@@ -19,14 +19,25 @@
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
   const errOf = (e) => ({ code: /JWT|permission|policy|42501|401|403/i.test(e?.message || e?.code || '') ? 'invalid_argument' : (e?.status === 429 ? 'resource_exhausted' : 'unavailable'), message: e?.message });
   const first = (p) => p.split('/')[0];
-  const PAGE = 300;
+  const PAGE = 40;
 
   /* ---------- database ---------- */
+  let active = 0; const waitQ = [];
+  const qrun = async (fn) => { if (active >= 2) await new Promise((r) => waitQ.push(r)); active++; try { return await fn(); } finally { active--; const n = waitQ.shift(); if (n) n(); } };
+  async function fetchPage(path, prefix, from) {
+    let last;
+    for (let i = 0; i < 4; i++) {
+      const { data, error } = await sb.from('em_docs').select('path,data').eq('coll', first(path)).like('path', prefix + '%').order('path').range(from, from + PAGE - 1);
+      if (!error) return data;
+      last = error; console.warn('em fetch retry', path, from, error.message);
+      await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+    }
+    throw errOf(last);
+  }
   async function fetchColl(path) {
     const out = []; const prefix = path + '/';
     for (let from = 0; ; from += PAGE) {
-      const { data, error } = await sb.from('em_docs').select('path,data').eq('coll', first(path)).like('path', prefix + '%').order('path').range(from, from + PAGE - 1);
-      if (error) throw errOf(error);
+      const data = await qrun(() => fetchPage(path, prefix, from));
       out.push(...data);
       if (data.length < PAGE) break;
     }
