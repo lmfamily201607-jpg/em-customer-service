@@ -205,6 +205,29 @@
       setTimeout(() => {
         const who = document.getElementById('who');
         if (who && !document.getElementById('lg-logout')) { const b = document.createElement('button'); b.id = 'lg-logout'; b.type = 'button'; b.textContent = 'ออกจากระบบ'; b.style.marginLeft = '8px'; b.onclick = async () => { await sb.auth.signOut(); location.reload(); }; who.after(b); }
+        if (who && !document.getElementById('lg-pw')) {
+          const p = document.createElement('button'); p.id = 'lg-pw'; p.type = 'button'; p.textContent = 'เปลี่ยนรหัสผ่าน'; p.style.marginLeft = '8px';
+          p.onclick = () => {
+            const g = el(`<div style="${css}"><div style="${card}"><h2 style="margin:0 0 12px;color:#111">เปลี่ยนรหัสผ่าน</h2>
+              <input id="pw1" type="password" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;border:1px solid #bbb;border-radius:8px;background:#fff;color:#111">
+              <input id="pw2" type="password" placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;border:1px solid #bbb;border-radius:8px;background:#fff;color:#111">
+              <div id="pwm" style="min-height:20px;color:#b00020;margin-bottom:8px"></div>
+              <div style="display:flex;gap:8px"><button id="pws" type="button" style="flex:1;padding:10px;background:#0a7d4a;color:#fff;border:0;border-radius:8px;cursor:pointer">บันทึกรหัสใหม่</button><button id="pwc" type="button" style="padding:10px;border:1px solid #bbb;background:#fff;color:#111;border-radius:8px;cursor:pointer">ยกเลิก</button></div></div></div>`);
+            document.body.appendChild(g);
+            const m = g.querySelector('#pwm');
+            g.querySelector('#pwc').onclick = () => g.remove();
+            g.querySelector('#pws').onclick = async () => {
+              const a = g.querySelector('#pw1').value, c = g.querySelector('#pw2').value;
+              if (a.length < 8) { m.textContent = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัว'; return; }
+              if (a !== c) { m.textContent = 'รหัสผ่านสองช่องไม่ตรงกัน'; return; }
+              m.style.color = '#555'; m.textContent = 'กำลังบันทึก...';
+              const { error } = await sb.auth.updateUser({ password: a });
+              if (error) { m.style.color = '#b00020'; m.textContent = 'เปลี่ยนไม่สำเร็จ: ' + error.message; return; }
+              m.style.color = '#0a7d4a'; m.textContent = 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว'; setTimeout(() => g.remove(), 1500);
+            };
+          };
+          document.getElementById('lg-logout').before(p);
+        }
       }, 1500);
       return;
     }
