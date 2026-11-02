@@ -282,6 +282,7 @@ progress{width:100%;accent-color:var(--accent)}
     </div>
     <nav class="tabs" id="tabs" aria-label="เมนู">
       <a href="#dashboard" data-v="dashboard">Dashboard</a>
+      <a href="#notices" data-v="notices">ประกาศ <span id="nt-badge" class="pill incomplete" hidden></span></a>
       <a href="#intake" data-v="intake">รับเรื่องลูกค้า</a>
       <a href="#search" data-v="search">ค้นหาประวัติ</a>
       <a href="#warranty" data-v="warranty">คำนวณประกัน</a>
@@ -301,6 +302,7 @@ progress{width:100%;accent-color:var(--accent)}
 </header>
 
 <main class="wrap">
+  <div id="notice-bar"></div>
   <div id="banner"></div>
 
   <!-- Dashboard -->
@@ -357,6 +359,23 @@ progress{width:100%;accent-color:var(--accent)}
   </section>
 
   <!-- Intake -->
+  <!-- Announcements: out-of-stock / do-not-sell notices -->
+  <section id="v-notices" hidden>
+    <h2>ประกาศ สินค้าหมด / งดขาย</h2>
+    <p class="sub">ประกาศที่ลงที่นี่จะขึ้นเป็นแถบแดงบนสุดของทุกหน้า และเตือนตอนเลือกรุ่นหรืออะไหล่ที่อยู่ในประกาศ ผู้ดูแลและ Call Center ลงประกาศและปิดประกาศได้</p>
+    <div class="panel" id="nt-form" style="margin-bottom:14px">
+      <div class="u-grid">
+        <div class="f"><label for="nt-type">ประเภท</label><select id="nt-type"><option value="stop">งดขาย / สินค้าหมด</option><option value="warn">สต๊อกไม่ตรง ตรวจก่อนขาย</option><option value="info">แจ้งทั่วไป</option></select></div>
+        <div class="f"><label for="nt-title">หัวข้อประกาศ</label><input id="nt-title" maxlength="120" placeholder="เช่น EM9 48V สีน้ำตาล หมดสต๊อก งดรับจอง"></div>
+        <div class="f"><label for="nt-items">รุ่น / อะไหล่ที่เกี่ยวข้อง (คั่นด้วยเครื่องหมาย ,)</label><input id="nt-items" maxlength="300" placeholder="เช่น EM9 48V, ผ้าเบรกหน้า, EM830021"></div>
+        <div class="f"><label for="nt-until">ใช้ถึงวันที่ (ไม่ใส่ = จนกว่าจะปิด)</label><input id="nt-until" type="date"></div>
+      </div>
+      <div class="f"><label for="nt-body">รายละเอียด / สิ่งที่ต้องทำ</label><textarea id="nt-body" rows="3" maxlength="800" placeholder="เช่น ห้ามรับจองจนกว่าจะมีแจ้งใหม่ ให้แจ้งลูกค้ารอของเข้าประมาณ ..."></textarea></div>
+      <div class="actions"><button type="button" class="primary" id="nt-post">ลงประกาศ</button><span class="meta" id="nt-msg"></span></div>
+    </div>
+    <div id="nt-list"></div>
+  </section>
+
   <section id="v-intake" hidden>
     <h2>รับเรื่องลูกค้า</h2>
     <p class="sub">ช่องเหมือนชีต Log Case ระบบออกเลขรับเรื่องให้อัตโนมัติเมื่อกดบันทึก ช่องที่มี * ต้องกรอก ถ้ายังไม่ครบก็บันทึกได้ แต่เรื่องจะขึ้นใน Dashboard ว่า "บันทึกไม่ครบ"</p>
@@ -928,7 +947,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','intake','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
+const VIEWS=['dashboard','notices','intake','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -979,7 +998,7 @@ function memberPerm(id){
 function myPerm(){
   if(S.isAdmin)return {role:'admin',menus:[...MENU_ALL,'kpi','users'],edit:'any',del:'any',exp:true};
   const p=memberPerm(S.uid);
-  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];
+  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');
   if(p.exp&&!p.menus.includes('export'))p.menus.push('export');
   if(!S.canWrite){p.edit='none';p.del='none'}
   return p;
@@ -1612,7 +1631,7 @@ function renderParts2(){
     const alt=p.bom.map(r=>r.alt).find(Boolean),vars=[...new Set(p.bom.map(r=>r.v).filter(Boolean))];
     return `<tr>
     <td>${p.img?`<a href="${esc(p.img)}" target="_blank" rel="noopener"><img src="${esc(p.img)}" alt="" loading="lazy" style="width:44px;height:44px;object-fit:cover;border-radius:6px;background:var(--sunk)"></a>`:''}</td>
-    <td class="mono">${esc(p.s)}</td><td>${hlq(p.name,q)}${p.bom.length?' <span class="tag on">BOM</span>':''}${p.byName?' <span class="tag">ชื่อระบุรุ่น</span>':''}${vars.length?`<div class="meta">${esc(vars.join(', '))}</div>`:''}${alt?`<div class="meta">ใช้แทนได้: ${esc(alt)}</div>`:''}</td><td>${esc(p.u||'')}</td>
+    <td class="mono">${esc(p.s)}</td><td>${hlq(p.name,q)}${ntTag(p.name+' '+p.s)}${p.bom.length?' <span class="tag on">BOM</span>':''}${p.byName?' <span class="tag">ชื่อระบุรุ่น</span>':''}${vars.length?`<div class="meta">${esc(vars.join(', '))}</div>`:''}${alt?`<div class="meta">ใช้แทนได้: ${esc(alt)}</div>`:''}</td><td>${esc(p.u||'')}</td>
     <td class="num"><b>${p.p?Number(p.p).toLocaleString()+' บาท':`<span class="meta">${p.unlisted?'ไม่มีในรายการราคา':'ไม่มีราคา'}</span>`}</b>${p.w?`<div class="meta">ส่ง ${Number(p.w).toLocaleString()}</div>`:''}</td>
     <td class="${model?'num':'meta'}">${model?(p.bom.length?esc(String(Math.max(...p.bom.map(r=>r.q||0))||'-')):'-'):esc(p.bomModels.slice(0,5).join(', '))}</td>
     <td class="num">${model?(p.n?p.n.toLocaleString()+' ครั้ง':'-'):(p.total?p.total.toLocaleString()+' ครั้ง':'-')}</td>
@@ -2886,6 +2905,55 @@ async function uRender(){
 $('#u-q').addEventListener('input',()=>{clearTimeout(uSearchT);uSearchT=setTimeout(uRender,250)});
 $('#u-q').addEventListener('focus',()=>{if(!$('#u-q').value.trim())uRender()});
 
+
+/* ---------- announcements (out of stock / do not sell) ---------- */
+S.notices=[];
+const NT_TYPE={stop:{n:'งดขาย',ico:'⛔',cls:'bad'},warn:{n:'สต๊อกไม่ตรง',ico:'⚠️',cls:'warn'},info:{n:'แจ้งทั่วไป',ico:'ℹ️',cls:'info'}};
+const ntKey=s=>String(s||'').toUpperCase().replace(/[\s\-_.\/]/g,'');
+const ntToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const ntActive=n=>!n.off&&(!n.until||n.until>=ntToday());
+const ntItems=n=>String(n.items||'').split(/[,\n،]/).map(s=>s.trim()).filter(Boolean);
+function ntHits(text){
+  const k=ntKey(text);if(k.length<2)return [];
+  return S.notices.filter(ntActive).filter(n=>ntItems(n).some(i=>{const ik=ntKey(i);return ik.length>=2&&(k.includes(ik)||(k.length>=3&&ik.includes(k)))}));
+}
+function ntTag(text){const h=ntHits(text);return h.length?` <span class="pill ${h.some(n=>n.type==='stop')?'incomplete':'follow'}" title="${esc(h.map(n=>n.title).join(' / '))}">${h.some(n=>n.type==='stop')?'งดขาย':'ตรวจสต๊อก'}</span>`:''}
+function renderNotices(){
+  const act=S.notices.filter(ntActive).sort((a,b)=>(a.type==='stop'?0:1)-(b.type==='stop'?0:1)||String(b.at).localeCompare(String(a.at)));
+  const urgent=act.filter(n=>n.type!=='info');
+  const bar=$('#notice-bar');
+  bar.innerHTML=urgent.length?`<div class="banner bad" style="background:#b00020;color:#fff;border-color:#b00020"><b>⛔ ประกาศ (${urgent.length})</b>${urgent.slice(0,3).map(n=>`<div style="margin-top:4px"><b>${NT_TYPE[n.type].ico} ${esc(n.title)}</b>${ntItems(n).length?' · '+esc(ntItems(n).join(', ')):''}${n.body?` — ${esc(n.body.slice(0,120))}`:''}</div>`).join('')}<div style="margin-top:6px"><a href="#notices" style="color:#fff;text-decoration:underline">ดูประกาศทั้งหมด${urgent.length>3?` (+${urgent.length-3})`:''}</a></div></div>`:'';
+  const bd=$('#nt-badge');if(bd){bd.hidden=!urgent.length;bd.textContent=urgent.length}
+  $('#nt-form').hidden=!S.canWrite;
+  if(S.view!=='notices')return;
+  const old=S.notices.filter(n=>!ntActive(n)).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,30);
+  const card=(n,live)=>`<div class="panel" style="margin-bottom:10px;${live&&n.type==='stop'?'border-left:5px solid #b00020':live&&n.type==='warn'?'border-left:5px solid #e08a00':''}">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="pill ${n.type==='stop'?'incomplete':n.type==='warn'?'follow':'done'}">${NT_TYPE[n.type]?.ico||''} ${esc(NT_TYPE[n.type]?.n||'')}</span><b>${esc(n.title)}</b></div>
+    ${ntItems(n).length?`<div style="margin-top:6px">${ntItems(n).map(i=>`<span class="tag">${esc(i)}</span>`).join(' ')}</div>`:''}
+    ${n.body?`<div style="margin-top:6px;white-space:pre-wrap">${esc(n.body)}</div>`:''}
+    <div class="meta" style="margin-top:6px">ลงโดย ${esc(n.byName||'-')} · ${esc(fmt(n.at))}${n.until?' · ใช้ถึง '+esc(fmtD(n.until)):''}${n.off?' · ปิดแล้ว'+(n.offBy?' โดย '+esc(n.offBy):''):''}</div>
+    ${S.canWrite?`<div class="actions" style="margin-top:8px">${live?`<button type="button" data-nt-off="${esc(n.id)}">ปิดประกาศ (กลับมาขายได้)</button>`:`<button type="button" data-nt-on="${esc(n.id)}">เปิดประกาศอีกครั้ง</button>`}${S.isAdmin?`<button type="button" data-nt-del="${esc(n.id)}">ลบ</button>`:''}</div>`:''}</div>`;
+  $('#nt-list').innerHTML=(act.length?'<h3>ประกาศที่ใช้อยู่ ('+act.length+')</h3>'+act.map(n=>card(n,true)).join(''):'<div class="empty">ไม่มีประกาศที่ใช้อยู่</div>')+(old.length?'<h3 style="margin-top:18px">ประกาศที่ปิด / หมดอายุ</h3>'+old.map(n=>card(n,false)).join(''):'');
+  const upd=async(id,patch)=>{const n=S.notices.find(x=>x.id===id);if(!n)return;try{await S.db.doc('notices/'+id).set({...n,...patch})}catch(e){toast(errText(e))}};
+  $('#nt-list').querySelectorAll('[data-nt-off]').forEach(b=>b.onclick=()=>upd(b.dataset.ntOff,{off:true,offBy:personName(S.uid),offAt:new Date().toISOString()}));
+  $('#nt-list').querySelectorAll('[data-nt-on]').forEach(b=>b.onclick=()=>upd(b.dataset.ntOn,{off:false,offBy:'',until:''}));
+  $('#nt-list').querySelectorAll('[data-nt-del]').forEach(b=>b.onclick=async()=>{if(!confirm('ลบประกาศนี้ถาวร?'))return;try{await S.db.doc('notices/'+b.dataset.ntDel).delete()}catch(e){toast(errText(e))}});
+}
+$('#nt-post').onclick=async()=>{
+  const title=$('#nt-title').value.trim(),m=$('#nt-msg');
+  if(!title){m.textContent='ใส่หัวข้อประกาศก่อน';return}
+  const id='n'+Date.now().toString(36);
+  const n={id,type:$('#nt-type').value,title,items:$('#nt-items').value.trim(),body:$('#nt-body').value.trim(),until:$('#nt-until').value||'',off:false,at:new Date().toISOString(),by:S.uid,byName:personName(S.uid)};
+  try{await S.db.doc('notices/'+id).set(n);['nt-title','nt-items','nt-body','nt-until'].forEach(x=>$('#'+x).value='');m.textContent='ลงประกาศแล้ว ทุกคนเห็นทันที';setTimeout(()=>m.textContent='',4000)}
+  catch(e){m.textContent=errText(e)}
+};
+// warn when a model / part that has an active notice is typed or picked
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t||!/(^|-)model$|^pp-q$|^wc-model$/.test(t.id||''))return;
+  let n=t.parentElement.querySelector('.nt-hint');if(!n){n=document.createElement('div');n.className='meta nt-hint';n.style.cssText='color:#b00020;font-weight:600';t.parentElement.appendChild(n)}
+  const hits=ntHits(t.value);n.textContent=hits.length?hits.map(x=>`${NT_TYPE[x.type].ico} ${x.title}`).join(' · '):''
+});
+
 /* ---------- data + identity ---------- */
 // older sheets used free-text statuses ("ปิดเคส มอเตอร์ไซค์", "รอลูกค้าแจ้งกลับ"); fold them into the app's three
 function normStatus(s){s=String(s||'').trim();if(!s||/ปิด|จบ|รับทราบ/.test(s))return 'จบ';if(/รอซ่อม/.test(s))return 'รอซ่อม';return CASE_STATUS.includes(s)?s:'ติดตามเคส'}
@@ -2921,6 +2989,7 @@ function refresh(viewOnly){
   if(S.view==='import')renderImport();
   if(S.view==='kpi')renderKpi();
   if(S.view==='users')renderUsers();
+  if(S.view==='notices')renderNotices();
   if(!viewOnly){updateLookup();updateModels();resolveNames(S.tickets.flatMap(t=>[t.receiverId,...(t.editorIds||[])]))}
 }
 function banner(kind,html){$('#banner').innerHTML=html?`<div class="banner ${kind}">${html}</div>`:''}
@@ -2966,6 +3035,7 @@ function applyGate(){
   db.collection('topics').onSnapshot(s=>{S.topics=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.title.localeCompare(b.title,'th'));refresh(true)},()=>{});
   db.doc('links/list').onSnapshot(s=>{const d=s.exists?s.data():null;S.linksMeta=d?{importedAt:d.importedAt||'',file:d.file||'',sheet:d.sheet||''}:null;S.links=d?.rows||[];refresh(true)},()=>{});
   db.doc('dealers/list').onSnapshot(s=>{const d=s.exists?s.data():null;S.dealerMeta=d;S.dealers=d?.rows||[];refresh(true)},()=>{});
+  db.collection('notices').onSnapshot(s=>{S.notices=s.docs.map(d=>d.data());renderNotices()},()=>{});
   db.collection('edits').onSnapshot(s=>{S.edits={};s.docs.forEach(d=>S.edits[d.id]=d.data());rebuildAll();refresh()},()=>{});
   db.collection('removals').onSnapshot(s=>{S.removals={};s.docs.forEach(d=>S.removals[d.id]=d.data());rebuildAll();refresh()},fail);
   // team settings decide menus and buttons; until they load everyone sees the full menu
