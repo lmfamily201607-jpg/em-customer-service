@@ -448,8 +448,10 @@ progress{width:100%;accent-color:var(--accent)}
     <div class="rsearch">
       <div class="f"><label for="pp-q">ค้นหาอะไหล่</label><input id="pp-q" type="search" placeholder="เช่น ผ้าเบรค, ที่ชาร์จ, แบตเตอรี่, 93031649028" autocomplete="off"></div>
       <div class="f"><label for="pp-model">รุ่นรถ</label><input id="pp-model" list="pp-models" autocomplete="off" placeholder="เช่น LEGEND PRO, NATION PLUS"><datalist id="pp-models"></datalist></div>
+      <div class="f"><label for="pp-vin">เลขตัวถัง (VIN)</label><input id="pp-vin" type="search" placeholder="เช่น MPPAA2KEARA000150" autocomplete="off" class="mono"></div>
       <div class="f"><label for="pp-sort">เรียงตาม</label><select id="pp-sort"><option value="use">ใช้บ่อยในงานซ่อม</option><option value="name">ชื่ออะไหล่</option><option value="price">ราคาต่ำไปสูง</option><option value="price-d">ราคาสูงไปต่ำ</option></select></div>
     </div>
+    <div id="pp-vin-res"></div>
     <p class="meta" id="pp-count" style="margin:0 0 8px"></p>
     <div class="tbl-wrap"><table id="pp-table"></table></div>
   </section>
@@ -1530,6 +1532,23 @@ $('#wc-maint').addEventListener('change',renderWarranty);
 $('#wc-pp').onclick=()=>{const m=$('#wc-model').value.trim();$('#pp-model').value=m?canonModel(m)||m:'';$('#pp-q').value='';location.hash='parts'};
 $('#wc-reset').onclick=()=>{$('#wc-form').reset();$('#wc-part').dataset.touched='';$('#wc-job').dataset.touched='';$('#wc-on').value='';$('#wc-maint').querySelectorAll('input').forEach(i=>i.checked=false);renderWarranty()};
 
+const CAT_REV=[["LEGEND","VT1001","Single Brake","MPPAA2KEAPA000000","MPPAA2KEAPA000029","Rev.00"],["LEGEND","VT1004","Single Brake","MPPAA2KEAPA000030","MPPAA2KEAPA000229","Rev.01"],["LEGEND","VT1005","Single Brake","MPPAA2KEAPA000230","MPPAA2KEAPA000329","Rev.01"],["LEGEND","VT1006","Single Brake","MPPAA2KEAPA000330","MPPAA2KEAPA000619","Rev.02"],["LEGEND","VT1007","Single Brake","MPPAA2KEAPA000620","MPPAA2KEAPA001119","Rev.02"],["LEGEND","KC24001","CBS brake","MPPAA2KEARA000001","MPPAA2KEARA000400","Rev.03"],["LEGEND","KC24002","CBS brake","MPPAA2KEARA000401","MPPAA2KEARA000800","Rev.04"],["LEGEND","KC24004","CBS brake","MPPAA2KEARA000801","MPPAA2KEARA001400","Rev.05"],["LEGEND","OK24004","CBS brake","MPPAA2KEARA001421","MPPAA2KEARA002120","Rev.05"],["LEGEND","OK24005","CBS brake","MPPAA2KEARA002121","MPPAA2KEARA002850","Rev.06"],["LEGEND","OK24006","CBS brake","MPPAA2KEARA002852","MPPAA2KEARA003351","Rev.07"],["LEGEND","KC24009","CBS brake","MPPAA2KEARA003358","MPPAA2KEARA004257","Rev.08"],["LEGEND","KC24010","CBS brake","MPPAA2KEARA004260","MPPAA2KEARA004709","Rev.09"],["LEGEND","ML25001","CBS brake","MPPAA2KEARA004710","MPPAA2KEARA004859","Rev.09"],["LEGEND","ML1250201-AAA","CBS brake","MPPAA2KEASA000007","MPPAA2KEASA000306","Rev.10"],["LEGEND","ML1250602-AAA","CBS brake","MPPAA2KEASA000314","MPPAA2KEASA000593","Rev.11"],["ENZO","VT1003/VT1008","Single Brake","MPPAC3KECPA000003","MPPAC3KECPA000060","Rev.00"],["ENZO","VT1013","Single Brake","MPPAC3KECPA000061","MPPAC3KECPA000260","Rev.01"],["ENZO","VT1017/KC24001","CBS brake","MPPAC3KECRA000001","MPPAC3KECRA000200","Rev.02"],["ENZO","VT1019/KC24003","CBS brake","MPPAC3KECRA000201","MPPAC3KECRA000400","Rev.02"],["ENZO","CT24002-1","CBS brake","MPPAC3KECRA000401","MPPAC3KECRA000450","Rev.03"],["ENZO","CT24002-2","CBS brake","MPPAC3KECRA000451","MPPAC3KECRA000600","Rev.03"],["ENZO","CT24005","CBS brake","MPPAC3KECRA000601","MPPAC3KECRA000800","Rev.03"],["ENZO","CT24002-2","CBS brake","MPPAC3KECRA000801","MPPAC3KECRA000900","Rev.03"],["ENZO","KC24007-KC24206","CBS brake","MPPAC3KECRA000929","MPPAC3KECRA001128","Rev.04"],["LEGEND PRO","ML2250201-DDD","CBS brake","MPPAA2HEASA000001","MPPAA2HEASA000400","Rev.01"],["LEGEND PRO","ML2250202-DDD","CBS brake","MPPAA2HEASA000401","MPPAA2HEASA000700","Rev.02"],["LEGEND PRO","ML2250503-DDD","CBS brake","MPPAA2HEASA000702","MPPAA2HEASA001001","Rev.03"],["LEGEND PRO","ML2250604-DDD","CBS brake","MPPAA2HEASA001002","MPPAA2HEASA001501","Rev.04"],["LEGEND PRO","ML2250705-DDD","CBS brake","MPPAA2HEASA001502","MPPAA2HEASA002001","Rev.05"],["LEGEND PRO","ML2251006-FCC","CBS brake","MPPAA2HEASA002002","MPPAA2HEASA002401","Rev.06"],["LEGEND PRO","ML2251007-BBB","CBS brake","MPPAA2HEATA000001","MPPAA2HEATA000300","Rev.07"],["LEGEND PRO","ML2251008-BBB","CBS brake","MPPAA2HEATA000301","MPPAA2HEATA000600","Rev.08"],["MILANO","MM2250903-BBB","CBS brake","MPPAK4KEFSA000011","MPPAK4KEFSA000210","Rev.00"],["MILANO","MM2250904-BBB","CBS brake","MPPAK4KEFSA000211","MPPAK4KEFSA000320","Rev.01"],["MILANO","MM2251105-BBB","CBS brake","MPPAK4KEFTA000001","MPPAK4KEFTA000300","Rev.01"],["MILANO","MM2251206-BBB","CBS brake","MPPAK4KEFTA000301","MPPAK4KEFTA000600","Rev.01"]];
+// Part Catalog revision by frame (VIN) number: model, lot, brake system and the catalogue revision that applies
+function catLookup(raw){
+  const v=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length<8)return null;
+  const sp=s=>{const m=String(s).match(/^(.*?)(\d+)$/);return m?[m[1],parseInt(m[2],10)]:null};
+  const q=sp(v);if(!q)return null;let near=null;
+  for(const c of CAT_REV){const a=sp(c[3]),b=sp(c[4]);if(!a||!b||a[0]!==q[0])continue;
+    if(q[1]>=a[1]&&q[1]<=b[1])return {model:c[0],lot:c[1],brake:c[2],start:c[3],end:c[4],rev:c[5],vin:v};
+    near=near||{model:c[0],gap:true,vin:v}}
+  return near;
+}
+function catHtml(r,vin){
+  if(!r)return `<div class="meta">ไม่พบเลขตัวถัง ${esc(vin)} ในตาราง Part Catalog (ตารางมีเฉพาะ LEGEND, ENZO, LEGEND PRO, MILANO)</div>`;
+  if(r.gap)return `<div class="meta">เลขตัวถังนี้เป็นรุ่น ${esc(r.model)} แต่อยู่นอกช่วงเลขที่มีในตาราง Part Catalog ตรวจกับฝ่ายบริการอีกครั้ง</div>`;
+  return `<div class="panel" style="margin:8px 0"><div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center"><span class="pill done" style="font-size:1.1em">Part Catalog ${esc(r.rev)}</span><b>${esc(r.model)}</b><span>Lot ${esc(r.lot)}</span><span>${esc(r.brake)}</span></div><div class="meta mono" style="margin-top:6px">ช่วงเลขตัวถัง ${esc(r.start)} ถึง ${esc(r.end)}</div></div>`;
+}
+
 /* ---------- parts price list ---------- */
 // A part belongs to a model when its name mentions the model, or when DMS/NCR repair cases of that model used its SKU.
 const ppKey=s=>String(s||'').toUpperCase().replace(/[\s\-_.]/g,'');
@@ -1602,6 +1621,18 @@ function renderParts2(){
 function hlq(s,q){let h=esc(s);if(q){const e=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');h=h.replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`)}return h}
 let ppT;['pp-q','pp-model'].forEach(id=>$('#'+id).addEventListener('input',()=>{clearTimeout(ppT);ppT=setTimeout(renderParts2,200)}));
 $('#pp-sort').addEventListener('change',renderParts2);
+$('#pp-vin').addEventListener('input',()=>{
+  const v=$('#pp-vin').value.trim(),box=$('#pp-vin-res');
+  if(!v){box.innerHTML='';return}
+  const r=catLookup(v);box.innerHTML=catHtml(r,v);
+  if(r&&!r.gap){const key=ppKey(r.model);const hit=allModels().find(m=>ppKey(m).replace(/^EM(?=[A-Z])/,'')===key);$('#pp-model').value=hit||r.model;renderParts2()}
+});
+// frame number typed in intake / edit forms shows the Part Catalog revision under the field
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t||!/-vin$/.test(t.id||'')||t.id==='pp-vin')return;
+  let n=t.parentElement.querySelector('.cat-hint');if(!n){n=document.createElement('div');n.className='meta cat-hint';t.parentElement.appendChild(n)}
+  const r=catLookup(t.value);n.textContent=!t.value.trim()||t.value.trim().length<8?'':r&&!r.gap?`Part Catalog ${r.rev} · ${r.model} · Lot ${r.lot} · ${r.brake}`:r&&r.gap?`${r.model}: เลขตัวถังอยู่นอกช่วงในตาราง Part Catalog`:''
+});
 
 /* ---------- dealer network ---------- */
 const offered=v=>{const s=String(v||'').trim();return !!s&&!/^(-|false|ไม่มี|ไม่)$/i.test(s)};
