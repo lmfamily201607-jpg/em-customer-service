@@ -1566,10 +1566,10 @@ function renderParts2(){
   }
   $('#pp-sub').textContent=S.partsMeta?`อะไหล่ ${P.length.toLocaleString()} รายการ จากไฟล์ ${S.partsMeta.file||''} (นำเข้าเมื่อ ${fmt(S.partsMeta.importedAt)}) · รุ่นที่ใช้ดูจากชื่ออะไหล่และประวัติซ่อม NCR/DMS ${(S.ncr.length+S.dms.length).toLocaleString()} เคส`
     :'ยังไม่มีรายการอะไหล่ ให้ผู้ดูแลระบบนำเข้าไฟล์ raw-materials ในเมนูนำเข้าข้อมูล';
-  const q=$('#pp-q').value.trim().toLowerCase(),model=$('#pp-model').value.trim(),mk=ppKey(model).replace(/^EM(?=[A-Z])/,'');
+  const q=$('#pp-q').value.trim().toLowerCase(),model=$('#pp-model').value.trim(),vm=model.match(/^EM\s?([89])\s?(36|48)V$/i),baseModel=vm?'EM'+vm[1]:model,mk=ppKey(baseModel).replace(/^EM(?=[A-Z])/,'');
   if(!P.length){$('#pp-table').innerHTML='';$('#pp-count').textContent='';return}
   if(!q&&!mk){$('#pp-count').textContent='พิมพ์ชื่ออะไหล่/SKU หรือเลือกรุ่นรถ เพื่อดูราคา';$('#pp-table').innerHTML='';return}
-  const bk=bomKey(model);
+  const bk=bomKey(baseModel);
   const known=new Set(P.map(p=>p.s.toUpperCase()));
   // BOM parts with no entry in the price list still show, marked as unpriced
   const extra=mk?S.bom.filter(r=>bomHit(r,bk)&&!known.has(r.s)).reduce((a,r)=>{if(!a.some(x=>x.s===r.s))a.push({s:r.s,name:r.name,u:'',p:0,k:ppKey(r.name),unlisted:true});return a},[]):[];
@@ -1581,6 +1581,7 @@ function renderParts2(){
   // a model with a BOM shows only its own BOM parts; repair history and name matches are the fallback for models with no BOM (they pulled in parts of other models)
   const hasBom=!!mk&&S.bom.some(r=>bomHit(r,bk));
   if(mk)rows=hasBom?rows.filter(p=>p.bom.length):rows.filter(p=>p.bom.length||p.byName||p.n>0);
+  if(vm){const other=vm[2]==='36'?'48':'36';const re=new RegExp('(^|[^0-9])'+other+'\\s?V','i');rows=rows.filter(p=>!re.test(String(p.name||'')+' '+p.bom.map(r=>r.v||'').join(' ')))}
   if(q)rows=rows.filter(p=>String(p.name||'').toLowerCase().includes(q)||String(p.s).toLowerCase().includes(q));
   const sort=$('#pp-sort').value;
   rows.sort(sort==='name'?(a,b)=>String(a.name).localeCompare(String(b.name),'th'):sort==='price'?(a,b)=>(a.p||1e12)-(b.p||1e12):sort==='price-d'?(a,b)=>(b.p||0)-(a.p||0):(a,b)=>(b.bom.length>0)-(a.bom.length>0)||(b.n-a.n)||(b.total-a.total)||(b.byName-a.byName));
@@ -2283,9 +2284,11 @@ function mapDealerRows(sheet){
 // One canonical model name used by warranty, intake and parts price list: no colour/watt/spec text, upper case, one spelling per model
 function canonModel(m){
   let s=String(m||'').replace(/\s+/g,' ').trim();if(!s)return '';
+  const volt=(s.match(/(?:^|[^0-9])(36|48)\s?V\b/i)||[])[1]||'';
   const grab=/GRAB/i.test(s);
   s=s.replace(/\s*\(GRAB\)/i,'').replace(/^(รถจักรยานยนต์ไฟฟ้า|รถมอเตอร์ไซค์ไฟฟ้า|รถสกู๊ตเตอร์ไฟฟ้า)\s*/,'')
     .replace(/\s*\d{3,5}W\b.*$/i,'').replace(/\s+(รถ)?(สกู๊ตเตอร์|จักรยาน).*$/,'').replace(/\s+สี.*$/,'').replace(/\s+(มอเตอร์ไซค์ไฟฟ้า|\d+IN\b).*$/i,'').replace(/\s+(Lithium|ลิเธี่ยม|ตะกั่ว).*$/i,'').trim().toUpperCase();
+  if(volt&&/^EM ?[89]$/.test(s))s=s.replace(/ /g,'')+' '+volt+'V';
   return s?s+(grab?' (GRAB)':''):'';
 }
 function allModels(){
@@ -2293,7 +2296,8 @@ function allModels(){
   // "ARENA" (BOM) and "EM ARENA" (catalogue) are one model: group by the key the BOM match uses and keep the name with the prefix
   const g=new Map();
   raw.map(canonModel).filter(Boolean).forEach(n=>{const k=n.toUpperCase().replace(/[\s\-_.]/g,'').replace(/\(GRAB\)/,'GRAB').replace(/^(EM|ECO)(?=[A-Z0-9])/,'');const o=g.get(k);if(!o||(!/^(EM|ECO)\b/.test(o)&&/^(EM|ECO)\b/.test(n)))g.set(k,n)});
-  return [...g.values()].sort();
+  const out=[...g.values()];
+  return out.filter(n=>!(/^EM[89]$/.test(n)&&out.some(x=>x.startsWith(n+' ')))).sort();
 }
 // the same SKU listed twice in the price list shows once, keeping the row that has a price
 function dedupeParts(list){
@@ -2308,6 +2312,7 @@ function wcFullModel(m){
 }
 function shortModel(m){
   const s=String(m||'').replace(/^รถจักรยานยนต์ไฟฟ้า\s*/,'').trim();if(!s)return '';
+  {const e=s.match(/^EM\s?([89])(?![0-9])/i);if(e){const v=(s.match(/(?:^|[^0-9])(36|48)\s?V\b/i)||[])[1];return 'EM'+e[1]+(v?' '+v+'V':'')}}
   const grab=/GRAB/i.test(s)?' (GRAB)':'';
   let x=s.match(/^(EM\s+.+?)\s+\d+W\b/i);if(x)return x[1].trim()+grab;
   x=s.match(/^(.+?)\s+จักรยานไฟฟ้า/);if(x)return x[1].trim()+grab;
