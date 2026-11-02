@@ -1579,9 +1579,10 @@ function renderParts2(){
     const boms=bi.bySku.get(String(p.s).toUpperCase())||[],bom=mk?boms.filter(r=>bomHit(r,bk)):[];
     return {...p,n,byName,total,bom,bomModels:[...new Set(boms.map(r=>r.m))],models:Object.entries(u).sort((a,b)=>b[1]-a[1]).slice(0,4)}});
   // a model with a BOM shows only its own BOM parts; repair history and name matches are the fallback for models with no BOM (they pulled in parts of other models)
+  if(vm){const reV=new RegExp(vm[2]+'\\s?V','i');rows=rows.map(p=>({...p,bom:p.bom.filter(r=>!r.v||reV.test(r.v))}))}
   const hasBom=!!mk&&S.bom.some(r=>bomHit(r,bk));
   if(mk)rows=hasBom?rows.filter(p=>p.bom.length):rows.filter(p=>p.bom.length||p.byName||p.n>0);
-  if(vm){const other=vm[2]==='36'?'48':'36';const re=new RegExp('(^|[^0-9])'+other+'\\s?V','i');rows=rows.filter(p=>!re.test(String(p.name||'')+' '+p.bom.map(r=>r.v||'').join(' ')))}
+  if(vm){const other=vm[2]==='36'?'48':'36';const reO=new RegExp('(^|[^0-9])'+other+'\\s?V','i'),reS=new RegExp('(^|[^0-9])'+vm[2]+'\\s?V','i');rows=rows.filter(p=>!(reO.test(String(p.name||''))&&!reS.test(String(p.name||''))))}
   if(q)rows=rows.filter(p=>String(p.name||'').toLowerCase().includes(q)||String(p.s).toLowerCase().includes(q));
   const sort=$('#pp-sort').value;
   rows.sort(sort==='name'?(a,b)=>String(a.name).localeCompare(String(b.name),'th'):sort==='price'?(a,b)=>(a.p||1e12)-(b.p||1e12):sort==='price-d'?(a,b)=>(b.p||0)-(a.p||0):(a,b)=>(b.bom.length>0)-(a.bom.length>0)||(b.n-a.n)||(b.total-a.total)||(b.byName-a.byName));
@@ -2296,6 +2297,7 @@ function allModels(){
   // "ARENA" (BOM) and "EM ARENA" (catalogue) are one model: group by the key the BOM match uses and keep the name with the prefix
   const g=new Map();
   raw.map(canonModel).filter(Boolean).forEach(n=>{const k=n.toUpperCase().replace(/[\s\-_.]/g,'').replace(/\(GRAB\)/,'GRAB').replace(/^(EM|ECO)(?=[A-Z0-9])/,'');const o=g.get(k);if(!o||(!/^(EM|ECO)\b/.test(o)&&/^(EM|ECO)\b/.test(n)))g.set(k,n)});
+  S.bom.forEach(r=>{const mm=String(r.m||'').replace(/\s/g,'').toUpperCase(),v=(String(r.v||'').match(/(36|48)\s?V/i)||[])[1];if(v&&/^EM[89]$/.test(mm))g.set(mm+v+'V',mm+' '+v+'V')});
   const out=[...g.values()];
   return out.filter(n=>!(/^EM[89]$/.test(n)&&out.some(x=>x.startsWith(n+' ')))).sort();
 }
