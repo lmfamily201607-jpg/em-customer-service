@@ -339,6 +339,17 @@ progress{width:100%;accent-color:var(--accent)}
       </table></div>
     </div>
     <h3>เรื่องที่ต้องติดตาม (ทุกช่วงเวลา) <span class="meta" id="k-incomplete"></span></h3>
+    <div class="rsearch" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="f"><label for="pf-q">ค้นหา</label><input id="pf-q" type="search" placeholder="ชื่อ เบอร์ เลขรับเรื่อง VIN" autocomplete="off"></div>
+      <div class="f"><label for="pf-st">สถานะ</label><select id="pf-st"><option value="">ทั้งหมด</option><option value="ติดตามเคส">ติดตามเคส</option><option value="รอซ่อม">รอซ่อม</option><option value="incomplete">บันทึกไม่ครบ</option></select></div>
+      <div class="f"><label for="pf-cat">เรื่อง</label><select id="pf-cat"></select></div>
+      <div class="f"><label for="pf-ch">ช่องทาง</label><select id="pf-ch"></select></div>
+      <div class="f"><label for="pf-who">เจ้าหน้าที่</label><select id="pf-who"></select></div>
+      <div class="f"><label for="pf-from">ตั้งแต่วันที่</label><input id="pf-from" type="date"></div>
+      <div class="f"><label for="pf-to">ถึงวันที่</label><input id="pf-to" type="date"></div>
+      <div class="f" style="align-self:end"><button type="button" id="pf-clear">ล้างตัวกรอง</button></div>
+    </div>
+    <div class="meta" id="pf-count" style="margin:4px 0"></div>
     <div class="tbl-wrap"><table>
       <thead><tr><th>เลขรับเรื่อง</th><th>วันเวลา</th><th>ลูกค้า</th><th>เรื่อง</th><th>ขาดข้อมูล</th><th>สถานะ</th></tr></thead>
       <tbody id="pending"></tbody>
@@ -910,7 +921,7 @@ EM TIGER จักรยานไฟฟ้า 10IN สีเขียว STL Lea
 รถจักรยานยนต์ไฟฟ้า EM MAX 3000W สีดำ Lithium Battery 1*72V25Ah
 รถจักรยานยนต์ไฟฟ้า EM LEGEND 2000W สีเขียวเงา Lithium Battery 1*72V25Ah`.split('\n');
 const REQUIRED=['name','channel','vehicleType','category','detail','answer'];
-const LABEL={ticketNo:'เลขรับเรื่อง',contactAt:'วันเวลาที่ติดต่อ',name:'ชื่อลูกค้า',phone:'เบอร์ติดต่อ',channel:'ช่องทางการติดต่อ',urgency:'ความเร่งด่วน',
+const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',contactAt:'วันเวลาที่ติดต่อ',name:'ชื่อลูกค้า',phone:'เบอร์ติดต่อ',channel:'ช่องทางการติดต่อ',urgency:'ความเร่งด่วน',
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
@@ -971,7 +982,8 @@ function myPerm(){
   return p;
 }
 const allowed=(right,t)=>right==='any'||(right==='own'&&!!t.receiverId&&t.receiverId===S.uid);
-const canEdit=t=>S.canWrite&&t.source!=='legacy'&&allowed(myPerm().edit,t);
+const canEdit=t=>S.canWrite&&allowed(myPerm().edit,t);
+const canRemark=t=>S.canWrite&&myPerm().edit!=='none';
 const canDel=t=>S.canWrite&&allowed(myPerm().del,t);
 function applyMenus(){
   if(!S.permReady)return;
@@ -1285,12 +1297,29 @@ function renderDashboard(){
     :'<tr><td colspan="8" class="empty">ไม่มีเคสในช่วงนี้</td></tr>';
   // click a staff row to narrow "เรื่องที่ต้องติดตาม" to that person's open cases
   $('#daily').querySelectorAll('tr[data-agent]').forEach(r=>{const pick=()=>{S.dAgent=S.dAgent===r.dataset.agent?null:r.dataset.agent;renderDashboard()};r.onclick=pick;r.onkeydown=e=>{if(e.key==='Enter')pick()}});
-  const mine=t=>!S.dAgent||who(t)===S.dAgent;
+  S.pf=S.pf||{q:'',st:'',cat:'',ch:'',who:'',from:'',to:''};
+  const PF=S.pf;PF.who=S.dAgent||'';
+  const baseOpen=T.filter(t=>statusOf(t)!=='done');
+  const fillSel=(id,vals,blank,cur)=>{const el=$('#'+id);if(!el)return;el.innerHTML=`<option value="">${blank}</option>`+vals.map(v=>`<option${v===cur?' selected':''}>${esc(v)}</option>`).join('')};
+  fillSel('pf-cat',[...new Set(baseOpen.map(t=>t.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th')),'ทุกเรื่อง',PF.cat);
+  fillSel('pf-ch',[...new Set(baseOpen.map(t=>t.channel).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th')),'ทุกช่องทาง',PF.ch);
+  fillSel('pf-who',[...new Set(baseOpen.map(t=>who(t)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th')),'ทุกคน',PF.who);
+  if($('#pf-q')&&document.activeElement!==$('#pf-q'))$('#pf-q').value=PF.q;
+  $('#pf-st').value=PF.st;$('#pf-from').value=PF.from;$('#pf-to').value=PF.to;
+  const pfTerms=PF.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const pfMatch=t=>{
+    if(PF.st==='incomplete'?statusOf(t)!=='incomplete':PF.st&&caseStatus(t)!==PF.st)return false;
+    if(PF.cat&&t.category!==PF.cat)return false;if(PF.ch&&t.channel!==PF.ch)return false;if(PF.who&&who(t)!==PF.who)return false;
+    const d=isoDate(t.contactAt);if(PF.from&&d<PF.from)return false;if(PF.to&&d>PF.to)return false;
+    if(pfTerms.length){const txt=[t.ticketNo,t.name,t.phone,t.vin,t.model,t.category,t.detail,t.refTicket].join(' ').toLowerCase();if(!pfTerms.every(w=>txt.includes(w)))return false}
+    return true};
+  const mine=t=>pfMatch(t);
   const inc=T.filter(t=>mine(t)&&statusOf(t)==='incomplete').length;
   $('#k-incomplete').innerHTML=(S.dAgent?`ของ <b>${esc(S.dAgent)}</b> <button type="button" class="link" id="d-allagents">ดูทุกคน</button> `:'<span>กดชื่อเจ้าหน้าที่ในตารางด้านบนเพื่อดูงานของคนนั้น</span> ')+(inc?`· บันทึกไม่ครบ ${inc} เรื่อง`:'');
   if($('#d-allagents'))$('#d-allagents').onclick=()=>{S.dAgent=null;renderDashboard()};
   const pend=T.filter(t=>mine(t)&&statusOf(t)!=='done');
-  $('#pending').innerHTML=pend.length?pend.slice(0,100).map(t=>`<tr class="click" data-open="${esc(t.ticketNo)}" tabindex="0">
+  $('#pf-count').textContent=`พบ ${pend.length.toLocaleString()} จาก ${baseOpen.length.toLocaleString()} เรื่องที่ยังไม่ปิด${pend.length>(S.pfLimit||100)?` · แสดง ${(S.pfLimit||100)} รายการแรก`:''}`;
+  $('#pending').innerHTML=pend.length?pend.slice(0,S.pfLimit||100).map(t=>`<tr class="click" data-open="${esc(t.ticketNo)}" tabindex="0">
     <td class="mono">${esc(t.ticketNo)}</td><td class="num">${esc(fmt(t.contactAt))}</td><td>${esc(t.name||'-')}<div class="meta">${esc(t.phone||'')}</div></td>
     <td>${esc(t.category||'-')}</td><td class="meta">${esc(missing(t).join(', ')||'-')}</td><td>${pill(t)}</td></tr>`).join('')
     :`<tr><td colspan="6" class="empty">ไม่มีเรื่องค้าง ทุกเรื่องปิดและบันทึกครบแล้ว</td></tr>`;
@@ -1299,6 +1328,11 @@ function renderDashboard(){
 function bindRows(tb){tb.querySelectorAll('tr[data-open]').forEach(r=>{r.onclick=()=>openTicket(r.dataset.open);r.onkeydown=e=>{if(e.key==='Enter')openTicket(r.dataset.open)}});
   tb.querySelectorAll('tr[data-repair]').forEach(r=>{r.onclick=()=>openRepair(r.dataset.repair);r.onkeydown=e=>{if(e.key==='Enter')openRepair(r.dataset.repair)}})}
 
+(function(){
+  const upd=()=>{S.pf=S.pf||{q:'',st:'',cat:'',ch:'',who:'',from:'',to:''};S.pf.q=$('#pf-q').value;S.pf.st=$('#pf-st').value;S.pf.cat=$('#pf-cat').value;S.pf.ch=$('#pf-ch').value;S.pf.who=$('#pf-who').value;S.pf.from=$('#pf-from').value;S.pf.to=$('#pf-to').value;S.dAgent=S.pf.who||null;renderDashboard()};
+  ['pf-q','pf-st','pf-cat','pf-ch','pf-who','pf-from','pf-to'].forEach(id=>$('#'+id).addEventListener(id==='pf-q'?'input':'change',upd));
+  $('#pf-clear').onclick=()=>{S.pf={q:'',st:'',cat:'',ch:'',who:'',from:'',to:''};S.dAgent=null;renderDashboard()};
+})();
 document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{D.mode=b.dataset.p;D.fixed=true;if(D.mode==='month'&&D.day)D.month=D.day.slice(0,7);renderDashboard()});
 $('#d-day').addEventListener('change',e=>{if(e.target.value){D.fixed=true;D.day=e.target.value;D.month=D.day.slice(0,7);renderDashboard()}});
 $('#d-month').addEventListener('change',e=>{if(e.target.value){D.fixed=true;D.month=e.target.value;renderDashboard()}});
@@ -1723,19 +1757,24 @@ function openTicket(no){
   S.editing=t;const legacy=t.source==='legacy';
   const reps=repairsForVins([t.vin||'']);
   modal(`<div class="modal-head"><div><div class="mono">${esc(t.ticketNo)}</div><h3>${esc(t.category||'เรื่องที่ติดต่อ')}</h3></div>${pill(t)}<button class="x" data-close aria-label="ปิด">ปิด</button></div>
-    ${legacy?`<div class="banner info">นำเข้าจาก Excel ชีต ${esc(t.sheet||'Log Case')} เป็นข้อมูลอ้างอิงย้อนหลัง แก้ไขในแอปไม่ได้</div>`:''}
+    ${legacy?`<div class="banner info">นำเข้าจาก Excel ชีต ${esc(t.sheet||'Log Case')}${t.edited?' · มีการแก้ไขในแอปแล้ว':' · แก้ไขได้ในแอป ระบบเก็บประวัติการแก้ไข'}</div>`:''}
     <dl class="kv">${['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback','closedAt']
       .filter(k=>!(legacy&&['callback','closedAt'].includes(k)&&!t[k])).map(k=>`<dt>${LABEL[k]}</dt><dd>${esc(valText(k,t[k]))}</dd>`).join('')}
     <dt>ดูแลโดย</dt><dd>${esc(who(t))}${legacy?'':` · บันทึก ${esc(fmt(t.createdAt))}`}</dd></dl>
+    <h3 style="margin-top:16px">Remark</h3><div id="m-rem">${remarksHtml(t)}</div>
+    ${canRemark(t)?`<div class="f" style="margin-top:8px"><label for="m-rem-text">เพิ่ม Remark</label><textarea id="m-rem-text" rows="2" placeholder="เช่น โทรกลับแล้ว ลูกค้าจะนำรถเข้าศูนย์วันเสาร์"></textarea></div>
+      <div class="actions"><button id="m-rem-add">เพิ่ม Remark</button><span class="meta" id="m-rem-msg"></span></div>`:''}
     ${reps.length?`<h3 style="margin-top:16px">ประวัติซ่อมของรถคันนี้</h3><div class="mini">${reps.map(repairMini).join('')}</div>`:''}
     <div class="actions">${canEdit(t)?'<button class="primary" id="m-edit">แก้ไขข้อมูล</button>':''}${canDel(t)?'<button class="danger" id="m-del">ลบรายการนี้</button>':''}
       ${S.canWrite?`<span class="meta">${[!legacy&&!canEdit(t)?'คุณไม่มีสิทธิ์แก้ไขเคสนี้':'',!canDel(t)?'คุณไม่มีสิทธิ์ลบเคสนี้':''].filter(Boolean).join(' · ')}</span>`:''}</div>
     <div id="m-del-box"></div>
-    ${legacy?'':'<h3 style="margin-top:18px">ประวัติการแก้ไข</h3><div class="hist" id="m-hist"><span class="meta">กำลังโหลด…</span></div>'}`);
+    <h3 style="margin-top:18px">ประวัติการแก้ไข</h3><div class="hist" id="m-hist"><span class="meta">กำลังโหลด…</span></div>`);
+  resolveNames((t.remarks||[]).map(r=>r.by),false).then(()=>{if($('#m-rem'))$('#m-rem').innerHTML=remarksHtml(t)});
+  if($('#m-rem-add'))$('#m-rem-add').onclick=()=>addRemark(t);
   bindMini($('#ov'));
   if($('#m-edit'))$('#m-edit').onclick=()=>editTicket(t);
   if($('#m-del'))$('#m-del').onclick=()=>askDelete(t);
-  if(!legacy)loadHistory(t);
+  loadHistory(t);
 }
 
 /* ---------- delete (soft) and restore: every removal keeps who, when and why ---------- */
@@ -1784,6 +1823,28 @@ function renderRemovals(){
   $('#del-rows').querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>{b.disabled=true;restore(b.dataset.restore)});
   resolveNames(list.flatMap(([,r])=>[r.by,r.restoredBy]));
 }
+
+function remarksHtml(t){
+  const rs=(t.remarks||[]).slice().sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+  return rs.length?rs.map(r=>`<div class="h"><div><b>${esc(personName(r.by))}</b> <span class="when">${esc(fmt(r.at))}</span></div><div style="white-space:pre-wrap">${esc(r.text)}</div></div>`).join(''):'<span class="meta">ยังไม่มี Remark</span>';
+}
+async function addRemark(t){
+  const ta=$('#m-rem-text'),msg=$('#m-rem-msg'),text=ta.value.trim();
+  if(!text){msg.textContent='พิมพ์ข้อความก่อน';return}
+  if(!S.uid){msg.textContent='ระบบระบุตัวตนไม่ได้ จึงบันทึกไม่ได้';return}
+  $('#m-rem-add').disabled=true;msg.textContent='กำลังบันทึก…';
+  try{
+    const now=new Date().toISOString();
+    const path=t.source==='legacy'?'edits/'+rid(t.ticketNo):'tickets/'+t.ticketNo;
+    const cur=await S.db.doc(path).get();const old=cur.exists?(cur.data().remarks||[]):[];
+    const remarks=[...old,{at:now,by:S.uid,text}];
+    const eids=[...new Set([...((cur.exists?cur.data().editorIds:null)||t.editorIds||[]),S.uid])];
+    if(t.source==='legacy')await S.db.doc(path).set({...(cur.exists?cur.data():{}),ticketNo:t.ticketNo,remarks,updatedAt:now,updatedBy:S.uid,editorIds:eids});
+    else await S.db.doc(path).update({remarks,updatedAt:now,updatedBy:S.uid,editorIds:eids});
+    await S.db.collection('audit/'+S.uid+'/log').add({ticketId:t.ticketNo,at:now,by:S.uid,changes:[{field:'remark',old:'',new:text}]});
+    t.remarks=remarks;ta.value='';$('#m-rem').innerHTML=remarksHtml(t);msg.textContent='เพิ่ม Remark แล้ว';$('#m-rem-add').disabled=false;
+  }catch(err){msg.textContent=errText(err);$('#m-rem-add').disabled=false}
+}
 async function loadHistory(t){
   const el=$('#m-hist');if(!el)return;
   const ids=t.editorIds||[];let rows=[];
@@ -1797,7 +1858,7 @@ async function loadHistory(t){
   el.innerHTML=rows.map(r=>`<div class="h"><div><b>${esc(personName(r.by))}</b> <span class="when">${esc(fmt(r.at))}</span></div>
     ${r.action==='delete'?`<div style="color:var(--bad)">ลบรายการ · เหตุผล: ${esc(r.reason||'-')}</div>`:r.action==='restore'?'<div style="color:var(--ok)">กู้คืนรายการ</div>':''}
     <div class="chg">${(r.changes||[]).map(c=>`<span class="meta">${esc(LABEL[c.field]||c.field)}</span><span><del>${esc(valText(c.field,c.old))}</del> → <ins>${esc(valText(c.field,c.new))}</ins></span>`).join('')}</div></div>`).join('')
-    +`<div class="h"><b>${esc(who(t))}</b> <span class="when">${esc(fmt(t.createdAt))}</span><div class="meta">สร้างเรื่อง</div></div>`;
+    +(t.source==='legacy'?`<div class="h"><div class="meta">นำเข้าจากชีต ${esc(t.sheet||'Log Case')}</div></div>`:`<div class="h"><b>${esc(who(t))}</b> <span class="when">${esc(fmt(t.createdAt))}</span><div class="meta">สร้างเรื่อง</div></div>`);
 }
 function editTicket(t){
   modal(`<div class="modal-head"><div><div class="mono">${esc(t.ticketNo)}</div><h3>แก้ไขข้อมูล</h3></div><button class="x" data-close>ยกเลิก</button></div>
@@ -1820,7 +1881,10 @@ async function saveEdit(e){
     const patch={};EDITABLE.forEach(k=>patch[k]=after[k]);
     if(after.status==='จบ'&&caseStatus(before)!=='จบ')patch.closedAt=now;
     if(after.status!=='จบ')patch.closedAt='';
-    await S.db.doc('tickets/'+before.ticketNo).update({...patch,updatedAt:now,updatedBy:S.uid,editorIds:[...new Set([...(before.editorIds||[]),S.uid])]});
+    const eids=[...new Set([...(before.editorIds||[]),S.uid])];
+    if(before.source==='legacy'){const path='edits/'+rid(before.ticketNo);const cur=await S.db.doc(path).get();
+      await S.db.doc(path).set({...(cur.exists?cur.data():{}),ticketNo:before.ticketNo,...patch,remarks:(cur.exists?cur.data().remarks:null)||before.remarks||[],updatedAt:now,updatedBy:S.uid,editorIds:eids})}
+    else await S.db.doc('tickets/'+before.ticketNo).update({...patch,updatedAt:now,updatedBy:S.uid,editorIds:eids});
     toast(`แก้ไข ${before.ticketNo} แล้ว`);
     const no=before.ticketNo;closeModal();setTimeout(()=>openTicket(no),300);
   }catch(err){msg.textContent=errText(err);$('#e-save').disabled=false}
@@ -1937,10 +2001,10 @@ function renderExport(){
 }
 const EXPORT_COLS=[['ticketNo','เลขรับเรื่อง'],['contactAt','วันเวลาที่ติดต่อ'],['receiver','ดูแลโดย'],['channel','ช่องทางการติดต่อ'],['urgency','ความเร่งด่วน'],['name','Customer Name'],
   ['phone','เบอร์ติดต่อ'],['vehicleType','ประเภทรถ'],['model','รุ่นรถ'],['vin','VIN/Serial'],['category','การติดต่อเรื่อง'],['detail','รายละเอียดของปัญหา'],['answer','สิ่งที่แจ้งกลับลูกค้า'],
-  ['refTicket','TICKET'],['callbackText','ติดต่อกลับลูกค้าเพื่อปิดงาน'],['statusText','สถานะ'],['closedAt','ปิดเคสเมื่อ'],['note','หมายเหตุ'],['sourceText','ที่มา'],['updatedAt','แก้ไขล่าสุด']];
+  ['refTicket','TICKET'],['callbackText','ติดต่อกลับลูกค้าเพื่อปิดงาน'],['statusText','สถานะ'],['closedAt','ปิดเคสเมื่อ'],['note','หมายเหตุ'],['remarkText','Remark'],['sourceText','ที่มา'],['updatedAt','แก้ไขล่าสุด']];
 function exportRows(){return filtered().map(rowFor)}
 function rowFor(t){{const o={...t,receiver:who(t),statusText:statusOf(t)==='incomplete'?'บันทึกไม่ครบ ('+caseStatus(t)+')':caseStatus(t),
-  callbackText:t.callback?'ติดต่อแล้ว':'',sourceText:t.source==='legacy'?'Excel: '+(t.sheet||'Log Case'):'แอป',
+  callbackText:t.callback?'ติดต่อแล้ว':'',remarkText:(t.remarks||[]).map(r=>fmt(r.at)+' '+personName(r.by)+': '+r.text).join('\n'),sourceText:t.source==='legacy'?'Excel: '+(t.sheet||'Log Case'):'แอป',
   contactAt:isoDateTime(t.contactAt),closedAt:isoDateTime(t.closedAt),updatedAt:isoDateTime(t.updatedAt)};
   return EXPORT_COLS.map(([k])=>String(o[k]??''))}}
 async function saveFile(name,data){
@@ -2730,7 +2794,7 @@ function renderUsers(){
   resolveNames(ids);
 }
 /* ---------- full backup / restore (moves the data between backends) ---------- */
-const BK_COLLS=['tickets','counters','removals','kb','legacy','repairs','dms','ncr','dealers','links','topics','parts','bom','members','seen','kpi'];
+const BK_COLLS=['tickets','edits','counters','removals','kb','legacy','repairs','dms','ncr','dealers','links','topics','parts','bom','members','seen','kpi'];
 async function bkExport(){
   const msg=$('#bk-msg');if(!S.db||!S.isAdmin){msg.textContent='เฉพาะผู้ดูแล (Editor)';return}
   const out={app:'em-customer-service',at:new Date().toISOString(),docs:[]};
@@ -2773,7 +2837,7 @@ function legacyToTicket(r){
   return {ticketNo:'LOG-'+r.r+(r.sh&&r.sh!=='Log Case'?'-'+r.sh:''),contactAt:r.d,agentName:r.ag,channel:r.ch,urgency:r.ur,name:r.nm,phone:r.ph,vehicleType:r.vt,
     category:r.tp,detail:r.dt,answer:r.an,refTicket:r.tk,callback:!!r.cb,status:st,note:[r.n,r.st&&r.st!==st?'สถานะเดิม: '+r.st:''].filter(Boolean).join(' / '),sheet:r.sh,source:'legacy'};
 }
-function rebuildAll(){S.all=[...S.tickets,...S.legacy].filter(t=>!S.removals[rid(t.ticketNo)]?.active).sort((a,b)=>String(b.contactAt||'').localeCompare(String(a.contactAt||'')))}
+function rebuildAll(){const ov=S.edits||{};const leg=S.legacy.map(t=>{const o=ov[rid(t.ticketNo)];if(!o)return t;const m={...t,edited:true,remarks:o.remarks||[],updatedAt:o.updatedAt,updatedBy:o.updatedBy,editorIds:o.editorIds||[]};EDITABLE.forEach(k=>{if(k in o)m[k]=o[k]});if('closedAt' in o)m.closedAt=o.closedAt;return m});S.all=[...S.tickets,...leg].filter(t=>!S.removals[rid(t.ticketNo)]?.active).sort((a,b)=>String(b.contactAt||'').localeCompare(String(a.contactAt||'')))}
 async function resolveNames(ids,rerender=true){
   if(!S.user)return;
   const want=[...new Set(ids.filter(Boolean))];if(!want.length)return;
@@ -2845,6 +2909,7 @@ function applyGate(){
   db.collection('topics').onSnapshot(s=>{S.topics=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.title.localeCompare(b.title,'th'));refresh(true)},()=>{});
   db.doc('links/list').onSnapshot(s=>{const d=s.exists?s.data():null;S.linksMeta=d?{importedAt:d.importedAt||'',file:d.file||'',sheet:d.sheet||''}:null;S.links=d?.rows||[];refresh(true)},()=>{});
   db.doc('dealers/list').onSnapshot(s=>{const d=s.exists?s.data():null;S.dealerMeta=d;S.dealers=d?.rows||[];refresh(true)},()=>{});
+  db.collection('edits').onSnapshot(s=>{S.edits={};s.docs.forEach(d=>S.edits[d.id]=d.data());rebuildAll();refresh()},()=>{});
   db.collection('removals').onSnapshot(s=>{S.removals={};s.docs.forEach(d=>S.removals[d.id]=d.data());rebuildAll();refresh()},fail);
   // team settings decide menus and buttons; until they load everyone sees the full menu
   const permsIn=()=>{S.permReady=true;applyMenus();applyGate();refresh(true)};
