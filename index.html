@@ -667,9 +667,10 @@ progress{width:100%;accent-color:var(--accent)}
   <!-- Users -->
   <section id="v-users" hidden>
     <h2>จัดการผู้ใช้</h2>
-    <p class="sub">ตั้งชื่อเล่น บทบาท เมนูที่เห็น และสิทธิ์แก้ไข/ลบเคสของแต่ละคน รายชื่อขึ้นเองเมื่อคนนั้นเปิดแอปครั้งแรก หรือค้นชื่อเพื่อเพิ่มล่วงหน้า</p>
+    <p class="sub">คนที่สมัครใหม่จะขึ้นในกล่อง "รออนุมัติ" ด้านบน กดปุ่มอนุมัติได้เลย จากนั้นปรับบทบาทและสิทธิ์ของแต่ละคนในรายการด้านล่าง</p>
     <div class="banner info" style="margin-bottom:14px">สิทธิ์หลักบังคับจากการแชร์ของหน้านี้: <b>Editor</b> = ผู้ดูแล (นำเข้าข้อมูล แก้คลังข้อมูล กู้คืน จัดการผู้ใช้) · <b>Contributor</b> = Call Center (รับเรื่อง แก้ไข) · <b>Viewer</b> = ดูอย่างเดียว การตั้งค่าในหน้านี้ใช้จัดเมนูและปุ่มของแต่ละคนภายในแอปเพิ่มจากนั้น</div>
     <div id="u-gate"></div>
+    <div class="panel" id="u-pend" style="margin-bottom:14px" hidden></div>
     <div class="panel" id="u-add" style="margin-bottom:14px"><div class="f"><label for="u-q">เพิ่มผู้ใช้ (ค้นชื่อ/อีเมล หรือพิมพ์อีเมลเพื่อเพิ่มล่วงหน้า)</label><div style="display:flex;gap:8px"><input id="u-q" type="search" autocomplete="off" placeholder="ชื่อหรืออีเมล เช่น แนน หรือ name@gmail.com" style="flex:1"><button type="button" class="primary" id="u-add-btn">+ เพิ่มผู้ใช้</button></div></div><div id="u-res" class="mini" style="margin-top:8px"></div></div>
     <div id="u-list"></div>
   </section>
@@ -2752,7 +2753,21 @@ function personStats(id){
   return {today:mine.filter(t=>isoDate(t.contactAt)===today).length,month:mine.filter(t=>isoDate(t.contactAt).startsWith(mon)).length,
     open:mine.filter(t=>caseStatus(t)!=='จบ').length,last:mine[0]?.contactAt||'',seen:S.seen[id]?.at||''};
 }
+async function renderPending(){
+  const box=$('#u-pend');if(!box)return;
+  if(!S.isAdmin||!S.user||!S.user.pending){box.hidden=true;return}
+  let list=[];try{list=await S.user.pending()}catch(e){}
+  if(!list.length){box.hidden=false;box.innerHTML='<h3 style="margin:0 0 4px">รออนุมัติ</h3><div class="meta">ไม่มีคนรออนุมัติ</div>';return}
+  box.hidden=false;
+  box.innerHTML='<h3 style="margin:0 0 8px">รออนุมัติ ('+list.length+' คน)</h3>'+list.map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #0001"><span style="flex:1">${esc(x.name)}</span><button type="button" class="primary" data-ok="${esc(x.id)}">อนุมัติ</button></div>`).join('');
+  box.querySelectorAll('[data-ok]').forEach(b=>b.onclick=async()=>{const id=b.dataset.ok;b.disabled=true;b.textContent='กำลังอนุมัติ...';
+    try{await S.user.approve(id);await S.db.doc('members/'+id).set({...PRESET.callcenter,role:'callcenter',nick:'',updatedAt:new Date().toISOString(),updatedBy:S.uid});toast('อนุมัติแล้ว เข้าใช้งานได้ทันที (ตั้งเป็น Call Center)');renderPending()}
+    catch(err){toast(errText(err));b.disabled=false;b.textContent='อนุมัติ'}});
+}
+setInterval(()=>{if(S.view==='users')renderPending()},8000);
+async function loadNames(){let n=0;try{(await S.user.search('')).forEach(h=>{if(h.name&&!S.names[h.id]){S.names[h.id]=h.name;n++}});}catch(e){}return n}
 function renderUsers(){
+  renderPending();loadNames().then(n=>{if(n&&S.view==='users')renderUsers()});
   $('#u-gate').innerHTML=S.isAdmin?'':'<div class="banner warn">เฉพาะผู้ดูแลระบบ (Editor) จัดการผู้ใช้ได้</div>';
   $('#u-add').hidden=!S.isAdmin||!S.user;
   if(!S.isAdmin){$('#u-list').innerHTML='';return}
