@@ -1415,8 +1415,7 @@ function wcLabor(chan,hours,covered){
   if(covered)return {fee:0,why:'ในประกัน ไม่มีค่าแรง'};
   if(chan.startsWith('sc'))return {fee:0,why:'Siam Chai นอกประกัน: ค่าแรงตามใบเสนอราคา'};
   if(hours==null)return {fee:0,why:'กรอกเวลาซ่อมเพื่อคำนวณค่าแรง'};
-  if(hours<=1)return {fee:0,why:'งาน 0–1 ชม. ไม่คิดค่าแรง'};
-  const h=Math.ceil(hours-1);return {fee:h*200,why:`ชั่วโมงแรกไม่คิด ส่วนที่เกิน ${h} ชม. × 200 บาท`};
+  const h=Math.max(1,Math.ceil(hours));return {fee:h*200,why:h===1?'งาน 0–1 ชม. เริ่มต้น 200 บาท':`${h} ชม. × 200 บาท (0–1 ชม. เริ่มต้น 200 บาท)`};
 }
 function addMonths(iso,m){const d=new Date(iso+'T12:00:00');const day=d.getDate();d.setMonth(d.getMonth()+m);if(d.getDate()<day)d.setDate(0);return d}
 function wcBatteryPrice(model,chem){
