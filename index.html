@@ -2297,7 +2297,7 @@ function allModels(){
   // "ARENA" (BOM) and "EM ARENA" (catalogue) are one model: group by the key the BOM match uses and keep the name with the prefix
   const g=new Map();
   raw.map(canonModel).filter(Boolean).forEach(n=>{const k=n.toUpperCase().replace(/[\s\-_.]/g,'').replace(/\(GRAB\)/,'GRAB').replace(/^(EM|ECO)(?=[A-Z0-9])/,'');const o=g.get(k);if(!o||(!/^(EM|ECO)\b/.test(o)&&/^(EM|ECO)\b/.test(n)))g.set(k,n)});
-  S.bom.forEach(r=>{const mm=String(r.m||'').replace(/\s/g,'').toUpperCase(),v=(String(r.v||'').match(/(36|48)\s?V/i)||[])[1];if(v&&/^EM[89]$/.test(mm))g.set(mm+v+'V',mm+' '+v+'V')});
+  S.bom.forEach(r=>{const mm=String(r.m||'').replace(/\s/g,'').toUpperCase(),v=(String(r.v||'').match(/(36|48)\s?V/i)||[])[1];if(v&&/^EM[89]$/.test(mm))g.set(mm.slice(2)+v+'V',mm+' '+v+'V')});
   const out=[...g.values()];
   return out.filter(n=>!(/^EM[89]$/.test(n)&&out.some(x=>x.startsWith(n+' ')))).sort();
 }
