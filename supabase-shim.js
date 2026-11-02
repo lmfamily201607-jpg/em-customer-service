@@ -118,6 +118,15 @@
       const { data } = await sb.from('profiles').select('id,name,email').or(`name.ilike.%${s}%,email.ilike.%${s}%`).limit(15);
       return (data || []).map((r) => ({ id: r.id, name: r.name || r.email }));
     },
+    async pending() {
+      const { data } = await sb.from('profiles').select('id,name,email').eq('level', 'none').limit(50);
+      return (data || []).map((r) => ({ id: r.id, name: (r.name || '') + (r.email ? ' · ' + r.email : '') }));
+    },
+    async invite(email, data) {
+      const e = String(email || '').trim().toLowerCase();
+      const { error } = await sb.from('em_docs').upsert({ path: 'invites/' + e, coll: 'invites', data: data || {} });
+      if (error) throw errOf(error);
+    },
     async profiles(ids) {
       const { data } = await sb.from('profiles').select('id,name,email').in('id', ids);
       const o = {}; (data || []).forEach((r) => { o[r.id] = { name: r.name || r.email }; }); return o;

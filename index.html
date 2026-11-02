@@ -670,7 +670,7 @@ progress{width:100%;accent-color:var(--accent)}
     <p class="sub">ตั้งชื่อเล่น บทบาท เมนูที่เห็น และสิทธิ์แก้ไข/ลบเคสของแต่ละคน รายชื่อขึ้นเองเมื่อคนนั้นเปิดแอปครั้งแรก หรือค้นชื่อเพื่อเพิ่มล่วงหน้า</p>
     <div class="banner info" style="margin-bottom:14px">สิทธิ์หลักบังคับจากการแชร์ของหน้านี้: <b>Editor</b> = ผู้ดูแล (นำเข้าข้อมูล แก้คลังข้อมูล กู้คืน จัดการผู้ใช้) · <b>Contributor</b> = Call Center (รับเรื่อง แก้ไข) · <b>Viewer</b> = ดูอย่างเดียว การตั้งค่าในหน้านี้ใช้จัดเมนูและปุ่มของแต่ละคนภายในแอปเพิ่มจากนั้น</div>
     <div id="u-gate"></div>
-    <div class="panel" id="u-add" style="margin-bottom:14px"><div class="f"><label for="u-q">เพิ่มผู้ใช้ (ค้นชื่อในองค์กร)</label><div style="display:flex;gap:8px"><input id="u-q" type="search" autocomplete="off" placeholder="พิมพ์ชื่อ เช่น แนน" style="flex:1"><button type="button" class="primary" id="u-add-btn">+ เพิ่มผู้ใช้</button></div></div><div id="u-res" class="mini" style="margin-top:8px"></div></div>
+    <div class="panel" id="u-add" style="margin-bottom:14px"><div class="f"><label for="u-q">เพิ่มผู้ใช้ (ค้นชื่อ/อีเมล หรือพิมพ์อีเมลเพื่อเพิ่มล่วงหน้า)</label><div style="display:flex;gap:8px"><input id="u-q" type="search" autocomplete="off" placeholder="ชื่อหรืออีเมล เช่น แนน หรือ name@gmail.com" style="flex:1"><button type="button" class="primary" id="u-add-btn">+ เพิ่มผู้ใช้</button></div></div><div id="u-res" class="mini" style="margin-top:8px"></div></div>
     <div id="u-list"></div>
   </section>
 </main>
@@ -2817,17 +2817,22 @@ async function bkImport(file){
 $('#bk-export').onclick=bkExport;
 $('#bk-file').onchange=e=>{if(e.target.files[0])bkImport(e.target.files[0]);e.target.value=''};
 let uSearchT=null;
-$('#u-add-btn').onclick=()=>{const q=$('#u-q');if(!q.value.trim()){q.focus();$('#u-res').innerHTML='<div class="meta">พิมพ์ชื่อคนที่ต้องการเพิ่ม แล้วกดเลือกชื่อที่ขึ้นมา</div>';return}clearTimeout(uSearchT);q.dispatchEvent(new Event('input'))};
+$('#u-add-btn').onclick=()=>{clearTimeout(uSearchT);uRender()};
 $('#u-q').addEventListener('keydown',e=>{if(e.key==='Enter')$('#u-add-btn').click()});
-$('#u-q').addEventListener('input',()=>{clearTimeout(uSearchT);uSearchT=setTimeout(async()=>{
-  const q=$('#u-q').value.trim(),box=$('#u-res');if(!q||!S.user){box.innerHTML='';return}
-  const hits=await S.user.search(q);
-  box.innerHTML=hits.length?hits.map(h=>`<button type="button" data-u-add="${esc(h.id)}"><span>${esc(h.name||'ผู้ใช้')}</span><span class="tag">${S.members[h.id]?'มีในรายการแล้ว':'เพิ่ม'}</span></button>`).join(''):'<div class="meta">ไม่พบชื่อนี้</div>';
+async function uRender(){
+  const q=$('#u-q').value.trim(),box=$('#u-res');if(!S.user){box.innerHTML='';return}
+  const hits=q?await S.user.search(q):(S.user.pending?await S.user.pending():[]);
+  let html=hits.length?(q?'':'<div class="meta">สมัครแล้ว รอเพิ่ม (กดชื่อเพื่อเพิ่ม)</div>')+hits.map(h=>`<button type="button" data-u-add="${esc(h.id)}"><span>${esc(h.name||'ผู้ใช้')}</span><span class="tag">${S.members[h.id]?'มีในรายการแล้ว':'เพิ่ม'}</span></button>`).join(''):(q?'<div class="meta">ไม่พบชื่อนี้</div>':'<div class="meta">ไม่มีคนสมัครรออยู่</div>');
+  if(q&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)&&S.user.invite)html+=`<button type="button" id="u-inv"><span>เพิ่มล่วงหน้า ${esc(q)}</span><span class="tag">เปิดสิทธิ์ทันทีเมื่อสมัครด้วยอีเมลนี้</span></button>`;
+  box.innerHTML=html;
   hits.forEach(h=>{if(h.name)S.names[h.id]=h.name});
+  const inv=box.querySelector('#u-inv');if(inv)inv.onclick=async()=>{try{await S.user.invite(q,{...PRESET.callcenter,role:'callcenter',nick:'',updatedAt:new Date().toISOString(),updatedBy:S.uid});box.innerHTML='';$('#u-q').value='';toast('เพิ่มล่วงหน้าแล้ว ให้เขาสมัครด้วยอีเมลนี้ แล้วเข้าใช้งานได้ทันที')}catch(err){toast(errText(err))}};
   box.querySelectorAll('[data-u-add]').forEach(b=>b.onclick=async()=>{const id=b.dataset.uAdd;if(S.members[id]){box.innerHTML='';return}
-    try{if(S.user.approve)await S.user.approve(id);await S.db.doc('members/'+id).set({...PRESET.callcenter,role:'callcenter',nick:'',updatedAt:new Date().toISOString(),updatedBy:S.uid});box.innerHTML='';$('#u-q').value='';toast('เพิ่มผู้ใช้แล้ว ตั้งค่าได้ในรายการด้านล่าง')}
+    try{if(S.user.approve)await S.user.approve(id);await S.db.doc('members/'+id).set({...PRESET.callcenter,role:'callcenter',nick:'',updatedAt:new Date().toISOString(),updatedBy:S.uid});box.innerHTML='';$('#u-q').value='';toast('เพิ่มผู้ใช้แล้ว ตั้งค่าได้ในรายการด้านล่าง');uRender()}
     catch(err){toast(errText(err))}});
-},250)});
+}
+$('#u-q').addEventListener('input',()=>{clearTimeout(uSearchT);uSearchT=setTimeout(uRender,250)});
+$('#u-q').addEventListener('focus',()=>{if(!$('#u-q').value.trim())uRender()});
 
 /* ---------- data + identity ---------- */
 // older sheets used free-text statuses ("ปิดเคส มอเตอร์ไซค์", "รอลูกค้าแจ้งกลับ"); fold them into the app's three
