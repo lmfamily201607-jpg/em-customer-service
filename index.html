@@ -2765,7 +2765,7 @@ async function renderPending(){
     catch(err){toast(errText(err));b.disabled=false;b.textContent='อนุมัติ'}});
 }
 setInterval(()=>{if(S.view==='users')renderPending()},8000);
-async function loadNames(){let n=0;try{(await S.user.search('')).forEach(h=>{if(h.name&&!S.names[h.id]){S.names[h.id]=h.name;n++}});}catch(e){}return n}
+async function loadNames(){let n=0;S.emails=S.emails||{};try{(await S.user.search('')).forEach(h=>{if(h.email)S.emails[h.id]=h.email;if(h.name&&!S.names[h.id]){S.names[h.id]=h.name;n++}});}catch(e){}return n}
 function renderUsers(){
   renderPending();loadNames().then(n=>{if(n&&S.view==='users')renderUsers()});
   $('#u-gate').innerHTML=S.isAdmin?'':'<div class="banner warn">เฉพาะผู้ดูแลระบบ (Editor) จัดการผู้ใช้ได้</div>';
@@ -2776,7 +2776,7 @@ function renderUsers(){
   $('#u-list').innerHTML=ids.length?ids.map(id=>{
     const m=S.members[id]||{},p=memberPerm(id),st=personStats(id),real=S.names[id]||'';
     return `<div class="panel u-card" data-uid="${esc(id)}">
-      <div class="u-head"><b>${esc(m.nick||real||'ผู้ใช้')}</b>${m.nick&&real?`<span class="meta">${esc(real)}</span>`:''}<span class="pill ${p.role==='admin'?'done':p.role==='viewer'?'incomplete':'follow'}">${esc(ROLES[p.role])}</span>${id===S.uid?'<span class="meta">(คุณ)</span>':''}${S.members[id]?'':'<span class="pill incomplete">รอลงทะเบียน · ยังเข้าใช้ไม่ได้ กดบันทึกเพื่ออนุมัติ</span>'}</div>
+      <div class="u-head"><b>${esc(m.nick||real||'ผู้ใช้')}</b>${m.nick&&real?`<span class="meta">${esc(real)}</span>`:''}${(S.emails||{})[id]?`<span class="meta">${esc(S.emails[id])}</span>`:''}<span class="pill ${p.role==='admin'?'done':p.role==='viewer'?'incomplete':'follow'}">${esc(ROLES[p.role])}</span>${id===S.uid?'<span class="meta">(คุณ)</span>':''}${S.members[id]?'':'<span class="pill incomplete">รอลงทะเบียน · ยังเข้าใช้ไม่ได้ กดบันทึกเพื่ออนุมัติ</span>'}</div>
       <div class="meta">วันนี้ ${st.today} เคส · เดือนนี้ ${st.month} เคส · ค้างติดตาม ${st.open} เคส · รับเรื่องล่าสุด ${esc(fmt(st.last))}${st.seen?` · เปิดแอปล่าสุด ${esc(fmt(st.seen))}`:''} <button type="button" class="link" data-u-work="${esc(id)}">ดูงาน ›</button></div>
       <div class="u-grid">
         <div class="f"><label>ชื่อเล่นที่แสดงในแอป</label><input data-k="nick" value="${esc(m.nick||'')}" placeholder="${esc(real||'เช่น แนน')}"></div>

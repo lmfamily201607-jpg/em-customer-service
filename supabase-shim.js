@@ -116,7 +116,7 @@
     async search(q) {
       const s = String(q || '').replace(/[%,()]/g, ' ').trim();
       const { data } = await sb.from('profiles').select('id,name,email').or(`name.ilike.%${s}%,email.ilike.%${s}%`).limit(15);
-      return (data || []).map((r) => ({ id: r.id, name: r.name || r.email }));
+      return (data || []).map((r) => ({ id: r.id, name: r.name || r.email, email: r.email || '' }));
     },
     async pending() {
       const { data } = await sb.from('profiles').select('id,name,email').eq('level', 'none').limit(50);
