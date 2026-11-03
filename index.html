@@ -319,6 +319,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#forms" data-v="forms">ฟอร์มนัดหมาย</a>
       <a href="#search" data-v="search">ค้นหาประวัติ</a>
       <a href="#warranty" data-v="warranty">คำนวณประกัน</a>
+      <a href="#product" data-v="product">PRODUCT สินค้า</a>
       <a href="#parts" data-v="parts">ราคาอะไหล่</a>
       <a href="#dealer" data-v="dealer">Dealer</a>
       <a href="#links" data-v="links">Link การทำงาน</a>
@@ -367,7 +368,7 @@ progress{width:100%;accent-color:var(--accent)}
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','dealer']],
-        ['tools','🧰','เครื่องมือช่วยงาน',['warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','kb','links']],
+        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','kb','links']],
         ['rep','📈','รายงาน',['kpi','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
@@ -596,6 +597,14 @@ progress{width:100%;accent-color:var(--accent)}
     <div id="pp-vin-res"></div>
     <p class="meta" id="pp-count" style="margin:0 0 8px"></p>
     <div class="tbl-wrap"><table id="pp-table"></table></div>
+  </section>
+
+  <!-- PRODUCT -->
+  <section id="v-product" hidden>
+    <h2>PRODUCT สินค้า</h2>
+    <p class="sub" id="pd-sub"></p>
+    <div class="rsearch"><div class="f"><label for="pd-q">ค้นหารุ่น / สี / แบตเตอรี่</label><input id="pd-q" type="search" placeholder="เช่น ARENA, 3000W, สีเขียว"></div><div class="f"><label for="pd-cat">ประเภท</label><select id="pd-cat"><option value="">ทั้งหมด</option><option>มอเตอร์ไซค์ไฟฟ้า</option><option>จักรยานไฟฟ้า</option><option>สกู๊ตเตอร์ไฟฟ้า</option></select></div></div>
+    <div id="pd-list"></div>
   </section>
 
   <!-- Dealer network -->
@@ -1088,7 +1097,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','intake','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
+const VIEWS=['dashboard','notices','product','intake','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1146,7 +1155,7 @@ function memberPerm(id){
 function myPerm(){
   if(S.isAdmin)return {role:'admin',menus:[...MENU_ALL,'kpi','users'],edit:'any',del:'any',exp:true};
   const p=memberPerm(S.uid);
-  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');
+  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');
   if(p.exp&&!p.menus.includes('export'))p.menus.push('export');
   if(!S.canWrite){p.edit='none';p.del='none'}
   return p;
@@ -1210,7 +1219,7 @@ function go(v){
   VIEWS.forEach(n=>{$('#v-'+n).hidden=n!==v});
   document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   if(['repair','search','intake','import','parts'].includes(v)){ensureDms();ensureNcr()}
-  if(['parts','import'].includes(v))ensureParts();
+  if(['parts','import','product'].includes(v))ensureParts();
   if(v==='assistant')setAsMode(S.asMode||'ask');
   renderTabs();
   refresh(true);
@@ -3432,6 +3441,29 @@ function updateModels(){
   let dl=$('#models');if(!dl){dl=document.createElement('datalist');dl.id='models';document.body.appendChild(dl)}
   dl.innerHTML=allModels().map(m=>`<option value="${esc(m)}">`).join('');
 }
+
+/* ---------- PRODUCT สินค้า ---------- */
+function prodParse(line){
+  const s=String(line||'').trim();
+  const cat=/จักรยานยนต์|มอเตอร์ไซค์/.test(s)?'มอเตอร์ไซค์ไฟฟ้า':/สกู๊ตเตอร์/.test(s)?'สกู๊ตเตอร์ไฟฟ้า':'จักรยานไฟฟ้า';
+  const w=(s.match(/(\d{3,5})\s?W\b/i)||[])[1]||'';
+  const color=(s.match(/สี\s?([^\s]+(?:\s?\/\s?[^\s]+)?)/)||[])[1]||(s.match(/\b\d+IN\s+(?:DOUBLE SEAT\s+)?([ก-๙\/\-]+)/)||[])[1]||'';
+  const bat=(s.match(/((?:Lithium|Lead Acid|STL Lithium|STL Lead Acid|ตะกั่ว|ลิเธี่ยม)[^\n]*)$/i)||[])[1]||'';
+  return {full:s,base:canonModel(s),cat,w,color,bat,grab:/GRAB/i.test(s)};
+}
+function renderProduct(){
+  const q=($('#pd-q').value||'').trim().toUpperCase(),cat=$('#pd-cat').value;
+  const rows=MODEL_LIST.map(prodParse).filter(r=>r.base);
+  const by=new Map();rows.forEach(r=>{const g=by.get(r.base)||{base:r.base,cat:r.cat,v:[]};g.v.push(r);by.set(r.base,g)});
+  const cnt=new Map();(S.bom||[]).forEach(r=>{const k=bomKey(r.m);cnt.set(k,(cnt.get(k)||0)+1)});
+  const list=[...by.values()].filter(g=>(!cat||g.cat===cat)&&(!q||g.base.includes(q)||g.v.some(v=>v.full.toUpperCase().includes(q)))).sort((a,b)=>a.cat.localeCompare(b.cat,'th')||a.base.localeCompare(b.base));
+  $('#pd-sub').textContent=`${list.length} รุ่น · ${list.reduce((n,g)=>n+g.v.length,0)} แบบ (สี/ขนาดแบตเตอรี่)`;
+  $('#pd-list').innerHTML=list.map((g,i)=>{const bc=cnt.get(bomKey(g.base))||0;return `<div class="panel" style="margin:8px 0"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><b style="font-size:1.1em">${esc(g.base)}</b><span class="pill">${esc(g.cat)}</span>${bc?`<span class="meta">BOM ${bc} รายการ</span>`:''}<button type="button" data-pd="${esc(g.base)}" style="margin-left:auto">ดูอะไหล่รุ่นนี้</button></div><div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map((v,j)=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div></div>`}).join('')||'<div class="empty">ไม่พบรุ่นที่ค้นหา</div>';
+  $('#pd-list').querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.pc);toast('คัดลอกชื่อรุ่นแล้ว')}catch(e){toast(b.dataset.pc)}});
+  $('#pd-list').querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const m=b.dataset.pd;location.hash='#parts';setTimeout(()=>{const e=$('#pp-model');if(e){e.value=m;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}},400)});
+}
+document.addEventListener('input',e=>{if(e.target&&(e.target.id==='pd-q'||e.target.id==='pd-cat'))renderProduct()});
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='pd-cat')renderProduct()});
 function refresh(viewOnly){
   if(S.view==='dashboard')renderDashboard();
   if(S.view==='search')renderSearch();
@@ -3448,7 +3480,7 @@ function refresh(viewOnly){
   if(S.view==='forms')renderForms();
   if(S.view==='kpi')renderKpi();
   if(S.view==='users')renderUsers();
-  if(S.view==='notices')renderNotices();
+  if(S.view==='notices')renderNotices();if(S.view==='product')renderProduct();
   if(!viewOnly){updateLookup();updateModels();resolveNames(S.tickets.flatMap(t=>[t.receiverId,...(t.editorIds||[])]))}
 }
 function banner(kind,html){$('#banner').innerHTML=html?`<div class="banner ${kind}">${html}</div>`:''}
