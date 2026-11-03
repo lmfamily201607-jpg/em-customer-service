@@ -2973,15 +2973,15 @@ function ensureKpi(){
 // Working days from the case log: for the staff in logPeople a day counts as worked when they logged at least one case
 // (app cases by the person who received them, imported Log Case rows by the name in the sheet).
 function kpiLogDays(month,people){
-  const want=new Set(people),out={};
-  S.all.forEach(t=>{const d=isoDate(t.contactAt);if(!d.startsWith(month))return;const a=kpiName(who(t));if(!want.has(a))return;
+  const want=people?new Set(people):null,out={};
+  S.all.forEach(t=>{const d=isoDate(t.contactAt);if(!d.startsWith(month))return;const a=kpiName(who(t));if(!a||a==='-'||(want&&!want.has(a)))return;
     const o=out[a]||(out[a]={});o[d]=(o[d]||0)+1});
   return out;
 }
 // logged days become "work"; a scheduled work day with nothing logged becomes "nolog"; sick/leave/off stay as scheduled
 function kpiApplyLog(M,month){
-  const lp=kpiConf().logPeople||[];if(!lp.length)return M;
-  const log=kpiLogDays(month,lp),seen=new Set();
+  const log=kpiLogDays(month,null),lp=[...new Set([...(kpiConf().logPeople||[]),...Object.keys(log)])];if(!lp.length)return M;
+  const seen=new Set();
   const out=M.map(r=>{if(!lp.includes(r.agent))return r;seen.add(r.agent+'|'+r.date);const n=(log[r.agent]||{})[r.date]||0;
     if(n)return {...r,status:'work',logN:n};
     return kpiStOf(r)==='work'?{...r,status:'nolog',logN:0}:{...r,logN:0}});
@@ -3016,7 +3016,7 @@ function kpiViewSum(view,M,people){
   <div class="rtable" style="margin-bottom:16px"><div class="rt-h">สรุปข้อมูลรายบุคคล · ${esc(kpiMonthName(K.month))} (กดชื่อเพื่อดูรายวัน)</div><div style="overflow-x:auto"><table>
   <thead><tr><th>เจ้าหน้าที่</th><th>วันทำงาน</th><th>เคสที่ลง log</th><th>มอบหมาย</th><th>ตอบแล้ว</th><th>ปิดแล้ว</th><th>ข้อความ</th><th>งานเฉลี่ย/วัน</th><th>มอบหมายเทียบเดือนก่อน</th></tr></thead><tbody>
   ${people.map(p=>{const o=kpiAgg(M.filter(r=>r.agent===p)),q=kpiAgg(P.filter(r=>r.agent===p));const ch=q.assigned?(o.assigned-q.assigned)/q.assigned*100:null;
-    const lg=(kpiConf().logPeople||[]).includes(p)?M.filter(r=>r.agent===p).reduce((n,r)=>n+(r.logN||0),0).toLocaleString():'-';
+    const lg=M.some(r=>r.agent===p&&r.logN!=null)?M.filter(r=>r.agent===p).reduce((n,r)=>n+(r.logN||0),0).toLocaleString():'-';
     return kpiRowHead(p)+kpiCell(o.days.work)+kpiCell(lg)+kpiCell(o.assigned.toLocaleString())+kpiCell(o.replied.toLocaleString())+kpiCell(o.closed.toLocaleString())+kpiCell(o.messages.toLocaleString())
       +kpiCell(o.perDay==null?'-':o.perDay.toFixed(1))+kpiCell(ch==null?'-':(ch>=0?'+':'')+ch.toFixed(0)+'%')+'</tr>'}).join('')}
   ${people.length>1?`<tr class="kp-total"><td>รวมทุกคน</td>${kpiCell(a0.days.work)}<td></td>${kpiCell(a0.assigned.toLocaleString())}${kpiCell(a0.replied.toLocaleString())}${kpiCell(a0.closed.toLocaleString())}${kpiCell(a0.messages.toLocaleString())}${kpiCell(a0.perDay==null?'-':a0.perDay.toFixed(1))}<td></td></tr>`:''}
@@ -3054,7 +3054,7 @@ function kpiViewSched(view,M,people){
     +kpiGrid(M,P,(p,d,r)=>{const st=r?kpiStOf(r):'';return [st?LET[st]:'',st?'kp-c-'+st:'',`${p} ${fmtD(d)}: ${KPI_ST[st]||'ไม่มีข้อมูล'}${r&&r.logN?` · ลง log ${r.logN} เคส`:''}${st==='nolog'?' (ตารางบอกทำงาน)':''}`]},
       [['ทำงาน',p=>cnt(p,'work')],['หยุด',p=>cnt(p,'off')],['ป่วย',p=>cnt(p,'sick')],['ลา',p=>cnt(p,'leave')],['ไม่มี log',p=>cnt(p,'nolog')||'-']])
     +'<div class="meta kp-legend"><span><i class="kp-c-work"></i>ท = ทำงาน</span><span><i class="kp-off"></i>ห = หยุด</span><span><i class="kp-sick"></i>ป = ป่วย</span><span><i class="kp-leave"></i>ล = ลา</span><span><i class="kp-c-nolog"></i>· = ตารางบอกทำงาน แต่ไม่มี log รับเคส</span></div>'
-    +((kpiConf().logPeople||[]).length?`<p class="meta" style="margin:6px 0 0">วันทำงานของ ${esc(kpiConf().logPeople.join(', '))} นับจาก log รับเคส (วันที่ลงเคสอย่างน้อย 1 เคส) · ชี้ที่ช่องเพื่อดูจำนวนเคส · เปลี่ยนรายชื่อได้ที่ "ตั้งเป้าหมาย"</p>`:'');
+    +((kpiConf().logPeople||[]).length?`<p class="meta" style="margin:6px 0 0">วันทำงานของทุกคนที่มีชื่อใน log นับจาก log รับเคส (วันที่ลงเคสอย่างน้อย 1 เคส) · ชี้ที่ช่องเพื่อดูจำนวนเคส · เปลี่ยนรายชื่อได้ที่ "ตั้งเป้าหมาย"</p>`:'');
   kpiGridClicks(view);
 }
 // 4. reply within the target minutes: each working day's average reply time against the target
