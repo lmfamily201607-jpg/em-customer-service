@@ -1851,10 +1851,23 @@ function renderDealers(){
     <div class="tags">${offered(d.service)?`<span class="tag on">ซ่อม: ${esc(d.service)}</span>`:'<span class="tag">ไม่รับซ่อม</span>'}
       ${offered(d.grab)?'<span class="tag on">Service Grab</span>':''}${offered(d.charge)?`<span class="tag on">${esc(d.charge)}</span>`:''}${d.pay?`<span class="tag">${esc(d.pay)}</span>`:''}</div>
     ${d.note?`<div class="meta">หมายเหตุ: ${esc(d.note)}</div>`:''}
-    <div class="row">${/^https?:\/\//.test(d.maps)?`<a href="${esc(d.maps)}" target="_blank" rel="noopener">เปิดแผนที่</a>`:''}<button type="button" class="primary" data-send="${i}" style="margin-left:auto">คัดลอกส่งลูกค้า</button></div>
+    <div class="row">${/^https?:\/\//.test(d.maps)?`<a href="${esc(d.maps)}" target="_blank" rel="noopener">เปิดแผนที่</a>`:''}<label class="meta" style="margin-left:auto"><input type="checkbox" data-pick="${i}"${S.dpick&&S.dpick.has(d.code+'|'+d.name)?' checked':''}> เลือก</label><button type="button" class="primary" data-send="${i}">คัดลอกส่งลูกค้า</button></div>
   </div>`).join('')||`<div class="empty">${L.length?'ไม่พบร้านที่ตรงกับเงื่อนไข':''}</div>`;
   $('#dl-list').querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.copy);toast('คัดลอกเบอร์แล้ว')}catch(e){toast(b.dataset.copy)}});
   $('#dl-list').querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>dealerSend(list[+b.dataset.send]));
+  $('#dl-list').querySelectorAll('[data-pick]').forEach(c=>c.onchange=()=>{const d=list[+c.dataset.pick],k=d.code+'|'+d.name;S.dpick=S.dpick||new Set();if(c.checked)S.dpick.add(k);else S.dpick.delete(k);dealerBar()});
+  dealerBar();
+}
+function dealerBar(){
+  let b=$('#dl-bar');if(!b){b=document.createElement('div');b.id='dl-bar';b.className='actions';b.style.cssText='margin:0 0 10px';$('#dl-list').before(b)}
+  const n=S.dpick?S.dpick.size:0;b.hidden=!n;b.innerHTML=n?`<span class="meta">เลือกแล้ว ${n} ร้าน</span><button type="button" class="primary" id="dl-sendsel">คัดลอกข้อความที่เลือก</button><button type="button" id="dl-clearsel">ล้างที่เลือก</button>`:'';
+  if(n){$('#dl-sendsel').onclick=()=>dealerSend(S.dealers.filter(d=>S.dpick.has(d.code+'|'+d.name)));$('#dl-clearsel').onclick=()=>{S.dpick.clear();renderDealers()}}
+}
+function dealerMsgs(d){
+  const a=Array.isArray(d)?d:[d];if(a.length===1)return dealerMsg(a[0]);
+  const out=['ร้านตัวแทนจำหน่าย EM MOTOR ใกล้คุณ ('+a.length+' ร้าน)',''];
+  a.forEach((x,i)=>{out.push((i+1)+'. '+dealerMsg(x).split('\n').slice(2,-2).join('\n'));out.push('')});
+  out.push('ขอบคุณที่ใช้บริการ EM MOTOR ค่ะ');return out.join('\n');
 }
 function dealerMsg(d){
   const L=['ร้านตัวแทนจำหน่าย EM MOTOR ใกล้คุณ','','ร้าน: '+d.name];
@@ -1873,7 +1886,7 @@ function dealerSend(d){
   const root=$('#modal-root');
   root.innerHTML=`<div style="position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px"><div class="panel" style="background:var(--bg,#fff);max-width:520px;width:100%;max-height:90vh;overflow:auto">
     <h3 style="margin:0 0 8px">ข้อความส่งลูกค้า</h3><p class="meta" style="margin:0 0 8px">แก้ข้อความได้ตามต้องการก่อนคัดลอก</p>
-    <textarea id="dm-text" rows="12" style="width:100%;box-sizing:border-box">${esc(dealerMsg(d))}</textarea>
+    <textarea id="dm-text" rows="12" style="width:100%;box-sizing:border-box">${esc(dealerMsgs(d))}</textarea>
     <div class="actions" style="margin-top:10px"><button type="button" class="primary" id="dm-copy">คัดลอกข้อความ</button><button type="button" id="dm-close">ปิด</button><span class="meta" id="dm-msg"></span></div></div></div>`;
   $('#dm-close').onclick=()=>root.innerHTML='';
   $('#dm-copy').onclick=async()=>{const t=$('#dm-text');try{await navigator.clipboard.writeText(t.value);$('#dm-msg').textContent='คัดลอกแล้ว วางส่งลูกค้าได้เลย'}catch(e){t.select();document.execCommand('copy');$('#dm-msg').textContent='คัดลอกแล้ว'}};
