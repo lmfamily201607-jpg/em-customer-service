@@ -1870,14 +1870,15 @@ function dealerMsgs(d){
   out.push('ขอบคุณที่ใช้บริการ EM MOTOR ค่ะ');return out.join('\n');
 }
 function dealerMsg(d){
-  const L=['ร้านตัวแทนจำหน่าย EM MOTOR ใกล้คุณ','','ร้าน: '+d.name];
+  const L=['ร้านตัวแทนจำหน่าย EM MOTOR ใกล้คุณ','','ร้าน: '+d.name+(d.code?' ('+d.code+')':'')];
   const area=[d.area,d.region].filter(Boolean).join(' · ');if(area)L.push('พื้นที่: '+area);
   if(d.phone)L.push('โทร: '+d.phone);
   if(d.fb)L.push('Facebook: '+d.fb);
   if(d.hours)L.push('เวลาทำการ: '+d.hours);
-  const sv=[];if(offered(d.service))sv.push('ศูนย์บริการซ่อม ('+d.service+')');else sv.push('ไม่รับซ่อม');
-  if(offered(d.grab))sv.push('Service Grab');if(offered(d.charge))sv.push('สถานีชาร์จ');
+  const sv=[];if(offered(d.service))sv.push('ซ่อม: '+d.service);else sv.push('ไม่รับซ่อม');
+  if(offered(d.grab))sv.push('Service Grab');if(offered(d.charge))sv.push(d.charge);if(d.pay)sv.push(d.pay);
   L.push('บริการ: '+sv.join(', '));
+  if(d.note)L.push('หมายเหตุ: '+d.note);
   if(/^https?:\/\//.test(d.maps))L.push('แผนที่: '+d.maps);
   L.push('','ขอบคุณที่ใช้บริการ EM MOTOR ค่ะ');
   return L.join('\n');
