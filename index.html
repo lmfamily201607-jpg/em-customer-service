@@ -603,6 +603,7 @@ progress{width:100%;accent-color:var(--accent)}
   <section id="v-product" hidden>
     <h2>PRODUCT สินค้า</h2>
     <p class="sub" id="pd-sub"></p>
+    <p class="sub"><a href="https://drive.google.com/drive/folders/130L2lJ0Uzz5fa7iRoKnee2FSfGWOojF7" target="_blank" rel="noopener">📷 เปิดคลังรูปสินค้ามอเตอร์ไซค์ทั้งหมด (Google Drive)</a></p>
     <div class="rsearch"><div class="f"><label for="pd-q">ค้นหารุ่น / สี / แบตเตอรี่</label><input id="pd-q" type="search" placeholder="เช่น ARENA, 3000W, สีเขียว"></div><div class="f"><label for="pd-cat">ประเภท</label><select id="pd-cat"><option value="">ทั้งหมด</option><option>มอเตอร์ไซค์ไฟฟ้า</option><option>จักรยานไฟฟ้า</option><option>สกู๊ตเตอร์ไฟฟ้า</option></select></div></div>
     <div id="pd-list"></div>
   </section>
@@ -3443,6 +3444,9 @@ function updateModels(){
 }
 
 /* ---------- PRODUCT สินค้า ---------- */
+const PD_PHOTO_ALL='https://drive.google.com/drive/folders/130L2lJ0Uzz5fa7iRoKnee2FSfGWOojF7';
+const PD_PHOTO={'EM ARENA':[['รูป ARENA','1OOdc2Pv7DR-_uFjv8eE448qKGjexUT_J']],'EM LEGEND':[['รูป LEGEND','1EAqR4nGMHg4hQAOZ-JoxKPiNhyZmxNCj'],['Legend Vintage','1Z2n2eBBTGmuVJpqXcCvhWGjkCizYm1fD']],'EM LEGEND PRO':[['รูป LEGEND PRO','1JJsybJeRDiuMO5joShmoazCPzTwTSKbq'],['Legend Pro M&M','1i9saftWpFPu8w2IjYYS0V3punwul7W5R'],['New Color น้ำเงิน/ฟ้า','1CSZhWs3zte016ThzB4A23wIfMmmsffae']],'EM MILANO':[['รูป MILANO','1CCXlREI7uzpH0kyfGhMFpmVINkU_nxuZ'],['Milano MM','19kafdY9ldMYiaIoXUMfi_KdCi5pdu650']],'EM OWEN':[['รูป OWEN','1sQep5yHEZvJazxdLNwy5p0_ic7cHNigd']],'EM OWEN LONG RANGE':[['รูป OWEN Long Range','1sQep5yHEZvJazxdLNwy5p0_ic7cHNigd']],'EM OWEN LONG RANGE (GRAB)':[['รูป OWEN Long Range','1sQep5yHEZvJazxdLNwy5p0_ic7cHNigd']]};
+const pdPhotos=b=>(PD_PHOTO[b]||[]).map(([n,id])=>`<a href="https://drive.google.com/drive/folders/${id}" target="_blank" rel="noopener">📷 ${esc(n)}</a>`).join(' ');
 function prodParse(line){
   const s=String(line||'').trim();
   const cat=/จักรยานยนต์|มอเตอร์ไซค์/.test(s)?'มอเตอร์ไซค์ไฟฟ้า':/สกู๊ตเตอร์/.test(s)?'สกู๊ตเตอร์ไฟฟ้า':'จักรยานไฟฟ้า';
@@ -3458,7 +3462,7 @@ function renderProduct(){
   const cnt=new Map();(S.bom||[]).forEach(r=>{const k=bomKey(r.m);cnt.set(k,(cnt.get(k)||0)+1)});
   const list=[...by.values()].filter(g=>(!cat||g.cat===cat)&&(!q||g.base.includes(q)||g.v.some(v=>v.full.toUpperCase().includes(q)))).sort((a,b)=>a.cat.localeCompare(b.cat,'th')||a.base.localeCompare(b.base));
   $('#pd-sub').textContent=`${list.length} รุ่น · ${list.reduce((n,g)=>n+g.v.length,0)} แบบ (สี/ขนาดแบตเตอรี่)`;
-  $('#pd-list').innerHTML=list.map((g,i)=>{const bc=cnt.get(bomKey(g.base))||0;return `<div class="panel" style="margin:8px 0"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><b style="font-size:1.1em">${esc(g.base)}</b><span class="pill">${esc(g.cat)}</span>${bc?`<span class="meta">BOM ${bc} รายการ</span>`:''}<button type="button" data-pd="${esc(g.base)}" style="margin-left:auto">ดูอะไหล่รุ่นนี้</button></div><div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map((v,j)=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div></div>`}).join('')||'<div class="empty">ไม่พบรุ่นที่ค้นหา</div>';
+  $('#pd-list').innerHTML=list.map((g,i)=>{const bc=cnt.get(bomKey(g.base))||0;return `<div class="panel" style="margin:8px 0"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><b style="font-size:1.1em">${esc(g.base)}</b><span class="pill">${esc(g.cat)}</span>${bc?`<span class="meta">BOM ${bc} รายการ</span>`:''}${pdPhotos(g.base)}<button type="button" data-pd="${esc(g.base)}" style="margin-left:auto">ดูอะไหล่รุ่นนี้</button></div><div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map((v,j)=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div></div>`}).join('')||'<div class="empty">ไม่พบรุ่นที่ค้นหา</div>';
   $('#pd-list').querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.pc);toast('คัดลอกชื่อรุ่นแล้ว')}catch(e){toast(b.dataset.pc)}});
   $('#pd-list').querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const m=b.dataset.pd;location.hash='#parts';setTimeout(()=>{const e=$('#pp-model');if(e){e.value=m;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}},400)});
 }
