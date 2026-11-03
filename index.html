@@ -330,6 +330,93 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
       <a href="#users" data-v="users">จัดการผู้ใช้</a>
     </nav>
+    <div class="emg-fav" id="emg-fav" aria-label="เมนูที่ใช้บ่อย"></div>
+    <style id="em-menu-groups">
+      #tabs.em-grouped{display:flex;flex-wrap:wrap;gap:4px;overflow:visible;padding:6px 0 4px;position:relative}
+      .emg{position:relative}
+      .emg[hidden]{display:none}
+      .emg-btn{display:flex;align-items:center;gap:7px;border:1px solid transparent;background:transparent;color:var(--muted);font-weight:600;padding:8px 12px;border-radius:8px;font-size:14px;cursor:pointer}
+      .emg-btn:hover{background:var(--accent-soft);color:var(--ink)}
+      .emg-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+      .emg.on>.emg-btn{background:var(--accent);color:var(--accent-ink)}
+      .emg-btn .ic{font-size:16px;line-height:1}
+      .emg-btn .car{font-size:10px;opacity:.75;transition:transform .15s}
+      .emg-btn[aria-expanded="true"] .car{transform:rotate(180deg)}
+      .emg-panel{position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.14);padding:6px;z-index:30;display:flex;flex-direction:column;gap:2px}
+      .emg-panel[hidden]{display:none}
+      #tabs.em-grouped .emg-panel a,#tabs.em-grouped .emg-panel .emg-item{display:block;width:100%;text-align:left;padding:9px 12px;border:0;border-radius:6px;background:none;color:var(--ink);font:inherit;font-weight:500;white-space:nowrap;text-decoration:none;cursor:pointer}
+      #tabs.em-grouped .emg-panel a[hidden],#tabs.em-grouped .emg-panel .emg-item[hidden]{display:none}
+      #tabs.em-grouped .emg-panel a:hover,#tabs.em-grouped .emg-panel .emg-item:hover{background:var(--accent-soft)}
+      #tabs.em-grouped .emg-panel a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:700;box-shadow:inset 3px 0 0 var(--accent)}
+      .emg-toggle{display:none;align-items:center;gap:8px;width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;padding:10px 12px;border-radius:8px;cursor:pointer}
+      .emg-toggle .cur{margin-left:auto;color:var(--accent);font-weight:700}
+      .emg-fav{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted);padding:0 0 6px}
+      .emg-fav:empty{display:none}
+      .emg-fav a{padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;background:var(--surface)}
+      .emg-fav a:hover,.emg-fav a[aria-current="page"]{border-color:var(--accent);color:var(--accent)}
+      @media (max-width:760px){
+        .emg-toggle{display:flex}
+        #tabs.em-grouped{flex-direction:column;align-items:stretch}
+        #tabs.em-grouped:not(.open) .emg{display:none}
+        .emg-btn{width:100%}
+        .emg-panel{position:static;box-shadow:none;border:0;border-left:3px solid var(--accent);border-radius:0;margin:0 0 6px 14px;padding:2px 0 2px 8px}
+      }
+    </style>
+    <script>
+    // Grouped top menu. Links keep their data-v/href; only their place on screen changes.
+    (function(){
+      const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
+      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','dealer']],
+        ['tools','🧰','เครื่องมือช่วยงาน',['warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','kb','links']],
+        ['rep','📈','รายงาน',['kpi','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
+      const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
+      // any menu not in the plan above is kept in its own group so nothing is lost
+      const planned=new Set(GROUPS.flatMap(g=>g[3])),extra=links.filter(a=>!planned.has(a.dataset.v)).map(a=>a.dataset.v);
+      if(extra.length)GROUPS.push(['more','➕','อื่น ๆ',extra]);
+      const pwBtn=()=>document.getElementById('lg-pw')||document.getElementById('acct-pw');
+      const pw=document.createElement('button');pw.type='button';pw.className='emg-item';pw.textContent='เปลี่ยนรหัสผ่าน';pw.hidden=true;
+      pw.onclick=()=>{closeAll();const b=pwBtn();if(b)b.click()};
+      nav.classList.add('em-grouped');
+      const tog=document.createElement('button');tog.type='button';tog.className='emg-toggle';tog.setAttribute('aria-expanded','false');
+      tog.innerHTML='<span aria-hidden="true">☰</span> เมนู <span class="cur"></span>';nav.prepend(tog);
+      tog.onclick=()=>{const o=!nav.classList.contains('open');nav.classList.toggle('open',o);tog.setAttribute('aria-expanded',String(o))};
+      const groups=[];
+      GROUPS.forEach(([id,ic,label,vs])=>{
+        const items=vs.map(v=>v==='__pw'?pw:byV[v]).filter(Boolean);if(!items.length)return;
+        const g=document.createElement('div');g.className='emg';g.dataset.g=id;
+        const b=document.createElement('button');b.type='button';b.className='emg-btn';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls','emg-'+id);
+        b.innerHTML='<span class="ic" aria-hidden="true">'+ic+'</span><span>'+label+'</span><span class="car" aria-hidden="true">▾</span>';
+        const p=document.createElement('div');p.className='emg-panel';p.id='emg-'+id;p.hidden=true;items.forEach(a=>p.appendChild(a));
+        b.onclick=e=>{e.stopPropagation();const open=p.hidden;closeAll(g);p.hidden=!open;b.setAttribute('aria-expanded',String(open))};
+        g.append(b,p);nav.appendChild(g);groups.push({g,b,p,items});
+      });
+      function closeAll(except){groups.forEach(x=>{if(x.g!==except){x.p.hidden=true;x.b.setAttribute('aria-expanded','false')}})}
+      nav.addEventListener('click',e=>{if(e.target.closest('.emg-panel a')){closeAll();nav.classList.remove('open');tog.setAttribute('aria-expanded','false')}});
+      document.addEventListener('click',e=>{if(!nav.contains(e.target))closeAll()});
+      document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+      // most used menus (this browser only), shown as shortcuts under the menu
+      const FAV_DEF=['dashboard','intake','search','forms'];
+      const useOf=()=>{try{return JSON.parse(localStorage.getItem('em-menu-use')||'{}')}catch(e){return {}}};
+      function bump(){const v=location.hash.slice(1);if(!byV[v])return;const u=useOf();u[v]=(u[v]||0)+1;try{localStorage.setItem('em-menu-use',JSON.stringify(u))}catch(e){}}
+      function renderFav(){
+        const fav=document.getElementById('emg-fav');if(!fav)return;const u=useOf(),cur=location.hash.slice(1);
+        const vs=[...new Set([...Object.keys(u).sort((a,b)=>u[b]-u[a]),...FAV_DEF])].filter(v=>byV[v]&&!byV[v].hidden).slice(0,5);
+        fav.innerHTML=vs.length?'<span>ใช้บ่อย:</span>'+vs.map(v=>'<a href="#'+v+'"'+(v===cur?' aria-current="page"':'')+'>'+byV[v].firstChild.textContent.trim()+'</a>').join(''):'';
+      }
+      function update(){
+        // only write attributes that change, so the observers below don't re-trigger themselves
+        if(pw.hidden!==!pwBtn())pw.hidden=!pwBtn();
+        let curName='';
+        groups.forEach(x=>{const vis=x.items.some(a=>!a.hidden);if(x.g.hidden!==!vis)x.g.hidden=!vis;const on=x.items.find(a=>a.getAttribute&&a.getAttribute('aria-current')==='page');x.g.classList.toggle('on',!!on);if(on)curName=on.firstChild.textContent.trim()});
+        tog.querySelector('.cur').textContent=curName;renderFav();
+      }
+      new MutationObserver(update).observe(nav,{subtree:true,attributes:true,attributeFilter:['hidden','aria-current']});
+      // the password button is added next to the user name after sign-in
+      const bar=nav.parentElement&&nav.parentElement.querySelector('.bar');if(bar)new MutationObserver(update).observe(bar,{childList:true,subtree:true});
+      window.addEventListener('hashchange',()=>{bump();update()});
+      bump();update();
+    })();
+    </script>
     <div class="wtabs" id="wtabs" role="tablist" aria-label="แท็บที่เปิดอยู่"></div>
   </div>
 </header>
