@@ -437,7 +437,7 @@ progress{width:100%;accent-color:var(--accent)}
         <input type="date" id="d-day" aria-label="เลือกวัน"><input type="month" id="d-month" aria-label="เลือกเดือน" hidden>
         <button type="button" id="d-next" aria-label="ถัดไป">›</button>
         <button type="button" id="d-copy">คัดลอกสรุป</button><button type="button" id="d-png">บันทึกเป็นภาพ</button>
-        <button type="button" id="d-xlsx">ส่งออกสรุป Excel</button>
+        <button type="button" id="d-xlsx">ส่งออกสรุป Excel</button><button type="button" id="d-import" hidden>นำเข้าข้อมูล Excel</button>
       </div>
     </div>
     <div class="kband">
@@ -1449,7 +1449,7 @@ function renderDashboard(){
   $('#d-day').hidden=D.mode!=='day';$('#d-month').hidden=D.mode!=='month';
   document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===D.mode)));
   const R=periodRows(),s=summarize(R);
-  $('#d-title').textContent=(D.mode==='day'?'สรุปงานรายวัน ':'สรุปงานรายเดือน ')+periodLabel();
+  $('#d-title').textContent=(D.mode==='day'?'สรุปงานรายวัน ':'สรุปงานรายเดือน ')+periodLabel();$('#d-import').hidden=!(S.permReady&&myPerm().menus.includes('import'));
   $('#dash-date').textContent=`ข้อมูลรวม ${T.length.toLocaleString()} เรื่อง (บันทึกในแอป ${S.tickets.length.toLocaleString()} · Log Case ที่นำเข้า ${S.legacy.length.toLocaleString()})`;
   $('#k-total').textContent=s.total.toLocaleString();$('#k-done').textContent=s.done.toLocaleString();
   $('#k-follow').textContent=s.follow.toLocaleString();$('#k-rate').textContent=s.rate;
@@ -3494,6 +3494,7 @@ function renderProduct(){
 }
 document.addEventListener('input',e=>{if(e.target&&(e.target.id==='pd-q'||e.target.id==='pd-cat'))renderProduct()});
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='pd-cat')renderProduct()});
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='d-import')location.hash='#import'});
 function refresh(viewOnly){
   if(S.view==='dashboard')renderDashboard();
   if(S.view==='search')renderSearch();
