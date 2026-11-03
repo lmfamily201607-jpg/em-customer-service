@@ -1851,9 +1851,33 @@ function renderDealers(){
     <div class="tags">${offered(d.service)?`<span class="tag on">ซ่อม: ${esc(d.service)}</span>`:'<span class="tag">ไม่รับซ่อม</span>'}
       ${offered(d.grab)?'<span class="tag on">Service Grab</span>':''}${offered(d.charge)?`<span class="tag on">${esc(d.charge)}</span>`:''}${d.pay?`<span class="tag">${esc(d.pay)}</span>`:''}</div>
     ${d.note?`<div class="meta">หมายเหตุ: ${esc(d.note)}</div>`:''}
-    ${/^https?:\/\//.test(d.maps)?`<a href="${esc(d.maps)}" target="_blank" rel="noopener">เปิดแผนที่</a>`:''}
+    <div class="row">${/^https?:\/\//.test(d.maps)?`<a href="${esc(d.maps)}" target="_blank" rel="noopener">เปิดแผนที่</a>`:''}<button type="button" class="primary" data-send="${i}" style="margin-left:auto">คัดลอกส่งลูกค้า</button></div>
   </div>`).join('')||`<div class="empty">${L.length?'ไม่พบร้านที่ตรงกับเงื่อนไข':''}</div>`;
   $('#dl-list').querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.copy);toast('คัดลอกเบอร์แล้ว')}catch(e){toast(b.dataset.copy)}});
+  $('#dl-list').querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>dealerSend(list[+b.dataset.send]));
+}
+function dealerMsg(d){
+  const L=['ร้านตัวแทนจำหน่าย EM MOTOR ใกล้คุณ','','ร้าน: '+d.name];
+  const area=[d.area,d.region].filter(Boolean).join(' · ');if(area)L.push('พื้นที่: '+area);
+  if(d.phone)L.push('โทร: '+d.phone);
+  if(d.fb)L.push('Facebook: '+d.fb);
+  if(d.hours)L.push('เวลาทำการ: '+d.hours);
+  const sv=[];if(offered(d.service))sv.push('ศูนย์บริการซ่อม ('+d.service+')');else sv.push('ไม่รับซ่อม');
+  if(offered(d.grab))sv.push('Service Grab');if(offered(d.charge))sv.push('สถานีชาร์จ');
+  L.push('บริการ: '+sv.join(', '));
+  if(/^https?:\/\//.test(d.maps))L.push('แผนที่: '+d.maps);
+  L.push('','ขอบคุณที่ใช้บริการ EM MOTOR ค่ะ');
+  return L.join('\n');
+}
+function dealerSend(d){
+  const root=$('#modal-root');
+  root.innerHTML=`<div style="position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px"><div class="panel" style="background:var(--bg,#fff);max-width:520px;width:100%;max-height:90vh;overflow:auto">
+    <h3 style="margin:0 0 8px">ข้อความส่งลูกค้า</h3><p class="meta" style="margin:0 0 8px">แก้ข้อความได้ตามต้องการก่อนคัดลอก</p>
+    <textarea id="dm-text" rows="12" style="width:100%;box-sizing:border-box">${esc(dealerMsg(d))}</textarea>
+    <div class="actions" style="margin-top:10px"><button type="button" class="primary" id="dm-copy">คัดลอกข้อความ</button><button type="button" id="dm-close">ปิด</button><span class="meta" id="dm-msg"></span></div></div></div>`;
+  $('#dm-close').onclick=()=>root.innerHTML='';
+  $('#dm-copy').onclick=async()=>{const t=$('#dm-text');try{await navigator.clipboard.writeText(t.value);$('#dm-msg').textContent='คัดลอกแล้ว วางส่งลูกค้าได้เลย'}catch(e){t.select();document.execCommand('copy');$('#dm-msg').textContent='คัดลอกแล้ว'}};
+  setTimeout(()=>$('#dm-text')?.focus(),50);
 }
 $('#dl-q').addEventListener('input',renderDealers);
 ['dl-region','dl-svc','dl-grab','dl-chg'].forEach(id=>$('#'+id).addEventListener('change',renderDealers));
