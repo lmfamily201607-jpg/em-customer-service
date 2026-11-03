@@ -2912,7 +2912,7 @@ function importRepairs(){guarded(this,async()=>{
 const KPI_ST={work:'ทำงาน',off:'หยุด',sick:'ป่วย',leave:'ลา',nolog:'ไม่มี log รับเคส'};
 const KPI_PILL={work:'done',off:'',sick:'incomplete',leave:'follow',nolog:''};
 // logPeople: staff whose working days are counted from the case log instead of the schedule
-const KPI_DEF={reply:85,close:65,replyMin:3,logPeople:['Gift','Fon'],alias:{'แนน':'Nan','กิฟ 1':'Gift','กิฟ1':'Gift','กิฟ':'Gift','กิ๊ฟ':'Gift','กิ๊บ':'Give','กิ๊บ (ออกแล้ว)':'Give','ฝน':'Fon','ปลายฝน':'Fon','กิฟ2':'Give','กิฟ 2':'Give'}};
+const KPI_DEF={reply:85,close:65,replyMin:3,logPeople:['Gift','Fon'],alias:{'แนน':'Nan','ใหม่':'Mai','Give':'Give (กิ๊บ ออกแล้ว)','กิฟ 1':'Gift','กิฟ1':'Gift','กิฟ':'Gift','กิ๊ฟ':'Gift','กิ๊บ':'Give (กิ๊บ ออกแล้ว)','กิ๊บ (ออกแล้ว)':'Give (กิ๊บ ออกแล้ว)','ฝน':'Fon','ปลายฝน':'Fon','กิฟ2':'Give (กิ๊บ ออกแล้ว)','กิฟ 2':'Give (กิ๊บ ออกแล้ว)'}};
 const K={tab:'ov',month:'',person:'',rows:[],conf:{},on:false,loaded:false,err:false,imp:null};
 const kpiConf=()=>({...KPI_DEF,...K.conf,alias:{...KPI_DEF.alias,...(K.conf.alias||{})}});
 function kpiName(s){
