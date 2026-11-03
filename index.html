@@ -316,6 +316,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#dashboard" data-v="dashboard">Dashboard</a>
       <a href="#notices" data-v="notices">ประกาศ <span id="nt-badge" class="pill incomplete" hidden></span></a>
       <a href="#intake" data-v="intake">รับเรื่องลูกค้า</a>
+      <a href="#notes" data-v="notes">โน๊ตส่วนตัว</a>
       <a href="#dto" data-v="dto">GRAB เช่าซื้อ (DTO)</a>
       <a href="#forms" data-v="forms">ฟอร์มนัดหมาย</a>
       <a href="#search" data-v="search">ค้นหาประวัติ</a>
@@ -368,7 +369,7 @@ progress{width:100%;accent-color:var(--accent)}
     // Grouped top menu. Links keep their data-v/href; only their place on screen changes.
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
-      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','dto','dealer']],
+      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','kb','links']],
         ['rep','📈','รายงาน',['kpi','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
@@ -598,6 +599,25 @@ progress{width:100%;accent-color:var(--accent)}
     <div id="pp-vin-res"></div>
     <p class="meta" id="pp-count" style="margin:0 0 8px"></p>
     <div class="tbl-wrap"><table id="pp-table"></table></div>
+  </section>
+
+  <!-- NOTES -->
+  <section id="v-notes" hidden>
+    <h2>โน๊ตความจำส่วนตัว</h2>
+    <p class="sub">โน้ตของคุณคนเดียว เก็บในเครื่อง/เบราว์เซอร์ที่ใช้อยู่ (ไม่ซิงค์ข้ามเครื่อง) ตั้งเวลาเตือนได้ ระบบจะแจ้งเตือนเมื่อเปิดแอปอยู่และถึงเวลา</p>
+    <div class="panel" style="margin-bottom:12px">
+      <input type="hidden" id="nt-id">
+      <div class="fields">
+        <div class="f full"><label for="nt-title">หัวข้อ</label><input id="nt-title" maxlength="120" autocomplete="off"></div>
+        <div class="f full"><label for="nt-detail">รายละเอียด</label><textarea id="nt-detail" rows="3"></textarea></div>
+        <div class="f"><label for="nt-due">วันที่/เวลาเตือน</label><input type="datetime-local" id="nt-due"></div>
+        <div class="f"><label for="nt-link">เลขเคส / ชื่อลูกค้า (ถ้ามี)</label><input id="nt-link" maxlength="80" autocomplete="off" placeholder="เช่น EM-261103-0001"></div>
+      </div>
+      <div class="actions"><button class="primary" type="button" id="nt-save">เพิ่มโน้ต</button><button type="button" id="nt-clear">ล้างช่อง</button></div>
+    </div>
+    <div class="seg" id="notes-filter" role="group" aria-label="กรองโน้ต"><button type="button" data-f="open" aria-pressed="true">ยังไม่เสร็จ</button><button type="button" data-f="done" aria-pressed="false">เสร็จแล้ว</button><button type="button" data-f="all" aria-pressed="false">ทั้งหมด</button></div>
+    <p class="meta" id="notes-count"></p>
+    <div id="notes-list"></div>
   </section>
 
   <!-- GRAB DTO -->
@@ -1109,7 +1129,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','dto','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1167,7 +1187,7 @@ function memberPerm(id){
 function myPerm(){
   if(S.isAdmin)return {role:'admin',menus:[...MENU_ALL,'kpi','users'],edit:'any',del:'any',exp:true};
   const p=memberPerm(S.uid);
-  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');
+  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');if(!p.menus.includes('notes'))p.menus.push('notes');
   if(p.exp&&!p.menus.includes('export'))p.menus.push('export');
   if(!S.canWrite){p.edit='none';p.del='none'}
   return p;
@@ -1314,7 +1334,7 @@ let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeou
 
 function mountIntake(){
   const f=$('#intake-form');
-  f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
+  f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
   f.addEventListener('submit',saveIntake);
   $('#f-clear').onclick=()=>{mountIntake();updateLookup();if(!S.canWrite)lockWrites()};
   ['f-phone','f-vin','f-name'].forEach(id=>$('#'+id).addEventListener('input',updateLookup));
@@ -3523,6 +3543,62 @@ function renderDto(){
 }
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='dto-q')renderDto()});
 
+/* personal notes (stored on this device only) */
+const NOTES_PAD=n=>String(n).padStart(2,'0');
+function notesKey(){return 'em-notes-'+(S.uid||'anon')}
+function notesLoad(){try{return JSON.parse(localStorage.getItem(notesKey())||'[]')||[]}catch(e){return[]}}
+function notesSave(a){try{localStorage.setItem(notesKey(),JSON.stringify(a));return true}catch(e){toast('บันทึกโน้ตในเครื่องนี้ไม่ได้');return false}}
+function notesFmt(v){if(!v)return '';const d=new Date(v);return isNaN(d)?'':`${NOTES_PAD(d.getDate())}/${NOTES_PAD(d.getMonth()+1)}/${d.getFullYear()+543} ${NOTES_PAD(d.getHours())}:${NOTES_PAD(d.getMinutes())}`}
+function notesCheck(){
+  const a=notesLoad(),now=Date.now();let hit=[];
+  a.forEach(n=>{if(!n.done&&n.due&&!n.alerted&&new Date(n.due).getTime()<=now){n.alerted=true;hit.push(n)}});
+  if(hit.length){notesSave(a);toast('⏰ ถึงเวลาเตือน: '+hit.map(n=>n.title).join(', '));if(S.view==='notes')renderNotes()}
+}
+function renderNotes(){
+  const box=$('#notes-list');if(!box)return;
+  const a=notesLoad(),F=S.notesF||'open',now=Date.now();
+  document.querySelectorAll('#notes-filter button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.f===F)));
+  let rows=a.filter(n=>F==='all'||(F==='done')===!!n.done);
+  rows.sort((x,y)=>(x.due?new Date(x.due).getTime():9e15)-(y.due?new Date(y.due).getTime():9e15)||y.id-x.id);
+  $('#notes-count').textContent=`${rows.length} รายการ · เก็บในเครื่อง/เบราว์เซอร์นี้เท่านั้น`;
+  box.innerHTML=rows.map(n=>{
+    const late=!n.done&&n.due&&new Date(n.due).getTime()<=now;
+    return `<div class="panel" style="margin-bottom:8px${late?';border-color:#c0392b':''}${n.done?';opacity:.6':''}">
+      <label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-nd="${n.id}"${n.done?' checked':''} style="margin-top:4px"><b${n.done?' style="text-decoration:line-through"':''}>${esc(n.title)}</b></label>
+      ${n.detail?`<div style="white-space:pre-wrap;margin:4px 0 0 26px">${esc(n.detail)}</div>`:''}
+      <div class="meta" style="margin:4px 0 0 26px">${n.due?`${late?'⏰ ถึงเวลาแล้ว ':'เตือน '}${esc(notesFmt(n.due))}`:''}${n.link?` · เคส/ลูกค้า: <span class="mono">${esc(n.link)}</span>`:''}</div>
+      <div style="margin:6px 0 0 26px"><button type="button" data-ne="${n.id}">แก้ไข</button> <button type="button" data-nx="${n.id}">ลบ</button></div></div>`}).join('')||'<p class="empty">ยังไม่มีโน้ต</p>';
+}
+function notesReset(){['title','detail','due','link'].forEach(k=>$('#nt-'+k).value='');$('#nt-id').value='';$('#nt-save').textContent='เพิ่มโน้ต'}
+document.addEventListener('click',e=>{
+  const t=e.target;if(!t||!t.closest)return;
+  if(t.id==='nt-save'){
+    const title=$('#nt-title').value.trim();if(!title){toast('ใส่หัวข้อก่อน');$('#nt-title').focus();return}
+    const a=notesLoad(),id=+$('#nt-id').value||0,rec={title,detail:$('#nt-detail').value.trim(),due:$('#nt-due').value,link:$('#nt-link').value.trim()};
+    if(id){const n=a.find(x=>x.id===id);if(n){Object.assign(n,rec);n.alerted=false}}else a.push({id:Date.now(),...rec,done:false,alerted:false});
+    if(notesSave(a)){notesReset();renderNotes();toast('บันทึกโน้ตแล้ว')}return}
+  if(t.id==='nt-clear'){notesReset();return}
+  const b=t.closest('[data-ne],[data-nx],#notes-filter button');if(!b)return;
+  if(b.dataset.f){S.notesF=b.dataset.f;renderNotes();return}
+  const a=notesLoad();
+  if(b.dataset.nx){if(!confirm('ลบโน้ตนี้?'))return;notesSave(a.filter(x=>x.id!==+b.dataset.nx));renderNotes();return}
+  if(b.dataset.ne){const n=a.find(x=>x.id===+b.dataset.ne);if(!n)return;$('#nt-id').value=n.id;$('#nt-title').value=n.title;$('#nt-detail').value=n.detail||'';$('#nt-due').value=n.due||'';$('#nt-link').value=n.link||'';$('#nt-save').textContent='บันทึกการแก้ไข';$('#nt-title').focus()}
+});
+document.addEventListener('change',e=>{const c=e.target;if(c&&c.dataset&&c.dataset.nd){const a=notesLoad(),n=a.find(x=>x.id===+c.dataset.nd);if(n){n.done=c.checked;notesSave(a);renderNotes()}}});
+setInterval(notesCheck,30000);setTimeout(notesCheck,4000);
+
+/* copy intake data as "label: value" lines for opening a case */
+function copyIntake(){
+  const t=readForm('f'),ca=($('#f-contactAt').value||'').trim();
+  const L=[['วันเวลาที่ติดต่อ',ca?notesFmt(ca):''],['ช่องทางการติดต่อ',t.channel],['ชื่อลูกค้า',t.name],['เบอร์ติดต่อ',t.phone],['ความเร่งด่วน',t.urgency],['ประเภทรถ',t.vehicleType],['รุ่นรถ',t.model],['VIN/Serial',t.vin],['การติดต่อเรื่อง',t.category],['TICKET',t.refTicket],['รายละเอียดของปัญหา',t.detail],['สิ่งที่แจ้งกลับลูกค้า',t.answer],['หมายเหตุ',t.note],['สถานะ',t.status],['ติดต่อกลับลูกค้าเพื่อปิดงาน',t.callback?'ใช่':'']];
+  const txt=L.filter(x=>x[1]).map(x=>x[0]+': '+x[1]).join('\n');
+  if(!txt){toast('ยังไม่มีข้อมูลในฟอร์ม');return}
+  const ok=()=>toast('คัดลอกข้อมูลแล้ว นำไปวางเปิดเคสได้เลย');
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(e){toast('คัดลอกไม่สำเร็จ')}ta.remove()};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,fb);else fb();
+}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='f-copy')copyIntake()});
+
 function refresh(viewOnly){
   if(S.view==='dashboard')renderDashboard();
   if(S.view==='search')renderSearch();
@@ -3539,7 +3615,7 @@ function refresh(viewOnly){
   if(S.view==='forms')renderForms();
   if(S.view==='kpi')renderKpi();
   if(S.view==='users')renderUsers();
-  if(S.view==='notices')renderNotices();if(S.view==='product')renderProduct();if(S.view==='dto')renderDto();
+  if(S.view==='notices')renderNotices();if(S.view==='product')renderProduct();if(S.view==='dto')renderDto();if(S.view==='notes')renderNotes();
   if(!viewOnly){updateLookup();updateModels();resolveNames(S.tickets.flatMap(t=>[t.receiverId,...(t.editorIds||[])]))}
 }
 function banner(kind,html){$('#banner').innerHTML=html?`<div class="banner ${kind}">${html}</div>`:''}
