@@ -829,7 +829,7 @@ progress{width:100%;accent-color:var(--accent)}
         <div class="period"><button type="button" id="kp-prev" aria-label="เดือนก่อน">‹</button><input type="month" id="kp-month" aria-label="เลือกเดือน"><button type="button" id="kp-next" aria-label="เดือนถัดไป">›</button><select id="kp-person" aria-label="เจ้าหน้าที่" style="width:auto"></select></div>
       </div>
       <div class="chips" id="kp-tabs" role="group" aria-label="หัวข้อ KPI">
-        <button type="button" data-kt="sum" aria-pressed="true">1. สรุปข้อมูล</button><button type="button" data-kt="rate" aria-pressed="false">2. อัตราเคส</button><button type="button" data-kt="sched" aria-pressed="false">3. ตารางการทำงาน</button><button type="button" data-kt="fast" aria-pressed="false">4. ตอบกลับภายใน <span id="kp-min">3</span> นาที</button>
+        <button type="button" data-kt="ov" aria-pressed="true">ภาพรวม 4 ตัวชี้วัด</button><button type="button" data-kt="sum" aria-pressed="false">1. สรุปข้อมูล</button><button type="button" data-kt="rate" aria-pressed="false">2. อัตราเคส</button><button type="button" data-kt="sched" aria-pressed="false">3. ตารางการทำงาน</button><button type="button" data-kt="fast" aria-pressed="false">4. ตอบกลับภายใน <span id="kp-min">3</span> นาที</button>
       </div>
       <div id="kp-view"></div>
       <div id="kp-person-box"></div>
@@ -2913,7 +2913,7 @@ const KPI_ST={work:'ทำงาน',off:'หยุด',sick:'ป่วย',leav
 const KPI_PILL={work:'done',off:'',sick:'incomplete',leave:'follow',nolog:''};
 // logPeople: staff whose working days are counted from the case log instead of the schedule
 const KPI_DEF={reply:85,close:65,replyMin:3,logPeople:['Gift','Fon'],alias:{'กิฟ 1':'Gift','กิฟ1':'Gift','กิฟ':'Gift','กิ๊ฟ':'Gift','กิ๊บ':'Give','กิ๊บ (ออกแล้ว)':'Give','ฝน':'Fon','ปลายฝน':'Fon','กิฟ2':'Give','กิฟ 2':'Give'}};
-const K={tab:'sum',month:'',person:'',rows:[],conf:{},on:false,loaded:false,err:false,imp:null};
+const K={tab:'ov',month:'',person:'',rows:[],conf:{},on:false,loaded:false,err:false,imp:null};
 const kpiConf=()=>({...KPI_DEF,...K.conf,alias:{...KPI_DEF.alias,...(K.conf.alias||{})}});
 function kpiName(s){
   s=cellText(s).replace(/\s+-\s+(CS|Service)\b.*$/i,'').replace(/\s+(Call Center|Service)$/i,'').trim();
@@ -3001,9 +3001,9 @@ function renderKpi(){
   document.querySelectorAll('#kp-tabs button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kt===K.tab)));
   const view=$('#kp-view');
   if(!M.length){view.innerHTML=`<div class="empty">${K.loaded?`ยังไม่มีข้อมูล KPI ของ${esc(kpiMonthName(K.month))} กด "นำเข้าจาก Excel" หรือ "บันทึกข้อมูลรายวัน"`:'กำลังโหลด…'}</div>`;$('#kp-person-box').innerHTML='';return}
-  ({sum:kpiViewSum,rate:kpiViewRate,sched:kpiViewSched,fast:kpiViewFast})[K.tab](view,M,people,c);
+  ({ov:kpiViewOv,sum:kpiViewSum,rate:kpiViewRate,sched:kpiViewSched,fast:kpiViewFast})[K.tab](view,M,people,c);
   view.querySelectorAll('tr[data-kp]').forEach(r=>{const pick=()=>{K.person=K.person===r.dataset.kp?'':r.dataset.kp;renderKpi()};r.onclick=pick;r.onkeydown=e=>{if(e.key==='Enter')pick()}});
-  if(K.tab==='sum'||K.tab==='rate')renderKpiPerson(M);else $('#kp-person-box').innerHTML='';
+  if(K.tab==='ov'||K.tab==='sum'||K.tab==='rate')renderKpiPerson(M);else $('#kp-person-box').innerHTML='';
 }
 const kpiBand=(lab,val,cls)=>`<div class="kpi ${cls==='bad'?'bad':''}"><b>${val}</b><span>${lab}</span></div>`;
 const kpiCell=(v,m,extra='')=>`<td class="num${m?' kp-'+m:''}"${extra}>${v}</td>`;
@@ -3076,6 +3076,27 @@ function kpiViewFast(view,M,people,c){
   +`<div class="meta kp-legend"><span><i class="kp-c-fast"></i>ภายใน ${c.replyMin} นาที</span><span><i class="kp-c-slow"></i>เกิน ${c.replyMin} นาที</span><span>ตัวเลข = นาที</span></div>`;
   kpiGridClicks(view);
 }
+function kpiViewOv(view,M,people,c){
+  const lim=c.replyMin*60,PR=kpiPrevRows();
+  const sel=r=>!K.person||r.agent===K.person;
+  const qual=rows=>{const d=rows.filter(r=>r.replySec!=null&&r.assigned);const ok=d.filter(r=>r.replySec<=lim).length;return {n:d.length,ok,pct:d.length?ok/d.length*100:null}};
+  const a=kpiAgg(M.filter(sel)),pa=kpiAgg(PR.filter(sel)),qa=qual(M.filter(sel)),qp=qual(PR.filter(sel));
+  const chg=(x,y)=>x==null||!y?'':` · เทียบเดือนก่อน ${(x-y>=0?'+':'')+((x-y)/y*100).toFixed(0)}%`;
+  const pts=(x,y)=>x==null||y==null?'':` · เทียบเดือนก่อน ${kpiDelta(x,y,' จุด')}`;
+  const card=(h,t,v,s,bad)=>`<div class="kpi ${bad?'bad':''}"><span><b style="font-size:.9em;display:inline">${h}</b> · ${t}</span><b>${v}</b><span>${s}</span></div>`;
+  view.innerHTML=`<div class="kpis">`
+  +card('1. ปริมาณงาน','เคสที่ได้รับ',a.assigned.toLocaleString(),`เฉลี่ย ${a.perDay==null?'-':a.perDay.toFixed(1)}/วัน${chg(a.assigned,pa.assigned)}`)
+  +card('2. ประสิทธิภาพ','เคสที่ปิดได้',a.closed.toLocaleString(),`อัตราปิด ${kpiPct(a.closeRate)} (เป้า ≥ ${c.close}%)${pts(a.closeRate,pa.closeRate)}`,a.closeRate!=null&&a.closeRate<c.close)
+  +card('3. ความรวดเร็ว','ระยะเวลาตอบกลับเฉลี่ย',kpiDur(a.replySec),`เป้า ≤ ${c.replyMin} นาที · อัตราตอบ ${kpiPct(a.replyRate)}`,a.replySec!=null&&a.replySec>lim)
+  +card('4. คุณภาพ',`ตอบภายใน ${c.replyMin} นาที`,qa.pct==null?'-':qa.pct.toFixed(0)+'%',`${qa.ok}/${qa.n} วันที่ผ่าน (เป้า ≥ 80%)${pts(qa.pct,qp.pct)}`,qa.pct!=null&&qa.pct<80)
+  +`</div>
+  <div class="rtable" style="margin-bottom:16px"><div class="rt-h">ภาพรวม 4 ตัวชี้วัด รายบุคคล · ${esc(kpiMonthName(K.month))} (กดชื่อเพื่อดูรายวัน)</div><div style="overflow-x:auto"><table>
+  <thead><tr><th>เจ้าหน้าที่</th><th>ปริมาณงาน<br><small>เคสที่ได้รับ</small></th><th>ประสิทธิภาพ<br><small>เคสที่ปิด</small></th><th>อัตราปิด</th><th>ความรวดเร็ว<br><small>เวลาตอบเฉลี่ย</small></th><th>คุณภาพ<br><small>% ตอบภายใน ${c.replyMin} นาที</small></th></tr></thead><tbody>
+  ${people.map(p=>{const R=M.filter(r=>r.agent===p),o=kpiAgg(R),q=qual(R);return kpiRowHead(p)+kpiCell(o.assigned.toLocaleString())+kpiCell(o.closed.toLocaleString())+kpiCell(kpiPct(o.closeRate),kpiMark(o.closeRate,c.close))+kpiCell(kpiDur(o.replySec),kpiMark(o.replySec,lim,true))+kpiCell(q.pct==null?'-':q.pct.toFixed(0)+'%',q.pct==null?'':q.pct>=80?'ok':'bad')+'</tr>'}).join('')}
+  </tbody></table></div></div>
+  <p class="meta">เขียว = ผ่านเป้า แดง = ต่ำกว่าเป้า · รายละเอียดเพิ่มเติมดูแท็บ 1–4 ด้านบน</p>`;
+}
+
 function kpiPrevRows(){const pm=kpiShift(K.month,-1);return K.rows.filter(r=>r.date.startsWith(pm))}
 function renderKpiPerson(M){
   const box=$('#kp-person-box');
