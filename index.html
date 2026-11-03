@@ -316,6 +316,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#dashboard" data-v="dashboard">Dashboard</a>
       <a href="#notices" data-v="notices">ประกาศ <span id="nt-badge" class="pill incomplete" hidden></span></a>
       <a href="#intake" data-v="intake">รับเรื่องลูกค้า</a>
+      <a href="#dto" data-v="dto">GRAB เช่าซื้อ (DTO)</a>
       <a href="#forms" data-v="forms">ฟอร์มนัดหมาย</a>
       <a href="#search" data-v="search">ค้นหาประวัติ</a>
       <a href="#warranty" data-v="warranty">คำนวณประกัน</a>
@@ -367,7 +368,7 @@ progress{width:100%;accent-color:var(--accent)}
     // Grouped top menu. Links keep their data-v/href; only their place on screen changes.
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
-      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','dealer']],
+      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','dto','dealer']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','kb','links']],
         ['rep','📈','รายงาน',['kpi','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
@@ -597,6 +598,16 @@ progress{width:100%;accent-color:var(--accent)}
     <div id="pp-vin-res"></div>
     <p class="meta" id="pp-count" style="margin:0 0 8px"></p>
     <div class="tbl-wrap"><table id="pp-table"></table></div>
+  </section>
+
+  <!-- GRAB DTO -->
+  <section id="v-dto" hidden>
+    <h2>GRAB เช่าซื้อ (DTO)</h2>
+    <p class="sub" id="dto-sub"></p>
+    <div class="rsearch"><div class="f"><label for="dto-q">ค้นหา ชื่อ / เบอร์โทร / เลขตัวถัง / ทะเบียน</label><input id="dto-q" type="search" autocomplete="off" placeholder="เช่น สมชาย, 064..., MPPAH3..., 1กด 4711"></div></div>
+    <div class="filters" id="dto-filters" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));margin-bottom:10px"></div>
+    <p class="meta" id="dto-count" style="margin:0 0 6px"></p>
+    <div class="tbl-wrap"><table id="dto-table"></table></div>
   </section>
 
   <!-- PRODUCT -->
@@ -1098,7 +1109,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
+const VIEWS=['dashboard','notices','product','intake','dto','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1156,7 +1167,7 @@ function memberPerm(id){
 function myPerm(){
   if(S.isAdmin)return {role:'admin',menus:[...MENU_ALL,'kpi','users'],edit:'any',del:'any',exp:true};
   const p=memberPerm(S.uid);
-  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');
+  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');
   if(p.exp&&!p.menus.includes('export'))p.menus.push('export');
   if(!S.canWrite){p.edit='none';p.del='none'}
   return p;
@@ -1940,7 +1951,7 @@ $('#lk-form').addEventListener('submit',e=>{
 
 /* ---------- team reference topics ---------- */
 function renderTopics(){
-  const T=S.topics;
+  const T=S.topics.filter(x=>x.id!=='ggrabdto');
   if(!T.find(t=>t.id===S.topic))S.topic=T[0]?.id||null;
   const t=T.find(x=>x.id===S.topic);
   // side list grouped by source file (a select on phones)
@@ -3495,6 +3506,23 @@ function renderProduct(){
 document.addEventListener('input',e=>{if(e.target&&(e.target.id==='pd-q'||e.target.id==='pd-cat'))renderProduct()});
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='pd-cat')renderProduct()});
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='d-import')location.hash='#import'});
+const DTO_ID='ggrabdto';
+function renderDto(){
+  const t=S.topics.find(x=>x.id===DTO_ID),tb=$('#dto-table');
+  if(!t){tb.innerHTML='';$('#dto-count').textContent='';$('#dto-filters').innerHTML='';$('#dto-sub').textContent=S.topics.length?'ยังไม่มีข้อมูลลูกค้า DTO ให้ผู้ดูแลนำเข้าในเมนูนำเข้าข้อมูล':'กำลังโหลด…';return}
+  const F=S.dtoF||(S.dtoF={}),ix=n=>t.cols.indexOf(n);
+  const fc=['Lot','แพ็กเกจ','ปิดระบบ'].map(n=>({n,j:ix(n)})).filter(x=>x.j>=0).map(x=>({...x,vals:[...new Set(t.rows.map(r=>r[x.j]).filter(Boolean))]})).filter(x=>x.vals.length>=2&&x.vals.length<=40);
+  $('#dto-filters').innerHTML=fc.map(x=>`<div class="f"><label for="dtof-${x.j}">${esc(x.n)}</label><select id="dtof-${x.j}" data-j="${x.j}"><option value="">ทั้งหมด</option>${x.vals.sort((a,b)=>a.localeCompare(b,'th',{numeric:true})).map(v=>`<option${F[x.j]===v?' selected':''}>${esc(v)}</option>`).join('')}</select></div>`).join('');
+  $('#dto-filters').querySelectorAll('select').forEach(s=>s.onchange=()=>{if(s.value)F[s.dataset.j]=s.value;else delete F[s.dataset.j];renderDto()});
+  const q=$('#dto-q').value.trim().toLowerCase(),qd=digits(q),jt=ix('โทร');
+  const rows=t.rows.filter(r=>Object.entries(F).every(([j,v])=>r[j]===v)&&(!q||r.join(' ').toLowerCase().includes(q)||(qd.length>=4&&digits(r.join(' ')).includes(qd))));
+  $('#dto-count').textContent=`${rows.length.toLocaleString()} ราย${rows.length!==t.rows.length?` จาก ${t.rows.length.toLocaleString()}`:''}`;
+  $('#dto-sub').textContent=`จากไฟล์ ${t.file||''} · นำเข้าเมื่อ ${fmt(t.importedAt)} · ค้นด้วยชื่อ เบอร์โทร เลขตัวถัง หรือทะเบียนได้`;
+  const cell=(v,j)=>j===jt&&digits(v).length>=9?`<a href="tel:${digits(v)}">${esc(v)}</a>`:esc(v);
+  tb.innerHTML=`<thead><tr>${t.cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.slice(0,500).map(r=>`<tr>${t.cols.map((_,j)=>`<td>${cell(r[j]||'',j)}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${t.cols.length||1}" class="empty">ไม่พบรายชื่อที่ตรงกับคำค้น</td></tr>`}</tbody>`;
+}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='dto-q')renderDto()});
+
 function refresh(viewOnly){
   if(S.view==='dashboard')renderDashboard();
   if(S.view==='search')renderSearch();
@@ -3511,7 +3539,7 @@ function refresh(viewOnly){
   if(S.view==='forms')renderForms();
   if(S.view==='kpi')renderKpi();
   if(S.view==='users')renderUsers();
-  if(S.view==='notices')renderNotices();if(S.view==='product')renderProduct();
+  if(S.view==='notices')renderNotices();if(S.view==='product')renderProduct();if(S.view==='dto')renderDto();
   if(!viewOnly){updateLookup();updateModels();resolveNames(S.tickets.flatMap(t=>[t.receiverId,...(t.editorIds||[])]))}
 }
 function banner(kind,html){$('#banner').innerHTML=html?`<div class="banner ${kind}">${html}</div>`:''}
