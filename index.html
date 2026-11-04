@@ -2946,7 +2946,8 @@ const KPI_PILL={work:'done',off:'',sick:'incomplete',leave:'follow',nolog:''};
 const KPI_DEF={reply:85,close:65,replyMin:3,logPeople:['Gift','Fon'],alias:{'แนน':'Nan','ใหม่':'Mai','Give':'Give (กิ๊บ ออกแล้ว)','กิฟ 1':'Gift','กิฟ1':'Gift','กิฟ':'Gift','กิ๊ฟ':'Gift','กิ๊บ':'Give (กิ๊บ ออกแล้ว)','กิ๊บ (ออกแล้ว)':'Give (กิ๊บ ออกแล้ว)','ฝน':'Fon','ปลายฝน':'Fon','กิฟ2':'Give (กิ๊บ ออกแล้ว)','กิฟ 2':'Give (กิ๊บ ออกแล้ว)'}};
 const K={tab:'ov',month:'',person:'',rows:[],conf:{},on:false,loaded:false,err:false,imp:null};
 const kpiConf=()=>({...KPI_DEF,...K.conf,alias:{...KPI_DEF.alias,...(K.conf.alias||{})}});
-function kpiName(s){
+function kpiName(s,date){const n=kpiName0(s);return date&&n==='Give (กิ๊บ ออกแล้ว)'&&String(date)<'2026-07'?'Cream':n}
+function kpiName0(s){
   s=cellText(s).replace(/\s+-\s+(CS|Service)\b.*$/i,'').replace(/\s+(Call Center|Service)$/i,'').trim();
   const A=kpiConf().alias,l=s.toLowerCase();if(A[s])return A[s];
   for(const k in A)if(k.toLowerCase()===l)return A[k];
@@ -3000,7 +3001,7 @@ function ensureKpi(){
   if(K.on||!S.db||!S.isAdmin)return;K.on=true;
   S.db.collection('kpi').onSnapshot(s=>{
     K.rows=[];K.conf={};const raw=[];s.docs.forEach(d=>{if(d.id==='settings')K.conf=d.data()||{};else raw.push(d.data())});
-    const best=new Map();raw.forEach(x=>{const a=kpiName(x.agent);if(!a||/^(เจ้าหน้าที่|admin)$/i.test(a))return;const y={...x,agent:a},k=y.date+'|'+a,o=best.get(k);if(!o||String(y.updatedAt||'')>=String(o.updatedAt||''))best.set(k,y)});K.rows=[...best.values()];
+    const best=new Map();raw.forEach(x=>{const a=kpiName(x.agent,x.date);if(!a||/^(เจ้าหน้าที่|admin)$/i.test(a))return;const y={...x,agent:a},k=y.date+'|'+a,o=best.get(k);if(!o||String(y.updatedAt||'')>=String(o.updatedAt||''))best.set(k,y)});K.rows=[...best.values()];
     K.loaded=true;K.err=false;if(S.view==='kpi')renderKpi()},
     ()=>{K.on=false;K.err=true;if(S.view==='kpi')renderKpi()});
 }
@@ -3008,7 +3009,7 @@ function ensureKpi(){
 // (app cases by the person who received them, imported Log Case rows by the name in the sheet).
 function kpiLogDays(month,people){
   const want=people?new Set(people):null,out={};
-  S.all.forEach(t=>{const d=isoDate(t.contactAt);if(!d.startsWith(month))return;const a=kpiName(who(t));if(!a||a==='-'||(want&&!want.has(a)))return;
+  S.all.forEach(t=>{const d=isoDate(t.contactAt);if(!d.startsWith(month))return;const a=kpiName(who(t),d);if(!a||a==='-'||(want&&!want.has(a)))return;
     const o=out[a]||(out[a]={});o[d]=(o[d]||0)+1});
   return out;
 }
@@ -3212,7 +3213,7 @@ function kpiParse(wb){
     const hi=findHeader(rows,['Admin','มอบหมาย','ตอบแล้ว']);
     if(hi>=0){const h=rows[hi].map(cellText),col=k=>colIdx(h,k);
       const ci={date:col('วันที่'),agent:col('Admin'),assigned:col('มอบหมาย'),replied:col('ตอบแล้ว'),closed:col('ปิดแล้ว'),messages:col('ข้อความ'),rt:h.findIndex(x=>x.includes('ตอบกลับ')),ct:h.findIndex(x=>x.includes('ปิดทิกเก็ต')),note:col('หมายเหตุ')};
-      rows.slice(hi+1).forEach(r=>{const date=kpiDate(r[ci.date]),agent=kpiName(r[ci.agent]);if(!date||!agent)return;
+      rows.slice(hi+1).forEach(r=>{const date=kpiDate(r[ci.date]),agent=kpiName(r[ci.agent],date);if(!date||!agent)return;
         const o=put(date,agent),a=kpiNum(r[ci.assigned]);daily++;
         if(a==null){const st=kpiStatus(r[ci.assigned]);if(st&&!o.sched)o.status=st}
         else{o.assigned=a;['replied','closed','messages'].forEach(k=>o[k]=kpiNum(r[ci[k]]));
