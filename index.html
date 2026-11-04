@@ -1158,7 +1158,7 @@ const AGENT_FIX={'กิฟ':'กิ๊ฟ','Give':'กิ๊บ (ออกแ�
 function agentShort(n){const v=agentShort0(n);return AGENT_FIX[v]||v}
 function agentShort0(n){return String(n||'').replace(/^SA\s+/i,'').replace(/\b(Call Center|Sales Online ECO|Service|Online|Tech|Admin)\b/gi,'').replace(/[\s\/]+$/,'').replace(/^[\s\/]+/,'').replace(/\s*\/\s*/g,' ').trim()||String(n||'').trim()}
 // กิ๊บ / Give (ออกแล้ว) is typed several ways; show one name
-function whoFix(n){return /^(กิ๊บ|กิบ|give)\s*(\(\s*)?(ออกแล้ว)?\s*\)?$/i.test(String(n).trim())?'กิ๊บ (ออกแล้ว)':n}
+function whoFix(n){const s=String(n).trim();if(/^(กิ๊ฟ|กิฟ|gift)\s*\.?$/i.test(s))return 'กิ๊ฟ';return /^(กิ๊บ|กิบ|give)\s*(\(\s*)?(ออกแล้ว)?\s*\)?$/i.test(s)?'กิ๊บ (ออกแล้ว)':n}
 function who(t){return whoFix(t.receiverId?personName(t.receiverId):(agentShort(t.agentName)||'-'))}
 function whoKey(t){return t.receiverId||('n:'+(t.agentName||''))}
 function toast(msg){const el=$('#toast');el.textContent=msg;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3600)}
