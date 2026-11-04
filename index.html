@@ -2834,12 +2834,20 @@ async function guarded(btn,fn){
 }
 function importLogs(){guarded(this,async()=>{
   const sel=S.found.logs.filter((_,i)=>$('#imp-log-'+i)?.checked);if(!sel.length){toast('เลือกอย่างน้อยหนึ่งชีต');return}
-  let total=0;
+  let total=0,skipped=0;
   for(const s of sel){
-    const rows=mapLogRows(s).map(r=>({...r,sh:s.name}));rows.sort((a,b)=>String(b.d).localeCompare(String(a.d)));total+=rows.length;
-    await replaceChunks('legacy',rows,{importedAt:new Date().toISOString(),file:S.found.file,sheets:[s.name],count:rows.length},s.name,{},setPrefix(s.name));
+    // add only new rows: keep every row already stored, skip rows that match one, give new rows fresh row numbers (ticket ids are LOG-<row>)
+    const incoming=mapLogRows(s).map(r=>({...r,sh:s.name})),prefix=setPrefix(s.name);
+    const mine=new RegExp('^'+prefix.replace(/[^a-z0-9]/g,'\\$&')+'c\\d+$');
+    const snap=await S.db.collection('legacy').get();
+    const old=snap.docs.filter(x=>mine.test(x.id)).flatMap(x=>x.data().rows||[]);
+    const key=r=>[r.d,r.nm,r.ph,r.tp,String(r.dt||'').slice(0,80)].join('|');
+    const have=new Set(old.map(key));let nr=old.reduce((m,x)=>Math.max(m,x.r||0),0);
+    const fresh=incoming.filter(r=>{const k=key(r);if(have.has(k))return false;have.add(k);return true}).map(r=>({...r,r:++nr}));
+    const rows=[...old,...fresh];rows.sort((a,b)=>String(b.d).localeCompare(String(a.d)));total+=fresh.length;skipped+=incoming.length-fresh.length;
+    if(fresh.length)await replaceChunks('legacy',rows,{importedAt:new Date().toISOString(),file:S.found.file,sheets:[s.name],count:rows.length},s.name,{},prefix);
   }
-  toast(`นำเข้าประวัติการรับเรื่อง ${total.toLocaleString()} เรื่องแล้ว`);
+  toast(`เพิ่มเรื่องใหม่ ${total.toLocaleString()} เรื่อง (ข้ามที่มีอยู่แล้ว ${skipped.toLocaleString()} เรื่อง)`);
 })}
 // Each Q&A sheet keeps its own id prefix so re-importing one never removes another's entries.
 // Category comes from a หมวด column, or (Toppic style) from a text-only row above the numbered questions.
