@@ -2948,7 +2948,9 @@ const K={tab:'ov',month:'',person:'',rows:[],conf:{},on:false,loaded:false,err:f
 const kpiConf=()=>({...KPI_DEF,...K.conf,alias:{...KPI_DEF.alias,...(K.conf.alias||{})}});
 function kpiName(s){
   s=cellText(s).replace(/\s+-\s+(CS|Service)\b.*$/i,'').replace(/\s+(Call Center|Service)$/i,'').trim();
-  return kpiConf().alias[s]||s;
+  const A=kpiConf().alias,l=s.toLowerCase();if(A[s])return A[s];
+  for(const k in A)if(k.toLowerCase()===l)return A[k];
+  return s;
 }
 function kpiNum(v){if(typeof v==='number')return isFinite(v)?v:null;const t=cellText(v).replace(/,/g,'');return /^-?\d+(\.\d+)?$/.test(t)?Number(t):null}
 // "3m 19s", "7h 27m", "1d 3h" → seconds; an Excel time fraction also works
