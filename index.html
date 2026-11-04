@@ -1157,7 +1157,10 @@ function personName(id){return S.members[id]?.nick||S.names[id]||(id===S.uid?'�
 const AGENT_FIX={'กิฟ':'กิ๊ฟ','Give':'กิ๊บ (ออกแล้ว)','กิ๊บ':'กิ๊บ (ออกแล้ว)','ใบเฟริน์':'ใบเฟิร์น'};
 function agentShort(n){const v=agentShort0(n);return AGENT_FIX[v]||v}
 function agentShort0(n){return String(n||'').replace(/^SA\s+/i,'').replace(/\b(Call Center|Sales Online ECO|Service|Online|Tech|Admin)\b/gi,'').replace(/[\s\/]+$/,'').replace(/^[\s\/]+/,'').replace(/\s*\/\s*/g,' ').trim()||String(n||'').trim()}
-function who(t){if(t.receiverId)return personName(t.receiverId);return agentShort(t.agentName)||'-'}
+// Gift has not started yet: cases that carry her name before this date belong to Cream
+const GIFT_START='2026-12-01';
+function who(t){const n=t.receiverId?personName(t.receiverId):(agentShort(t.agentName)||'-');
+  if(/^(กิ๊ฟ|กิฟ|gift)\s*\.?$/i.test(String(n).trim())&&String(t.contactAt||'').slice(0,10)<GIFT_START)return 'ครีม';return n}
 function whoKey(t){return t.receiverId||('n:'+(t.agentName||''))}
 function toast(msg){const el=$('#toast');el.textContent=msg;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3600)}
 function errText(e){
@@ -2943,7 +2946,7 @@ function importRepairs(){guarded(this,async()=>{
 const KPI_ST={work:'ทำงาน',off:'หยุด',sick:'ป่วย',leave:'ลา',nolog:'ไม่มี log รับเคส'};
 const KPI_PILL={work:'done',off:'',sick:'incomplete',leave:'follow',nolog:''};
 // logPeople: staff whose working days are counted from the case log instead of the schedule
-const KPI_DEF={reply:85,close:65,replyMin:3,logPeople:['Gift','Fon'],alias:{'แนน':'Nan','ใหม่':'Mai','Give':'Give (กิ๊บ ออกแล้ว)','กิฟ 1':'Gift','กิฟ1':'Gift','กิฟ':'Gift','กิ๊ฟ':'Gift','กิ๊บ':'Give (กิ๊บ ออกแล้ว)','กิ๊บ (ออกแล้ว)':'Give (กิ๊บ ออกแล้ว)','ฝน':'Fon','ปลายฝน':'Fon','กิฟ2':'Give (กิ๊บ ออกแล้ว)','กิฟ 2':'Give (กิ๊บ ออกแล้ว)'}};
+const KPI_DEF={reply:85,close:65,replyMin:3,logPeople:['Gift','Fon'],alias:{'ครีม':'Cream','แนน':'Nan','ใหม่':'Mai','Give':'Give (กิ๊บ ออกแล้ว)','กิฟ 1':'Gift','กิฟ1':'Gift','กิฟ':'Gift','กิ๊ฟ':'Gift','กิ๊บ':'Give (กิ๊บ ออกแล้ว)','กิ๊บ (ออกแล้ว)':'Give (กิ๊บ ออกแล้ว)','ฝน':'Fon','ปลายฝน':'Fon','กิฟ2':'Give (กิ๊บ ออกแล้ว)','กิฟ 2':'Give (กิ๊บ ออกแล้ว)'}};
 const K={tab:'ov',month:'',person:'',rows:[],conf:{},on:false,loaded:false,err:false,imp:null};
 const kpiConf=()=>({...KPI_DEF,...K.conf,alias:{...KPI_DEF.alias,...(K.conf.alias||{})}});
 function kpiName(s,date){const n=kpiName0(s);return date&&n==='Give (กิ๊บ ออกแล้ว)'&&String(date)<'2026-07'?'Cream':n}
