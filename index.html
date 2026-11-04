@@ -1157,10 +1157,7 @@ function personName(id){return S.members[id]?.nick||S.names[id]||(id===S.uid?'�
 const AGENT_FIX={'กิฟ':'กิ๊ฟ','Give':'กิ๊บ (ออกแล้ว)','กิ๊บ':'กิ๊บ (ออกแล้ว)','ใบเฟริน์':'ใบเฟิร์น'};
 function agentShort(n){const v=agentShort0(n);return AGENT_FIX[v]||v}
 function agentShort0(n){return String(n||'').replace(/^SA\s+/i,'').replace(/\b(Call Center|Sales Online ECO|Service|Online|Tech|Admin)\b/gi,'').replace(/[\s\/]+$/,'').replace(/^[\s\/]+/,'').replace(/\s*\/\s*/g,' ').trim()||String(n||'').trim()}
-// Gift has not started yet: cases that carry her name before this date belong to Cream
-const GIFT_START='2026-12-01';
-function who(t){const n=t.receiverId?personName(t.receiverId):(agentShort(t.agentName)||'-');
-  if(/^(กิ๊ฟ|กิฟ|gift)\s*\.?$/i.test(String(n).trim())&&String(t.contactAt||'').slice(0,10)<GIFT_START)return 'ครีม';return n}
+function who(t){if(t.receiverId)return personName(t.receiverId);return agentShort(t.agentName)||'-'}
 function whoKey(t){return t.receiverId||('n:'+(t.agentName||''))}
 function toast(msg){const el=$('#toast');el.textContent=msg;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3600)}
 function errText(e){
