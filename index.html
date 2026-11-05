@@ -3590,6 +3590,7 @@ function pdResize(file,max=640){return new Promise((res,rej)=>{const fr=new File
 document.addEventListener('change',async e=>{const f=e.target&&e.target.dataset&&e.target.dataset.up;if(!f)return;const file=e.target.files[0];if(!file)return;
   if(!S.isAdmin||!S.db){toast('เฉพาะผู้ดูแลระบบอัพโหลดรูปได้');return}
   try{toast('กำลังอัพโหลดรูป…');const img=await pdResize(file);await S.db.doc('pimg/'+pdKey(f)).set({m:f,img,updatedAt:new Date().toISOString(),updatedBy:S.uid});toast('อัพโหลดรูปแล้ว')}catch(err){toast('อัพโหลดไม่สำเร็จ: '+errText(err))}});
+document.addEventListener('change',async e=>{const t=e.target;if(t&&t.id==='pd-hd'){S.pdHideDisc=t.checked;renderProduct();return}const k=t&&t.dataset&&t.dataset.disc;if(!k)return;if(!S.isAdmin||!S.db){toast('เฉพาะผู้ดูแลระบบ');t.checked=!t.checked;return}try{const id='pimg/'+pdKey(k)+'-disc';if(t.checked)await S.db.doc(id).set({m:k,disc:true,updatedAt:new Date().toISOString(),updatedBy:S.uid});else await S.db.doc(id).delete();toast(t.checked?'ทำเครื่องหมายเลิกผลิตแล้ว':'ยกเลิกเครื่องหมายแล้ว')}catch(err){toast(errText(err));t.checked=!t.checked}});
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-rmimg]');if(!b)return;if(!confirm('ลบรูปของรุ่นนี้?'))return;try{await S.db.doc('pimg/'+pdKey(b.dataset.rmimg)).delete();toast('ลบรูปแล้ว')}catch(err){toast(errText(err))}});
 function renderProduct(){
   if(!S.pdInit){S.pdInit=1;$('#pd-cat').value=PD_CATS[0]}
@@ -3603,14 +3604,14 @@ function renderProduct(){
   $('#pd-sub').textContent=`${list.length} รุ่น · ${list.reduce((n,g)=>n+g.v.length,0)} แบบ (สี/ขนาดแบตเตอรี่)`;
   ensurePimg();
   const pimg=S.pimg||{};
-  $('#pd-list').innerHTML='<div class="pd-grid">'+(list.map(g=>{
-    const bc=cnt.get(bomKey(g.base))||0,up=(pimg[pdKey(g.base)]||{}).img,drive=PD_IMG[g.base];
+  $('#pd-list').innerHTML='<label style="display:block;margin:0 0 10px"><input type="checkbox" id="pd-hd" '+(S.pdHideDisc?'checked':'')+'> ซ่อนรุ่นที่เลิกผลิตแล้ว</label><div class="pd-grid">'+(list.slice().sort((a,b)=>(!!pimg[pdKey(a.base)+'-disc'])-(!!pimg[pdKey(b.base)+'-disc'])).filter(g=>S.pdHideDisc?!pimg[pdKey(g.base)+'-disc']:true).map(g=>{
+    const dis=!!pimg[pdKey(g.base)+'-disc'];const bc=cnt.get(bomKey(g.base))||0,up=(pimg[pdKey(g.base)]||{}).img,drive=PD_IMG[g.base];
     const src=up||(drive?`https://drive.google.com/thumbnail?id=${drive}&sz=w600`:''),big=up||(drive?`https://drive.google.com/thumbnail?id=${drive}&sz=w1600`:'');
     const ws=g.v.map(v=>+v.w).filter(Boolean),lo=Math.min(...ws),hi=Math.max(...ws),pw=ws.length?(lo===hi?lo+' W':lo+'–'+hi+' W'):'-',bats=pdBat(g);
-    return `<div class="pd-card"><div class="pd-img">${src?`<a href="${esc(big)}" data-zoom title="กดเพื่อดูรูปใหญ่"><img src="${esc(src)}" alt="${esc(g.base)}" loading="lazy" referrerpolicy="no-referrer"></a>`:'<span class="meta">ยังไม่มีรูป</span>'}</div>
-      <div class="pd-body"><div class="pd-name">${esc(g.base)}</div><div><span class="pill">${esc(g.cat)}</span></div>
+    return `<div class="pd-card" style="${dis?'opacity:.6':''}"><div class="pd-img">${src?`<a href="${esc(big)}" data-zoom title="กดเพื่อดูรูปใหญ่"><img src="${esc(src)}" alt="${esc(g.base)}" loading="lazy" referrerpolicy="no-referrer"></a>`:'<span class="meta">ยังไม่มีรูป</span>'}</div>
+      <div class="pd-body"><div class="pd-name">${esc(g.base)}</div><div><span class="pill">${esc(g.cat)}</span> ${dis?'<span class="pill" style="background:#c0392b;color:#fff">เลิกผลิตแล้ว</span>':''}</div>
       <div class="pd-spec"><div><span>กำลัง</span><b>${esc(pw)}</b></div><div><span>แบตเตอรี่</span><b>${bats.length?bats.map(esc).join('<br>'):'-'}</b></div></div>
-      ${S.isAdmin?`<div class="pd-adm"><label class="pd-up">${up?'เปลี่ยนรูป':'อัพโหลดรูป'}<input type="file" accept="image/*" data-up="${esc(g.base)}" hidden></label>${up?`<button type="button" data-rmimg="${esc(g.base)}">ลบรูป</button>`:''}</div>`:''}
+      ${S.isAdmin?`<div class="pd-adm"><label><input type="checkbox" data-disc="${esc(g.base)}" ${dis?'checked':''}> เลิกผลิตแล้ว</label><label class="pd-up">${up?'เปลี่ยนรูป':'อัพโหลดรูป'}<input type="file" accept="image/*" data-up="${esc(g.base)}" hidden></label>${up?`<button type="button" data-rmimg="${esc(g.base)}">ลบรูป</button>`:''}</div>`:''}
       <button type="button" class="primary" data-pd="${esc(g.base)}">ดูอะไหล่รุ่นนี้${bc?` (BOM ${bc})`:''}</button>
       <details><summary>สี / แบตทั้งหมด (${g.v.length} แบบ)</summary>${pdPhotos(g.base)}<div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map(v=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div>${pdSpec(g.base)}</details></div></div>`}).join('')||`<div class="empty">${cat==='จักรยานเด็ก'&&!q?'ยังไม่ได้กำหนดว่ารุ่นไหนเป็นจักรยานเด็ก บอกชื่อรุ่นให้ผู้ดูแลระบบเพิ่มได้':'ไม่พบรุ่นที่ค้นหา'}</div>`)+'</div>';
   $('#pd-list').querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.pc);toast('คัดลอกชื่อรุ่นแล้ว')}catch(e){toast(b.dataset.pc)}});
