@@ -595,6 +595,8 @@ progress{width:100%;accent-color:var(--accent)}
       <div class="f"><label for="pp-model">รุ่นรถ</label><input id="pp-model" list="pp-models" autocomplete="off" placeholder="เช่น LEGEND PRO, NATION PLUS"><datalist id="pp-models"></datalist></div>
       <div class="f"><label for="pp-vin">เลขตัวถัง (VIN)</label><input id="pp-vin" type="search" placeholder="เช่น MPPAA2KEARA000150" autocomplete="off" class="mono"></div>
       <div class="f"><label for="pp-sort">เรียงตาม</label><select id="pp-sort"><option value="use">ใช้บ่อยในงานซ่อม</option><option value="name">ชื่ออะไหล่</option><option value="price">ราคาต่ำไปสูง</option><option value="price-d">ราคาสูงไปต่ำ</option></select></div>
+      <div class="f"><label for="pp-noimg">กรองรูป</label><label style="display:flex;gap:6px;align-items:center;min-height:40px"><input type="checkbox" id="pp-noimg"> เฉพาะรายการที่ไม่มีรูป</label></div>
+      <div class="f"><label>&nbsp;</label><button type="button" id="pp-noimg-csv">ดาวน์โหลดรายการที่ไม่มีรูป (CSV)</button></div>
     </div>
     <div id="pp-vin-res"></div>
     <p class="meta" id="pp-count" style="margin:0 0 8px"></p>
@@ -1837,7 +1839,7 @@ function renderParts2(){
     :'ยังไม่มีรายการอะไหล่ ให้ผู้ดูแลระบบนำเข้าไฟล์ raw-materials ในเมนูนำเข้าข้อมูล';
   const q=$('#pp-q').value.trim().toLowerCase(),model=$('#pp-model').value.trim(),vm=model.match(/^EM\s?([89])\s?(36|48)V$/i),baseModel=vm?'EM'+vm[1]:model,mk=ppKey(baseModel).replace(/^EM(?=[A-Z])/,'');
   if(!P.length){$('#pp-table').innerHTML='';$('#pp-count').textContent='';return}
-  if(!q&&!mk){$('#pp-count').textContent='พิมพ์ชื่ออะไหล่/SKU หรือเลือกรุ่นรถ เพื่อดูราคา';$('#pp-table').innerHTML='';return}
+  if(!q&&!mk&&!$('#pp-noimg').checked){$('#pp-count').textContent='พิมพ์ชื่ออะไหล่/SKU หรือเลือกรุ่นรถ เพื่อดูราคา';$('#pp-table').innerHTML='';return}
   const bk=bomKey(baseModel);
   const known=new Set(P.map(p=>p.s.toUpperCase()));
   // BOM parts with no entry in the price list still show, marked as unpriced
@@ -1853,10 +1855,12 @@ function renderParts2(){
   if(mk)rows=hasBom?rows.filter(p=>p.bom.length):rows.filter(p=>p.bom.length||p.byName||p.n>0);
   if(vm){const other=vm[2]==='36'?'48':'36';const reO=new RegExp('(^|[^0-9])'+other+'\\s?V','i'),reS=new RegExp('(^|[^0-9])'+vm[2]+'\\s?V','i');rows=rows.filter(p=>!(reO.test(String(p.name||''))&&!reS.test(String(p.name||''))))}
   if(q)rows=rows.filter(p=>String(p.name||'').toLowerCase().includes(q)||String(p.s).toLowerCase().includes(q));
+  if($('#pp-noimg').checked)rows=rows.filter(p=>!p.img);
   const sort=$('#pp-sort').value;
   rows.sort(sort==='name'?(a,b)=>String(a.name).localeCompare(String(b.name),'th'):sort==='price'?(a,b)=>(a.p||1e12)-(b.p||1e12):sort==='price-d'?(a,b)=>(b.p||0)-(a.p||0):(a,b)=>(b.bom.length>0)-(a.bom.length>0)||(b.n-a.n)||(b.total-a.total)||(b.byName-a.byName));
   $('#pp-count').textContent=`${rows.length.toLocaleString()} รายการ${rows.length>300?' (แสดง 300 รายการแรก)':''}${model?` สำหรับรุ่น ${model}`:''}`;
   const bomN=rows.filter(p=>p.bom.length).length;
+  $('#pp-count').textContent+=` · มีรูป ${rows.filter(p=>p.img).length.toLocaleString()} · ไม่มีรูป ${rows.filter(p=>!p.img).length.toLocaleString()}`;
   if(mk)$('#pp-count').textContent+=` · ตาม BOM ${bomN.toLocaleString()} รายการ`;
   $('#pp-table').innerHTML=`<thead><tr><th></th><th>SKU</th><th>ชื่ออะไหล่</th><th>หน่วย</th><th>ราคา</th><th>${model?'จำนวน/คัน (BOM)':'รุ่นตาม BOM'}</th><th>${model?'ใช้กับรุ่นนี้':'ใช้ในงานซ่อม'}</th><th>รุ่นที่เคยใช้ซ่อม</th></tr></thead><tbody>${rows.slice(0,300).map(p=>{
     const alt=p.bom.map(r=>r.alt).find(Boolean),vars=[...new Set(p.bom.map(r=>r.v).filter(Boolean))];
@@ -1871,6 +1875,13 @@ function renderParts2(){
 function hlq(s,q){let h=esc(s);if(q){const e=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');h=h.replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`)}return h}
 let ppT;['pp-q','pp-model'].forEach(id=>$('#'+id).addEventListener('input',()=>{clearTimeout(ppT);ppT=setTimeout(renderParts2,200)}));
 $('#pp-sort').addEventListener('change',renderParts2);
+$('#pp-noimg').addEventListener('change',renderParts2);
+$('#pp-noimg-csv').onclick=()=>{
+  const L=dedupeParts(S.parts).filter(p=>!p.img);if(!L.length){toast('ทุกรายการมีรูปแล้ว');return}
+  const q=v=>/[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
+  const lines=[['SKU','ชื่ออะไหล่','หน่วย','ราคา'],...L.map(p=>[p.s,p.name||'',p.u||'',p.p||''])].map(r=>r.map(x=>q(String(x))).join(','));
+  saveFile(`parts-no-image-${stamp()}.csv`,'\ufeff'+lines.join('\r\n'));
+};
 $('#pp-vin').addEventListener('input',()=>{
   const v=$('#pp-vin').value.trim(),box=$('#pp-vin-res');
   if(!v){box.innerHTML='';return}
