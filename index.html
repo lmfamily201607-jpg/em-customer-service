@@ -1816,6 +1816,16 @@ function ppUsage(){
   [...S.ncr,...S.dms].forEach(r=>{const mod=r.mf||r.m;if(!mod)return;(r.parts||[]).forEach(p=>{if(!p.s)return;const o=m.get(p.s)||{};o[mod]=(o[mod]||0)+1;m.set(p.s,o)})});
   S.ppUse=m;S.ppUseSig=sig;return m;
 }
+/* image zoom: big preview with a close button (Esc or tap outside also closes) */
+(function(){const st=document.createElement('style');st.textContent='#zoom{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;overflow:auto}#zoom img{max-width:94vw;max-height:88vh;object-fit:contain;cursor:zoom-in;border-radius:6px;background:#fff}#zoom.big img{max-width:none;max-height:none;width:200vw;cursor:zoom-out}#zoom.big{align-items:flex-start;justify-content:flex-start}#zoom .zx{position:fixed;top:12px;right:12px;z-index:2;min-width:48px;min-height:48px;padding:0 16px;font-size:18px;font-weight:700;border-radius:24px;border:0;background:#fff;color:#111;cursor:pointer}#zoom .zh{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#fff;font-size:13px;pointer-events:none}';document.head.appendChild(st)})();
+function zoomClose(){const z=document.getElementById('zoom');if(z)z.remove()}
+function zoomImg(src){zoomClose();const z=document.createElement('div');z.id='zoom';z.setAttribute('role','dialog');z.setAttribute('aria-label','ดูรูปขยาย');
+  z.innerHTML='<button type="button" class="zx" aria-label="ปิดรูป">✕ ปิด</button><img alt=""><div class="zh">กดที่รูปเพื่อซูมเข้า/ออก · กด Esc หรือพื้นที่ว่างเพื่อปิด</div>';
+  z.querySelector('img').src=src;
+  z.onclick=e=>{if(e.target.closest('.zx')||e.target===z){zoomClose();return}if(e.target.tagName==='IMG')z.classList.toggle('big')};
+  document.body.appendChild(z);z.querySelector('.zx').focus()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')zoomClose()});
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[data-zoom]');if(a){e.preventDefault();zoomImg(a.getAttribute('href'))}});
 function renderParts2(){
   const P=S.parts,use=ppUsage(),bi=bomIndex();
   if(!$('#pp-models').children.length||S.ppModelsSig!==S.ncr.length+':'+S.bom.length){
@@ -1851,7 +1861,7 @@ function renderParts2(){
   $('#pp-table').innerHTML=`<thead><tr><th></th><th>SKU</th><th>ชื่ออะไหล่</th><th>หน่วย</th><th>ราคา</th><th>${model?'จำนวน/คัน (BOM)':'รุ่นตาม BOM'}</th><th>${model?'ใช้กับรุ่นนี้':'ใช้ในงานซ่อม'}</th><th>รุ่นที่เคยใช้ซ่อม</th></tr></thead><tbody>${rows.slice(0,300).map(p=>{
     const alt=p.bom.map(r=>r.alt).find(Boolean),vars=[...new Set(p.bom.map(r=>r.v).filter(Boolean))];
     return `<tr>
-    <td>${p.img?`<a href="${esc(p.img)}" target="_blank" rel="noopener"><img src="${esc(p.img)}" alt="" loading="lazy" style="width:44px;height:44px;object-fit:cover;border-radius:6px;background:var(--sunk)"></a>`:''}</td>
+    <td>${p.img?`<a href="${esc(p.img)}" data-zoom title="กดเพื่อดูรูปใหญ่"><img src="${esc(p.img)}" alt="" loading="lazy" style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:var(--sunk);cursor:zoom-in"></a>`:''}</td>
     <td class="mono">${esc(p.s)}</td><td>${hlq(p.name,q)}${ntTag(p.name+' '+p.s)}${p.bom.length?' <span class="tag on">BOM</span>':''}${p.byName?' <span class="tag">ชื่อระบุรุ่น</span>':''}${vars.length?`<div class="meta">${esc(vars.join(', '))}</div>`:''}${alt?`<div class="meta">ใช้แทนได้: ${esc(alt)}</div>`:''}</td><td>${esc(p.u||'')}</td>
     <td class="num"><b>${p.p?Number(p.p).toLocaleString()+' บาท':`<span class="meta">${p.unlisted?'ไม่มีในรายการราคา':'ไม่มีราคา'}</span>`}</b>${p.w?`<div class="meta">ส่ง ${Number(p.w).toLocaleString()}</div>`:''}</td>
     <td class="${model?'num':'meta'}">${model?(p.bom.length?esc(String(Math.max(...p.bom.map(r=>r.q||0))||'-')):'-'):esc(p.bomModels.slice(0,5).join(', '))}</td>
