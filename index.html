@@ -3579,6 +3579,18 @@ function prodParse(line){
   const base=canonModel(s);return {full:s,base,cat:PD_KIDS.includes(base)?'จักรยานเด็ก':cat,w,color,bat,grab:/GRAB/i.test(s)};
 }
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#pd-cats button');if(b){$('#pd-cat').value=b.dataset.c;renderProduct()}});
+/* PRODUCT cards: photo uploaded by the admin (stored in the pimg collection, resized to 640px) */
+(function(){const st=document.createElement('style');st.textContent='.pd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}.pd-card{border:1px solid var(--line,#d9ddd9);border-radius:14px;overflow:hidden;background:var(--panel,#fff);display:flex;flex-direction:column}.pd-img{aspect-ratio:4/3;background:var(--sunk,#f1f3f1);display:flex;align-items:center;justify-content:center}.pd-img a{display:block;width:100%;height:100%}.pd-img img{width:100%;height:100%;object-fit:contain;cursor:zoom-in}.pd-body{padding:12px;display:flex;flex-direction:column;gap:8px}.pd-name{font-size:1.15em;font-weight:700}.pd-spec{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pd-spec span{display:block;font-size:.8em;opacity:.7}.pd-up{display:inline-block;padding:6px 12px;border:1px solid currentColor;border-radius:8px;cursor:pointer;font-size:.9em}.pd-adm{display:flex;gap:8px;flex-wrap:wrap;align-items:center}';document.head.appendChild(st)})();
+const pdKey=b=>String(b).replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')||'x';
+function pdBat(g){const set=new Set();g.v.forEach(v=>{const s=v.full,m=s.match(/(\d{2,3})\s?V\s?(\d+(?:\.\d+)?)\s?AH/i),vo=(s.match(/(\d{2,3})\s?V\b/i)||[])[1];
+  const tech=/lithium|lithuim|ลิเธี/i.test(s)?'Lithium':/lead\s?acid|leadacid|ตะกั่ว/i.test(s)?'Lead Acid':'';
+  const k=[m?m[1]+'V '+m[2]+'Ah':(vo?vo+'V':''),tech].filter(Boolean).join(' ');if(k)set.add(k)});return [...set].slice(0,4)}
+function ensurePimg(){if(S.pimgLoaded||!S.db)return;S.pimgLoaded=true;S.pimg={};S.db.collection('pimg').onSnapshot(s=>{S.pimg={};s.docs.forEach(d=>{S.pimg[d.id]=d.data()});if(S.view==='product')renderProduct()},()=>{S.pimgLoaded=false})}
+function pdResize(file,max=640){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.82))};im.onerror=rej;im.src=fr.result};fr.onerror=rej;fr.readAsDataURL(file)})}
+document.addEventListener('change',async e=>{const f=e.target&&e.target.dataset&&e.target.dataset.up;if(!f)return;const file=e.target.files[0];if(!file)return;
+  if(!S.isAdmin||!S.db){toast('เฉพาะผู้ดูแลระบบอัพโหลดรูปได้');return}
+  try{toast('กำลังอัพโหลดรูป…');const img=await pdResize(file);await S.db.doc('pimg/'+pdKey(f)).set({m:f,img,updatedAt:new Date().toISOString(),updatedBy:S.uid});toast('อัพโหลดรูปแล้ว')}catch(err){toast('อัพโหลดไม่สำเร็จ: '+errText(err))}});
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-rmimg]');if(!b)return;if(!confirm('ลบรูปของรุ่นนี้?'))return;try{await S.db.doc('pimg/'+pdKey(b.dataset.rmimg)).delete();toast('ลบรูปแล้ว')}catch(err){toast(errText(err))}});
 function renderProduct(){
   if(!S.pdInit){S.pdInit=1;$('#pd-cat').value=PD_CATS[0]}
   const q=($('#pd-q').value||'').trim().toUpperCase(),cat=$('#pd-cat').value;
@@ -3589,7 +3601,18 @@ function renderProduct(){
   const catN=Object.fromEntries(PD_CATS.map(c=>[c,[...by.values()].filter(g=>g.cat===c).length]));
   $('#pd-cats').innerHTML=PD_CATS.map(c=>`<button type="button" data-c="${esc(c)}" aria-pressed="${c===cat}">${esc(c)} <span class="meta">${catN[c]}</span></button>`).join('')+`<button type="button" data-c="" aria-pressed="${cat===''}">ทั้งหมด</button>`;
   $('#pd-sub').textContent=`${list.length} รุ่น · ${list.reduce((n,g)=>n+g.v.length,0)} แบบ (สี/ขนาดแบตเตอรี่)`;
-  $('#pd-list').innerHTML=list.map((g,i)=>{const bc=cnt.get(bomKey(g.base))||0;return `<div class="panel" style="margin:8px 0;overflow:hidden">${pdImg(g.base)}<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><b style="font-size:1.1em">${esc(g.base)}</b><span class="pill">${esc(g.cat)}</span>${bc?`<span class="meta">BOM ${bc} รายการ</span>`:''}${pdPhotos(g.base)}<button type="button" data-pd="${esc(g.base)}" style="margin-left:auto">ดูอะไหล่รุ่นนี้</button></div><div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map((v,j)=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div>${pdSpec(g.base)}</div>`}).join('')||`<div class="empty">${cat==='จักรยานเด็ก'&&!q?'ยังไม่ได้กำหนดว่ารุ่นไหนเป็นจักรยานเด็ก บอกชื่อรุ่นให้ผู้ดูแลระบบเพิ่มได้':'ไม่พบรุ่นที่ค้นหา'}</div>`;
+  ensurePimg();
+  const pimg=S.pimg||{};
+  $('#pd-list').innerHTML='<div class="pd-grid">'+(list.map(g=>{
+    const bc=cnt.get(bomKey(g.base))||0,up=(pimg[pdKey(g.base)]||{}).img,drive=PD_IMG[g.base];
+    const src=up||(drive?`https://drive.google.com/thumbnail?id=${drive}&sz=w600`:''),big=up||(drive?`https://drive.google.com/thumbnail?id=${drive}&sz=w1600`:'');
+    const ws=g.v.map(v=>+v.w).filter(Boolean),lo=Math.min(...ws),hi=Math.max(...ws),pw=ws.length?(lo===hi?lo+' W':lo+'–'+hi+' W'):'-',bats=pdBat(g);
+    return `<div class="pd-card"><div class="pd-img">${src?`<a href="${esc(big)}" data-zoom title="กดเพื่อดูรูปใหญ่"><img src="${esc(src)}" alt="${esc(g.base)}" loading="lazy" referrerpolicy="no-referrer"></a>`:'<span class="meta">ยังไม่มีรูป</span>'}</div>
+      <div class="pd-body"><div class="pd-name">${esc(g.base)}</div><div><span class="pill">${esc(g.cat)}</span></div>
+      <div class="pd-spec"><div><span>กำลัง</span><b>${esc(pw)}</b></div><div><span>แบตเตอรี่</span><b>${bats.length?bats.map(esc).join('<br>'):'-'}</b></div></div>
+      ${S.isAdmin?`<div class="pd-adm"><label class="pd-up">${up?'เปลี่ยนรูป':'อัพโหลดรูป'}<input type="file" accept="image/*" data-up="${esc(g.base)}" hidden></label>${up?`<button type="button" data-rmimg="${esc(g.base)}">ลบรูป</button>`:''}</div>`:''}
+      <button type="button" class="primary" data-pd="${esc(g.base)}">ดูอะไหล่รุ่นนี้${bc?` (BOM ${bc})`:''}</button>
+      <details><summary>สี / แบตทั้งหมด (${g.v.length} แบบ)</summary>${pdPhotos(g.base)}<div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map(v=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div>${pdSpec(g.base)}</details></div></div>`}).join('')||`<div class="empty">${cat==='จักรยานเด็ก'&&!q?'ยังไม่ได้กำหนดว่ารุ่นไหนเป็นจักรยานเด็ก บอกชื่อรุ่นให้ผู้ดูแลระบบเพิ่มได้':'ไม่พบรุ่นที่ค้นหา'}</div>`)+'</div>';
   $('#pd-list').querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.pc);toast('คัดลอกชื่อรุ่นแล้ว')}catch(e){toast(b.dataset.pc)}});
   $('#pd-list').querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const m=b.dataset.pd;location.hash='#parts';setTimeout(()=>{const e=$('#pp-model');if(e){e.value=m;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}},400)});
 }
