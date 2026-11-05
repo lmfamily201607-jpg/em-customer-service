@@ -637,7 +637,8 @@ progress{width:100%;accent-color:var(--accent)}
     <h2>PRODUCT สินค้า</h2>
     <p class="sub" id="pd-sub"></p>
     <p class="sub"><a href="https://drive.google.com/drive/folders/130L2lJ0Uzz5fa7iRoKnee2FSfGWOojF7" target="_blank" rel="noopener">📷 เปิดคลังรูปสินค้ามอเตอร์ไซค์ทั้งหมด (Google Drive)</a></p>
-    <div class="rsearch"><div class="f"><label for="pd-q">ค้นหารุ่น / สี / แบตเตอรี่</label><input id="pd-q" type="search" placeholder="เช่น ARENA, 3000W, สีเขียว"></div><div class="f"><label for="pd-cat">ประเภท</label><select id="pd-cat"><option value="">ทั้งหมด</option><option>มอเตอร์ไซค์ไฟฟ้า</option><option>จักรยานไฟฟ้า</option><option>สกู๊ตเตอร์ไฟฟ้า</option></select></div></div>
+    <div class="rsearch"><div class="f"><label for="pd-q">ค้นหารุ่น / สี / แบตเตอรี่</label><input id="pd-q" type="search" placeholder="เช่น ARENA, 3000W, สีเขียว"></div><div class="f"><label for="pd-cat">ประเภท</label><select id="pd-cat"><option value="">ทั้งหมด</option><option>จักรยานไฟฟ้า</option><option>มอเตอร์ไซค์ไฟฟ้า</option><option>สกู๊ตเตอร์ไฟฟ้า</option><option>จักรยานเด็ก</option></select></div></div>
+    <div class="chips" id="pd-cats" role="group" aria-label="หมวดสินค้า" style="margin:8px 0"></div>
     <div id="pd-list"></div>
   </section>
 
@@ -3566,22 +3567,29 @@ const PD_SPEC={"ECO LOVE X": {"items": [["531311039", "ฟ้าชมพู", "
 function pdSpec(b){const s=PD_SPEC[b];if(!s)return '';const ul=a=>'<ul style="margin:4px 0 8px 18px;padding:0">'+a.map(x=>`<li>${esc(x.replace(/^\d+\.\s*/,''))}</li>`).join('')+'</ul>';return `<details style="margin-top:8px"><summary><b>สเปกสินค้า</b> <span class="meta">(${esc(s.src)})</span></summary><div style="padding:6px 2px"><div class="tbl-wrap"><table><thead><tr><th>สี</th><th>รหัสสินค้า (SKU)</th><th>บาร์โค้ด</th></tr></thead><tbody>${s.items.map(i=>`<tr><td>${esc(i[1])}</td><td class="mono">${esc(i[0])}</td><td class="mono">${esc(i[2])}</td></tr>`).join('')}</tbody></table></div><b>ส่วนประกอบ</b>${ul(s.mat)}<b>คุณสมบัติ</b>${ul(s.feat)}<b>จุดเด่น</b>${ul(s.sell)}<div class="meta">ขนาดสินค้า (กว้าง × ลึก × สูง): ${esc(s.dim)}</div></div></details>`}
 const PD_IMG={'EM ARENA':'1YeEqnn4w6T9DgbG5XyXIlesrVIOVAIUk','EM LEGEND':'1uFNMcPdAPTuKGmdffJ7dGuZVW1KaIL46','EM LEGEND PRO':'1drOCAY_R3meuJtMqLzA-LdUQFa99abMV','EM MILANO':'1k6Utv5WUPAIV2pdnTjDOT9_j2QThIeKh'};
 const pdImg=b=>PD_IMG[b]?`<a href="https://drive.google.com/file/d/${PD_IMG[b]}/view" target="_blank" rel="noopener"><img src="https://drive.google.com/thumbnail?id=${PD_IMG[b]}&sz=w600" alt="${esc(b)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.style.display='none'" style="float:right;max-width:260px;width:40%;max-height:180px;object-fit:contain;border-radius:8px;margin:0 0 6px 10px"></a>`:'';
+// PRODUCT categories, in the order the team uses them. Add model names to PD_KIDS to list them under จักรยานเด็ก
+const PD_CATS=['จักรยานไฟฟ้า','มอเตอร์ไซค์ไฟฟ้า','สกู๊ตเตอร์ไฟฟ้า','จักรยานเด็ก'];
+const PD_KIDS=[];
 function prodParse(line){
   const s=String(line||'').trim();
   const cat=/จักรยานยนต์|มอเตอร์ไซค์/.test(s)?'มอเตอร์ไซค์ไฟฟ้า':/สกู๊ตเตอร์/.test(s)?'สกู๊ตเตอร์ไฟฟ้า':'จักรยานไฟฟ้า';
   const w=(s.match(/(\d{3,5})\s?W\b/i)||[])[1]||'';
   const color=(s.match(/สี\s?([^\s]+(?:\s?\/\s?[^\s]+)?)/)||[])[1]||(s.match(/\b\d+IN\s+(?:DOUBLE SEAT\s+)?([ก-๙\/\-]+)/)||[])[1]||'';
   const bat=(s.match(/((?:Lithium|Lead Acid|STL Lithium|STL Lead Acid|ตะกั่ว|ลิเธี่ยม)[^\n]*)$/i)||[])[1]||'';
-  return {full:s,base:canonModel(s),cat,w,color,bat,grab:/GRAB/i.test(s)};
+  const base=canonModel(s);return {full:s,base,cat:PD_KIDS.includes(base)?'จักรยานเด็ก':cat,w,color,bat,grab:/GRAB/i.test(s)};
 }
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#pd-cats button');if(b){$('#pd-cat').value=b.dataset.c;renderProduct()}});
 function renderProduct(){
+  if(!S.pdInit){S.pdInit=1;$('#pd-cat').value=PD_CATS[0]}
   const q=($('#pd-q').value||'').trim().toUpperCase(),cat=$('#pd-cat').value;
   const rows=MODEL_LIST.map(prodParse).filter(r=>r.base);
   const by=new Map();rows.forEach(r=>{const g=by.get(r.base)||{base:r.base,cat:r.cat,v:[]};g.v.push(r);by.set(r.base,g)});
   const cnt=new Map();(S.bom||[]).forEach(r=>{const k=bomKey(r.m);cnt.set(k,(cnt.get(k)||0)+1)});
-  const list=[...by.values()].filter(g=>(!cat||g.cat===cat)&&(!q||g.base.includes(q)||g.v.some(v=>v.full.toUpperCase().includes(q)))).sort((a,b)=>a.cat.localeCompare(b.cat,'th')||a.base.localeCompare(b.base));
+  const list=[...by.values()].filter(g=>(!cat||g.cat===cat)&&(!q||g.base.includes(q)||g.v.some(v=>v.full.toUpperCase().includes(q)))).sort((a,b)=>PD_CATS.indexOf(a.cat)-PD_CATS.indexOf(b.cat)||a.base.localeCompare(b.base));
+  const catN=Object.fromEntries(PD_CATS.map(c=>[c,[...by.values()].filter(g=>g.cat===c).length]));
+  $('#pd-cats').innerHTML=PD_CATS.map(c=>`<button type="button" data-c="${esc(c)}" aria-pressed="${c===cat}">${esc(c)} <span class="meta">${catN[c]}</span></button>`).join('')+`<button type="button" data-c="" aria-pressed="${cat===''}">ทั้งหมด</button>`;
   $('#pd-sub').textContent=`${list.length} รุ่น · ${list.reduce((n,g)=>n+g.v.length,0)} แบบ (สี/ขนาดแบตเตอรี่)`;
-  $('#pd-list').innerHTML=list.map((g,i)=>{const bc=cnt.get(bomKey(g.base))||0;return `<div class="panel" style="margin:8px 0;overflow:hidden">${pdImg(g.base)}<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><b style="font-size:1.1em">${esc(g.base)}</b><span class="pill">${esc(g.cat)}</span>${bc?`<span class="meta">BOM ${bc} รายการ</span>`:''}${pdPhotos(g.base)}<button type="button" data-pd="${esc(g.base)}" style="margin-left:auto">ดูอะไหล่รุ่นนี้</button></div><div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map((v,j)=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div>${pdSpec(g.base)}</div>`}).join('')||'<div class="empty">ไม่พบรุ่นที่ค้นหา</div>';
+  $('#pd-list').innerHTML=list.map((g,i)=>{const bc=cnt.get(bomKey(g.base))||0;return `<div class="panel" style="margin:8px 0;overflow:hidden">${pdImg(g.base)}<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><b style="font-size:1.1em">${esc(g.base)}</b><span class="pill">${esc(g.cat)}</span>${bc?`<span class="meta">BOM ${bc} รายการ</span>`:''}${pdPhotos(g.base)}<button type="button" data-pd="${esc(g.base)}" style="margin-left:auto">ดูอะไหล่รุ่นนี้</button></div><div class="tbl-wrap"><table><thead><tr><th>สี</th><th>กำลัง</th><th>แบตเตอรี่ / รายละเอียด</th><th></th></tr></thead><tbody>${g.v.map((v,j)=>`<tr><td>${esc(v.color||'-')}${v.grab?' (GRAB)':''}</td><td>${v.w?esc(v.w)+'W':'-'}</td><td>${esc(v.bat||'-')}</td><td><button type="button" data-pc="${esc(v.full)}">คัดลอกชื่อ</button></td></tr>`).join('')}</tbody></table></div>${pdSpec(g.base)}</div>`}).join('')||`<div class="empty">${cat==='จักรยานเด็ก'&&!q?'ยังไม่ได้กำหนดว่ารุ่นไหนเป็นจักรยานเด็ก บอกชื่อรุ่นให้ผู้ดูแลระบบเพิ่มได้':'ไม่พบรุ่นที่ค้นหา'}</div>`;
   $('#pd-list').querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.pc);toast('คัดลอกชื่อรุ่นแล้ว')}catch(e){toast(b.dataset.pc)}});
   $('#pd-list').querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const m=b.dataset.pd;location.hash='#parts';setTimeout(()=>{const e=$('#pp-model');if(e){e.value=m;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}},400)});
 }
