@@ -864,7 +864,7 @@ progress{width:100%;accent-color:var(--accent)}
       <div class="chips" id="kp-tabs" role="group" aria-label="หัวข้อ KPI">
         <button type="button" data-kt="ov" aria-pressed="true">ภาพรวม 4 ตัวชี้วัด</button><button type="button" data-kt="sum" aria-pressed="false">1. สรุปข้อมูล</button><button type="button" data-kt="rate" aria-pressed="false">2. อัตราเคส</button><button type="button" data-kt="sched" aria-pressed="false">3. ตารางการทำงาน</button><button type="button" data-kt="fast" aria-pressed="false">4. ตอบกลับภายใน <span id="kp-min">3</span> นาที</button>
       </div>
-      <div class="chips" id="kp-gran" role="group" aria-label="ช่วงเวลา" style="margin-top:8px"><button type="button" data-g="month" aria-pressed="true">รายเดือน</button><button type="button" data-g="week" aria-pressed="false">รายสัปดาห์</button><button type="button" data-g="day" aria-pressed="false">รายวัน</button><select id="kp-sub" aria-label="เลือกช่วง" style="width:auto" hidden></select></div>
+      <div class="chips" id="kp-gran" role="group" aria-label="ช่วงเวลา" style="margin-top:8px"><button type="button" data-g="month" aria-pressed="true">รายเดือน</button><button type="button" data-g="week" aria-pressed="false">รายสัปดาห์</button><button type="button" data-g="day" aria-pressed="false">รายวัน</button><select id="kp-sub" aria-label="เลือกช่วง" style="width:auto" hidden></select><input type="date" id="kp-day" aria-label="เลือกวันที่จากปฏิทิน" style="width:auto" hidden></div>
       <div id="kp-view"></div>
       <div id="kp-person-box"></div>
     </div>
@@ -3060,10 +3060,17 @@ K.gran='month';K.sub='';K.gl='';
 function kpiWeeks(month){const [y,m]=month.split('-').map(Number),n=new Date(y,m,0).getDate(),out=[];let s=1;while(s<=n){const dow=new Date(y,m-1,s).getDay()||7,e=Math.min(n,s+(7-dow));out.push([month+'-'+pad(s),month+'-'+pad(e)]);s=e+1}return out}
 function kpiGranRows(M){
   const sel=$('#kp-sub');document.querySelectorAll('#kp-gran button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.g===K.gran)));
+  const day=$('#kp-day');day.hidden=true;
   if(K.gran==='month'){K.gl='';sel.hidden=true;return M}
+  if(K.gran==='day'){
+    sel.hidden=true;day.hidden=false;
+    const dates=[...new Set(M.map(r=>r.date))].sort();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(K.sub)||!K.sub.startsWith(K.month))K.sub=dates[dates.length-1]||K.month+'-01';
+    day.value=K.sub;K.gl='วันที่ '+fmtD(K.sub);
+    return M.filter(r=>r.date===K.sub);
+  }
   let opts;
   if(K.gran==='week')opts=kpiWeeks(K.month).map(([a,b])=>({v:a+'|'+b,l:fmtD(a)+' – '+fmtD(b),a,b}));
-  else opts=[...new Set(M.map(r=>r.date))].sort().map(d=>({v:d,l:fmtD(d),a:d,b:d}));
   if(!opts.length){sel.hidden=true;return M}
   if(!opts.some(o=>o.v===K.sub)){const withData=opts.filter(o=>M.some(r=>r.date>=o.a&&r.date<=o.b));K.sub=(withData.pop()||opts[opts.length-1]).v}
   sel.hidden=false;sel.innerHTML=opts.map(o=>'<option value="'+o.v+'"'+(o.v===K.sub?' selected':'')+'>'+esc(o.l)+'</option>').join('');
@@ -3071,7 +3078,8 @@ function kpiGranRows(M){
   return M.filter(r=>r.date>=cur.a&&r.date<=cur.b);
 }
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#kp-gran button');if(b){K.gran=b.dataset.g;K.sub='';renderKpi()}});
-document.addEventListener('change',e=>{if(e.target&&e.target.id==='kp-sub'){K.sub=e.target.value;renderKpi()}});
+document.addEventListener('change',e=>{if(!e.target)return;if(e.target.id==='kp-sub'){K.sub=e.target.value;renderKpi()}
+  if(e.target.id==='kp-day'&&e.target.value){K.sub=e.target.value;K.month=e.target.value.slice(0,7);renderKpi()}});
 function renderKpi(){
   if(!S.isAdmin){$('#kp-gate').innerHTML=S.me?'<div class="banner warn">หน้านี้ดูได้เฉพาะผู้ดูแลระบบ</div>':'<div class="empty">กำลังตรวจสิทธิ์…</div>';$('#kp-body').hidden=true;return}
   $('#kp-body').hidden=false;ensureKpi();
