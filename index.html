@@ -1869,12 +1869,13 @@ function renderParts2(){
     const alt=p.bom.map(r=>r.alt).find(Boolean),vars=[...new Set(p.bom.map(r=>r.v).filter(Boolean))];
     return `<tr>
     <td>${p.img?`<a href="${esc(p.img)}" data-zoom title="กดเพื่อดูรูปใหญ่"><img src="${esc(p.img)}" alt="" loading="lazy" style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:var(--sunk);cursor:zoom-in"></a>`:''}</td>
-    <td class="mono">${esc(p.s)}</td><td>${hlq(p.name,q)}${ntTag(p.name+' '+p.s)}${p.bom.length?' <span class="tag on">BOM</span>':''}${p.byName?' <span class="tag">ชื่อระบุรุ่น</span>':''}${vars.length?`<div class="meta">${esc(vars.join(', '))}</div>`:''}${alt?`<div class="meta">ใช้แทนได้: ${esc(alt)}</div>`:''}</td><td>${esc(p.u||'')}</td>
+    <td class="mono">${esc(p.s)}<div><button type="button" data-sku="${esc(p.s)}" title="คัดลอก SKU">คัดลอก</button></div></td><td>${hlq(p.name,q)}${ntTag(p.name+' '+p.s)}${p.bom.length?' <span class="tag on">BOM</span>':''}${p.byName?' <span class="tag">ชื่อระบุรุ่น</span>':''}${vars.length?`<div class="meta">${esc(vars.join(', '))}</div>`:''}${alt?`<div class="meta">ใช้แทนได้: ${esc(alt)}</div>`:''}</td><td>${esc(p.u||'')}</td>
     <td class="num"><b>${p.p?Number(p.p).toLocaleString()+' บาท':`<span class="meta">${p.unlisted?'ไม่มีในรายการราคา':'ไม่มีราคา'}</span>`}</b>${p.w?`<div class="meta">ส่ง ${Number(p.w).toLocaleString()}</div>`:''}</td>
     <td class="${model?'num':'meta'}">${model?(p.bom.length?esc(String(Math.max(...p.bom.map(r=>r.q||0))||'-')):'-'):esc(p.bomModels.slice(0,5).join(', '))}</td>
     <td class="num">${model?(p.n?p.n.toLocaleString()+' ครั้ง':'-'):(p.total?p.total.toLocaleString()+' ครั้ง':'-')}</td>
     <td class="meta">${esc(p.models.map(([m,c])=>`${m} (${c})`).join(', '))}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">ไม่พบอะไหล่ที่ตรงกับเงื่อนไข</td></tr>'}</tbody>`;
 }
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sku]');if(!b)return;const v=b.dataset.sku;try{await navigator.clipboard.writeText(v)}catch(_){const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(__){}t.remove()}toast('คัดลอก SKU แล้ว: '+v);const o=b.textContent;b.textContent='คัดลอกแล้ว';setTimeout(()=>{b.textContent=o},1200)});
 function hlq(s,q){let h=esc(s);if(q){const e=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');h=h.replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`)}return h}
 let ppT;['pp-q','pp-model'].forEach(id=>$('#'+id).addEventListener('input',()=>{clearTimeout(ppT);ppT=setTimeout(renderParts2,200)}));
 $('#pp-sort').addEventListener('change',renderParts2);
