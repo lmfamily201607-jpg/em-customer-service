@@ -3693,6 +3693,19 @@ function copyIntake(){
 }
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='f-copy')copyIntake()});
 
+/* ล้างกรอง: ปุ่มล้างตัวกรองในทุกหน้าที่มีช่องค้นหา/ตัวกรอง */
+(function(){const SKIP=/^(ask-ai|tp-pick|d-day|d-month|kp-month|kp-day|kp-person|kp-sub|nt-.*)$/;
+function setup(){document.querySelectorAll('section[id^="v-"]').forEach(sec=>{if(/^v-(notes|notices|forms|warranty|import)$/.test(sec.id)||sec.querySelector('[data-clrf]'))return;
+ const cs=[...sec.querySelectorAll('input,select')].filter(e=>!['hidden','file','button','submit'].includes(e.type)&&!e.closest('form')&&!SKIP.test(e.id));
+ if(!cs.length)return;const last=cs[cs.length-1];
+ const b=document.createElement('button');b.type='button';b.textContent='ล้างกรอง';b.setAttribute('data-clrf','1');b.style.marginLeft='8px';b.title='ล้างค่าค้นหาและตัวกรองทั้งหมดในหน้านี้';
+ b.addEventListener('click',()=>{cs.forEach(e=>{if(e.tagName==='SELECT')e.selectedIndex=0;else if(e.type==='checkbox'||e.type==='radio')e.checked=false;else e.value='';});
+  if(sec.id==='v-product')S.pdHideDisc=false;
+  cs.forEach(e=>{e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))});
+  if(sec.id==='v-product'&&typeof renderProduct==='function')renderProduct();
+  toast('ล้างตัวกรองแล้ว')});
+ (last.parentElement&&last.parentElement.tagName==='LABEL'?last.parentElement:last).insertAdjacentElement('afterend',b)})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup()})();
 function refresh(viewOnly){
   if(S.view==='dashboard')renderDashboard();
   if(S.view==='search')renderSearch();
