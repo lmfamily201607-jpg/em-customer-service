@@ -552,8 +552,8 @@ progress{width:100%;accent-color:var(--accent)}
         <h3>ข้อมูลรถ</h3>
         <div class="wc-fields">
           <div class="f full"><label for="wc-model">รุ่นรถ</label><input id="wc-model" list="models" autocomplete="off" placeholder="พิมพ์ชื่อรุ่น เช่น LEGEND PRO, ECO NATION PLUS"><span class="meta" id="wc-detect">ระบบจะแยกประเภทเงื่อนไขและชนิดแบตจากชื่อรุ่นให้เอง</span></div>
-          <div class="f"><label for="wc-buy">วันที่ซื้อ</label><input type="date" id="wc-buy"></div>
-          <div class="f"><label for="wc-on">วันที่ตรวจ</label><input type="date" id="wc-on"></div>
+          <div class="f"><label for="wc-buy">วันที่ซื้อ</label><input type="date" id="wc-buy"><span class="meta" id="wc-buy-h">กรอกปีเป็น ค.ศ. เช่น 2023 (= พ.ศ. 2566)</span></div>
+          <div class="f"><label for="wc-on">วันที่ตรวจ</label><input type="date" id="wc-on"><span class="meta" id="wc-on-h">กรอกปีเป็น ค.ศ. เช่น 2026 (= พ.ศ. 2569)</span></div>
           <div class="f"><label for="wc-km">เลขไมล์ (กม.)</label><input id="wc-km" inputmode="numeric" placeholder="เช่น 3500"></div>
           <div class="f"><label for="wc-item">ชิ้นส่วนที่มีปัญหา</label><select id="wc-item"></select></div>
         </div>
@@ -568,8 +568,7 @@ progress{width:100%;accent-color:var(--accent)}
             <option value="hp_home">HomePro: ไปบ้านลูกค้า (จากสาขา)</option>
             <option value="sc_branch">Siam Chai: ซ่อมที่สาขา</option>
             <option value="sc_home">Siam Chai: ไปบ้านลูกค้า (จากสาขา)</option></select></div>
-          <div class="f" id="wc-zone-f" hidden><label for="wc-zone">ช่าง Onsite (เขต/อำเภอ)</label><input id="wc-zone" list="wc-zones" autocomplete="off" placeholder="เช่น บางกะปิ, ปากเกร็ด"><datalist id="wc-zones"></datalist><span class="meta" id="wc-zone-hint"></span></div>
-          <div class="f"><label for="wc-dist">ระยะทาง (กม.)</label><input id="wc-dist" inputmode="decimal" placeholder="เช่น 32"><span class="meta" id="wc-dist-hint"></span></div>
+                    <div class="f"><label for="wc-dist">ระยะทาง (กม.)</label><input id="wc-dist" inputmode="decimal" placeholder="เช่น 32"><span class="meta" id="wc-dist-hint"></span></div>
           <div class="f"><label for="wc-hours">เวลาซ่อม (ชั่วโมง)</label><input id="wc-hours" inputmode="decimal" placeholder="เช่น 1.5"></div>
           <div class="f"><label for="wc-part">ค่าอะไหล่ (บาท)</label><input id="wc-part" inputmode="decimal" placeholder="0"><span class="meta" id="wc-part-hint"></span><button type="button" class="link" id="wc-pp" style="align-self:flex-start;font-size:13px">ดูราคาอะไหล่ของรุ่นนี้ ›</button></div>
           <div class="f"><label for="wc-labor">ค่าบริการอื่น (บาท)</label><input id="wc-labor" inputmode="decimal" placeholder="0"></div>
@@ -1674,14 +1673,16 @@ function wcBatteryPrice(model,chem){
 function wcFill(){
   // selects that depend on imported tables
   const zone=wcZoneTopic();
-  if(zone&&!$('#wc-zones').children.length)$('#wc-zones').innerHTML=zone.rows.map(r=>`<option value="${esc(r[2])}">${esc(r[1])} · ช่าง${esc(r[3])} · ${num(r[4])} บาท</option>`).join('');
   const jobs=wcJobTopic(),jcur=$('#wc-job').value;
   $('#wc-job').innerHTML='<option value="">ไม่ระบุ</option>'+(jobs?jobs.rows.filter(r=>r[0]).map(r=>`<option${r[0]===jcur?' selected':''}>${esc(r[0])}</option>`).join(''):'');
   // the check date defaults to today
   if(!$('#wc-on').value)$('#wc-on').value=isoDate(new Date().toISOString());
   if(!$('#wc-maint').children.length)$('#wc-maint').innerHTML=WC_MAINT.map(([n,p],i)=>`<label><input type="checkbox" id="wcm-${i}"> ${esc(n)}<span>${p.toLocaleString()} บาท</span></label>`).join('');
 }
-function renderWarranty(){
+const WC_TM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function wcDateHints(){['buy','on'].forEach(k=>{const e=$('#wc-'+k),h=$('#wc-'+k+'-h');if(!e||!h)return;const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(e.value);h.textContent=m?'= '+(+m[3])+' '+WC_TM[+m[2]-1]+' พ.ศ. '+(+m[1]+543):'กรอกปีเป็น ค.ศ. เช่น '+(k==='buy'?'2023 (= พ.ศ. 2566)':'2026 (= พ.ศ. 2569)')})}
+document.addEventListener('change',e=>{const t=e.target;if(!t||(t.id!=='wc-buy'&&t.id!=='wc-on'))return;const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(t.value);if(m&&+m[1]>2200){t.value=(+m[1]-543)+'-'+m[2]+'-'+m[3];toast('ปีที่กรอกเป็น พ.ศ. แปลงเป็น ค.ศ. '+(+m[1]-543)+' ให้แล้ว');t.dispatchEvent(new Event('change',{bubbles:true}))}wcDateHints()});
+function renderWarranty(){wcDateHints();
   wcFill();
   const model=wcFullModel($('#wc-model').value.trim()),cls=wcClassOf(model),buy=$('#wc-buy').value,on=$('#wc-on').value||isoDate(new Date().toISOString());
   const km=$('#wc-km').value.trim()===''?null:num($('#wc-km').value);
@@ -1716,16 +1717,12 @@ function renderWarranty(){
   const chan=$('#wc-chan').value,dist=$('#wc-dist').value.trim()===''?null:num($('#wc-dist').value),hours=$('#wc-hours').value.trim()===''?null:num($('#wc-hours').value);
   const days=buy?Math.floor((new Date(on+'T12:00:00')-new Date(buy+'T12:00:00'))/864e5):null;
   // Onsite by district: technician, zone and the team's zone travel rate (MASTER ZONE) take precedence over the distance formula
-  $('#wc-zone-f').hidden=chan!=='onsite';
-  const zr=chan==='onsite'?wcZone($('#wc-zone').value):null;
-  $('#wc-zone-hint').textContent=chan==='onsite'&&$('#wc-zone').value.trim()?(zr?`โซน ${zr[0]} ${zr[1]} · ช่าง${zr[3]} · ${zr[5]} · ${num(zr[4])} บาท`:'ไม่พบเขตนี้ใน MASTER ZONE ใช้ระยะทางคำนวณแทน'):'';
   let tr=wcTravel(chan,dist,covered,days);
-  if(zr&&!(covered&&days!=null&&days<15))tr={fee:num(zr[4]),why:`ค่าเดินทางตามโซน ${zr[1]} (MASTER ZONE)`};
   const lb=wcLabor(chan,hours,covered);
   $('#wc-dist-hint').textContent=tr.why;
   // where the job can be done
   const moto=['moto','grab'].includes(cls),wh=wcWhere($('#wc-job').value,moto);
-  const tech=zr?zr[3]:null;
+  const tech=null;
   $('#wc-where').innerHTML=wh?`รับบริการได้ที่ (${moto?'มอเตอร์ไซค์':'จักรยานไฟฟ้า'}): `+wh.map(([n,s])=>`<span class="pill ${s==='ok'?'done':s==='no'?'incomplete':''}" style="margin:2px 4px 0 0${tech&&n==='ช่าง'+tech?';outline:2px solid var(--accent)':''}">${n} ${s==='ok'?'✓':s==='no'?'✕':'-'}</span>`).join('')
     +(tech&&wh.find(([n])=>n==='ช่าง'+tech)?.[1]==='no'?`<div style="color:var(--bad);margin-top:4px">ช่าง${esc(tech)}ประจำเขตนี้รับงานนี้ไม่ได้ แนะนำ SHOWROOM หรือช่างอีกท่าน</div>`:''):'';
   const part=num($('#wc-part').value),other=num($('#wc-labor').value);
@@ -1766,7 +1763,6 @@ function renderWarranty(){
     <td class="num">${r.exp?r.exp.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td><td>${r.state==='na'?'<span class="meta">-</span>':`<span class="pill ${r.state==='ok'?'done':'incomplete'}">${r.state==='ok'?'ในประกัน':!r.dateOk?'หมดเวลา':'เกินระยะทาง'}</span>`}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">ไม่มีข้อมูลเงื่อนไขสำหรับประเภทนี้</td></tr>'}</tbody>`;
 }
 $('#wc-model').addEventListener('change',()=>{$('#wc-part').dataset.touched='';renderWarranty()});
-$('#wc-zone').addEventListener('input',renderWarranty);
 ['wc-buy','wc-on','wc-item','wc-chan','wc-job'].forEach(id=>$('#'+id).addEventListener('change',()=>{if(id==='wc-item'){$('#wc-part').dataset.touched='';$('#wc-job').dataset.touched=''}if(id==='wc-job')$('#wc-job').dataset.touched='1';renderWarranty()}));
 ['wc-km','wc-labor','wc-dist','wc-hours'].forEach(id=>$('#'+id).addEventListener('input',renderWarranty));
 $('#wc-part').addEventListener('input',()=>{$('#wc-part').dataset.touched='1';renderWarranty()});
