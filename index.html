@@ -3551,6 +3551,25 @@ async function resolveNames(ids,rerender=true){
   want.forEach(id=>{const n=ps[id]?.name||'';if(n&&S.names[id]!==n){S.names[id]=n;changed=true}});
   if(changed&&rerender)refresh(true);
 }
+/* ค้นหารุ่นรถ: พิมพ์คำใดคำหนึ่งหรือหลายคำ (ลำดับไหนก็ได้) แล้วเลือกจากรายการ */
+(function(){const st=document.createElement('style');st.textContent='#mdl-pop{position:fixed;z-index:9999;max-height:300px;overflow:auto;background:var(--panel,#fff);color:inherit;border:1px solid var(--line,#c9d0c9);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px;display:none}#mdl-pop div{padding:8px 10px;border-radius:8px;cursor:pointer}#mdl-pop div:hover,#mdl-pop div.on{background:color-mix(in srgb,var(--panel,#fff) 82%,#2e7d32)}#mdl-pop .nm{padding:8px 10px;opacity:.7;cursor:default}';document.head.appendChild(st);
+let pop=null,cur=null,idx=-1,items=[];const norm=s=>String(s||'').toLowerCase().replace(/[\s\-_.()/]+/g,'');
+function all(){const dl=document.getElementById('models');return dl?[...dl.options].map(o=>o.value):[]}
+function hide(){if(pop)pop.style.display='none';idx=-1}
+function pick(v){if(!cur)return;cur.value=v;cur.dispatchEvent(new Event('input',{bubbles:true}));cur.dispatchEvent(new Event('change',{bubbles:true}));hide()}
+function show(showAll){if(!cur)return;if(!pop){pop=document.createElement('div');pop.id='mdl-pop';document.body.appendChild(pop);pop.addEventListener('mousedown',e=>{const d=e.target.closest('[data-v]');if(d){e.preventDefault();pick(d.dataset.v)}})}
+ const toks=String(cur.value||'').toLowerCase().split(/\s+/).map(norm).filter(Boolean),L=all();
+ items=showAll||!toks.length?L:L.filter(m=>{const n=norm(m);return toks.every(t=>n.includes(t))});
+ const r=cur.getBoundingClientRect();pop.style.left=r.left+'px';pop.style.top=(r.bottom+4)+'px';pop.style.minWidth=r.width+'px';pop.style.maxWidth='min(92vw,640px)';
+ pop.innerHTML=items.length?items.slice(0,60).map((m,i)=>'<div data-v="'+esc(m)+'" class="'+(i===idx?'on':'')+'">'+esc(m)+'</div>').join('')+(items.length>60?'<div class="nm">…มีอีก '+(items.length-60)+' รุ่น พิมพ์เพิ่มเพื่อกรอง</div>':''):'<div class="nm">ไม่พบรุ่นที่มีคำนี้ ลองพิมพ์คำอื่น</div>';pop.style.display='block'}
+document.addEventListener('focusin',e=>{const t=e.target;if(!(t&&t.tagName==='INPUT'&&(t.getAttribute('list')==='models'||t.dataset.mdl)))return;t.dataset.mdl='1';t.removeAttribute('list');t.setAttribute('autocomplete','off');cur=t;idx=-1;const exact=all().includes(t.value);show(exact);if(exact)setTimeout(()=>t.select(),0)});
+document.addEventListener('input',e=>{if(e.target===cur&&cur.dataset.mdl){idx=-1;show(false)}});
+document.addEventListener('keydown',e=>{if(!cur||e.target!==cur||!pop||pop.style.display==='none')return;const n=Math.min(items.length,60);
+ if(e.key==='ArrowDown'){e.preventDefault();idx=(idx+1)%Math.max(n,1);show2()}else if(e.key==='ArrowUp'){e.preventDefault();idx=(idx-1+n)%Math.max(n,1);show2()}else if(e.key==='Enter'&&idx>=0&&items[idx]){e.preventDefault();pick(items[idx])}else if(e.key==='Escape'){hide()}
+ function show2(){[...pop.querySelectorAll('[data-v]')].forEach((d,i)=>{d.classList.toggle('on',i===idx);if(i===idx)d.scrollIntoView({block:'nearest'})})}});
+document.addEventListener('mousedown',e=>{if(pop&&!e.target.closest('#mdl-pop')&&e.target!==cur)hide()});
+window.addEventListener('scroll',e=>{if(pop&&pop.style.display==='block'&&!(e.target&&e.target.closest&&e.target.closest('#mdl-pop')))hide()},true);
+})();
 function updateModels(){
   let dl=$('#models');if(!dl){dl=document.createElement('datalist');dl.id='models';document.body.appendChild(dl)}
   dl.innerHTML=allModels().map(m=>`<option value="${esc(m)}">`).join('');
