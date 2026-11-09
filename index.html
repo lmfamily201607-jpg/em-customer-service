@@ -3618,6 +3618,8 @@ document.addEventListener('input',e=>{if(e.target&&(e.target.id==='pd-q'||e.targ
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='pd-cat')renderProduct()});
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='d-import')location.hash='#import'});
 const DTO_ID='ggrabdto';
+/* GRAB DTO: ตารางเต็มจอ อ่านง่าย */
+(function(){const st=document.createElement('style');st.textContent='#v-dto{width:calc(100vw - 48px);max-width:none;margin-left:calc(50% - 50vw + 24px)}#v-dto .tbl-wrap{max-height:calc(100vh - 250px);min-height:320px;overflow:auto;border:1px solid var(--line,#d9ddd9);border-radius:10px}#v-dto table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.95em}#v-dto th{position:sticky;top:0;z-index:3;white-space:nowrap;padding:10px 14px;background:var(--sunk,#eef1ee);border-bottom:2px solid var(--line,#cfd5cf);text-align:left}#v-dto td{white-space:nowrap;padding:9px 14px;background:var(--panel,#fff);border-bottom:1px solid var(--line,#e3e7e3)}#v-dto tbody tr:nth-child(even) td{background:var(--sunk,#f4f6f4)}#v-dto tbody tr:hover td{background:color-mix(in srgb,var(--panel,#fff) 82%,#2e7d32)}#v-dto th:first-child,#v-dto td:first-child{position:sticky;left:0;z-index:2;border-right:1px solid var(--line,#d9ddd9)}#v-dto th:first-child{z-index:4}@media(max-width:700px){#v-dto{width:calc(100vw - 24px);margin-left:calc(50% - 50vw + 12px)}}';document.head.appendChild(st)})();
 function renderDto(){
   const t=S.topics.find(x=>x.id===DTO_ID),tb=$('#dto-table');
   if(!t){tb.innerHTML='';$('#dto-count').textContent='';$('#dto-filters').innerHTML='';$('#dto-sub').textContent=S.topics.length?'ยังไม่มีข้อมูลลูกค้า DTO ให้ผู้ดูแลนำเข้าในเมนูนำเข้าข้อมูล':'กำลังโหลด…';return}
