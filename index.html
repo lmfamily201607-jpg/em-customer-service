@@ -1306,17 +1306,17 @@ function formFields(p,t={}){
   return `<div class="fields">
     <div class="f"><label for="${p}-contactAt">วันเวลาที่ติดต่อ</label><input type="datetime-local" id="${p}-contactAt" value="${toLocalInput(t.contactAt)}"></div>
     <div class="f"><label for="${p}-channel">ช่องทางการติดต่อ${r('channel')}</label><select id="${p}-channel">${opts(CHANNELS,t.channel||'','เลือกช่องทาง')}</select></div>
+    <div class="f"><label for="${p}-urgency">ความเร่งด่วน</label><select id="${p}-urgency">${opts(URGENCY,t.urgency||'ปกติ')}</select></div>
+    <div class="f full"><label for="${p}-note">หมายเหตุ</label><textarea id="${p}-note" rows="2">${esc(t.note)}</textarea></div>
     <div class="f"><label for="${p}-name">Customer Name${r('name')}</label><input id="${p}-name" value="${esc(t.name)}" maxlength="120" autocomplete="off"></div>
     <div class="f"><label for="${p}-phone">เบอร์ติดต่อ</label><input id="${p}-phone" value="${esc(t.phone)}" inputmode="tel" maxlength="30" autocomplete="off"></div>
-    <div class="f"><label for="${p}-urgency">ความเร่งด่วน</label><select id="${p}-urgency">${opts(URGENCY,t.urgency||'ปกติ')}</select></div>
     <div class="f"><label for="${p}-vehicleType">ประเภทรถ${r('vehicleType')}</label><select id="${p}-vehicleType">${opts(VEHICLES,t.vehicleType||'','เลือกประเภทรถ')}</select></div>
     <div class="f"><label for="${p}-model">รุ่นรถ</label><input id="${p}-model" value="${esc(t.model)}" list="models" maxlength="80" autocomplete="off"></div>
     <div class="f"><label for="${p}-vin">VIN / Serial</label><input id="${p}-vin" value="${esc(t.vin)}" maxlength="60" autocomplete="off" class="mono"></div>
     <div class="f"><label for="${p}-category">การติดต่อเรื่อง${r('category')}</label><select id="${p}-category">${opts(CATEGORIES,t.category||'','เลือกเรื่อง')}</select></div>
-    <div class="f"><label for="${p}-refTicket">TICKET (เลขเคสซ่อม/DMS ถ้ามี)</label><input id="${p}-refTicket" value="${esc(t.refTicket)}" maxlength="40" class="mono" autocomplete="off"></div>
     <div class="f full"><label for="${p}-detail">รายละเอียดของปัญหา${r('detail')}</label><textarea id="${p}-detail" rows="4">${esc(t.detail)}</textarea></div>
     <div class="f full"><label for="${p}-answer">สิ่งที่แจ้งกลับลูกค้า${r('answer')}</label><textarea id="${p}-answer" rows="4">${esc(t.answer)}</textarea></div>
-    <div class="f full"><label for="${p}-note">หมายเหตุ</label><textarea id="${p}-note" rows="2">${esc(t.note)}</textarea></div>
+    <div class="f"><label for="${p}-refTicket">TICKET</label><input id="${p}-refTicket" value="${esc(t.refTicket)}" maxlength="40" class="mono" autocomplete="off"></div>
     <div class="f"><label for="${p}-status">สถานะ</label><select id="${p}-status">${opts(CASE_STATUS,caseStatus(t))}</select></div>
     <div class="f chk" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="${p}-callback"${t.callback?' checked':''}><label for="${p}-callback">ติดต่อกลับลูกค้าเพื่อปิดงานแล้ว</label></div>
   </div>`;
