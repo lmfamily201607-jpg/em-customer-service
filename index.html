@@ -1374,6 +1374,11 @@ function mountIntake(){
   const f=$('#intake-form');
   f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-copyrow" title="คัดลอกเป็นแถวเดียว วางต่อท้ายชีต Log Case ได้เลย">คัดลอกเป็นแถวชีต</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
   f.addEventListener('submit',saveIntake);
+  // วันเวลาเด้งเอง: ใส่เวลาปัจจุบันให้ และอัปเดตทุกวินาทีจนกว่าจะบันทึก (ถ้าพนักงานแก้เองจะไม่เปลี่ยนทับ)
+  {const c=$('#f-contactAt');if(c){c.step='1';const nowL=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())};
+   c.value=nowL();c.addEventListener('input',e=>{if(e.isTrusted)c.dataset.t='1'});
+   if(S.contactTimer)clearInterval(S.contactTimer);S.contactTimer=setInterval(()=>{const x=$('#f-contactAt');if(!x||x.dataset.t||!document.body.contains(x)){clearInterval(S.contactTimer);return}if(document.activeElement!==x)x.value=nowL()},1000);
+   f.addEventListener('submit',()=>{const x=$('#f-contactAt');if(x&&!x.dataset.t)x.value=nowL()},true)}}
   $('#f-clear').onclick=()=>{mountIntake();updateLookup();if(!S.canWrite)lockWrites()};
   ['f-phone','f-vin','f-name'].forEach(id=>$('#'+id).addEventListener('input',updateLookup));
 }
