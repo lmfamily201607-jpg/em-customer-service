@@ -331,6 +331,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
       <a href="#import" data-v="import">นำเข้าข้อมูล</a>
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
+      <a href="#activity" data-v="activity">รายงานการทำงาน USER</a>
       <a href="#users" data-v="users">จัดการผู้ใช้</a>
     </nav>
     <div class="emg-fav" id="emg-fav" aria-label="เมนูที่ใช้บ่อย"></div>
@@ -371,7 +372,7 @@ progress{width:100%;accent-color:var(--accent)}
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','kb','links']],
-        ['rep','📈','รายงาน',['kpi','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
+        ['rep','📈','รายงาน',['kpi','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
       const planned=new Set(GROUPS.flatMap(g=>g[3])),extra=links.filter(a=>!planned.has(a.dataset.v)).map(a=>a.dataset.v);
@@ -662,6 +663,21 @@ progress{width:100%;accent-color:var(--accent)}
     <div class="filters" id="dto-filters" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));margin-bottom:10px"></div>
     <p class="meta" id="dto-count" style="margin:0 0 6px"></p>
     <div class="tbl-wrap"><table id="dto-table"></table></div>
+  </section>
+
+  <!-- USER ACTIVITY REPORT -->
+  <section id="v-activity" hidden>
+    <h2>รายงานการทำงาน USER</h2>
+    <p class="sub">สรุปว่าแต่ละคนดำเนินการอะไรไปบ้างในช่วงเวลาที่เลือก จากเรื่องที่บันทึกในแอป (รับเรื่อง ปิดเคส แก้ไข/เพิ่มข้อมูล สั่งซื้ออะไหล่) · กดที่ชื่อเพื่อดูรายการเคสของคนนั้น · ดูได้เฉพาะผู้ดูแลระบบ</p>
+    <div class="rsearch" style="align-items:end">
+      <div class="f"><label>ช่วงเวลา</label><div class="chips" id="ac-r"><button type="button" data-r="today">วันนี้</button><button type="button" data-r="7">7 วัน</button><button type="button" data-r="month">เดือนนี้</button></div></div>
+      <div class="f"><label for="ac-from">ตั้งแต่</label><input type="date" id="ac-from"></div>
+      <div class="f"><label for="ac-to">ถึง</label><input type="date" id="ac-to"></div>
+      <div class="f"><label>&nbsp;</label><button type="button" id="ac-csv">ดาวน์โหลดไฟล์ CSV</button></div>
+    </div>
+    <p class="meta" id="ac-count" style="margin:8px 0"></p>
+    <div class="tbl-wrap"><table id="ac-table"></table></div>
+    <div id="ac-detail" style="margin-top:14px"></div>
   </section>
 
   <!-- PRODUCT -->
@@ -1165,7 +1181,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1209,7 +1225,7 @@ function errText(e){
 /* ---------- team members: nickname, role, menus, edit/delete rights ---------- */
 // Share level stays the hard boundary (db rules); these per-person settings shape menus and buttons on top of it.
 const ROLES={admin:'ผู้ดูแล',callcenter:'Call Center',viewer:'ดูอย่างเดียว'};
-const ADMIN_ONLY=['import','users'];
+const ADMIN_ONLY=['import','users','activity'];
 const MENU_ALL=VIEWS.filter(v=>v!=='users'&&v!=='kpi'); // admin-only pages, never handed out per user
 const RIGHTS={any:'ทุกเคส',own:'เฉพาะเคสที่ตัวเองรับ',none:'ไม่ได้'};
 const PRESET={
@@ -3578,6 +3594,48 @@ function ntHits(text){
   return S.notices.filter(ntActive).filter(n=>ntItems(n).some(i=>{const ik=ntKey(i);return ik.length>=2&&(k.includes(ik)||(k.length>=3&&ik.includes(k)))}));
 }
 function ntTag(text){const h=ntHits(text);return h.length?` <span class="pill ${h.some(n=>n.type==='stop')?'incomplete':'follow'}" title="${esc(h.map(n=>n.title).join(' / '))}">${h.some(n=>n.type==='stop')?'งดขาย':'ตรวจสต๊อก'}</span>`:''}
+/* ---------- รายงานการทำงาน USER ---------- */
+function acRange(){const k=S.acR||'today',today=isoDate(new Date().toISOString());let f=today,t=today;if(k==='7')f=isoDate(new Date(Date.now()-6*864e5).toISOString());else if(k==='month')f=today.slice(0,8)+'01';else if(k==='custom'){f=($('#ac-from').value||today);t=($('#ac-to').value||f)}return [f,t]}
+function acData(){const [f,t]=acRange(),inR=d=>{const x=d?isoDate(d):'';return !!x&&x>=f&&x<=t};const U={},u=id=>U[id]||(U[id]={id,n:0,done:0,follow:0,inc:0,closed:0,edit:0,order:0,last:'',rows:[]});
+  S.all.filter(x=>x.source!=='legacy').forEach(x=>{
+    if(x.receiverId&&inR(x.contactAt)){const o=u(x.receiverId);o.n++;const s=statusOf(x);if(s==='done')o.done++;else if(s==='incomplete')o.inc++;else o.follow++;if(/สั่งซื้อ/.test(x.category||''))o.order++;o.rows.push(x);const c=String(x.createdAt||x.contactAt||'');if(c>o.last)o.last=c}
+    if(x.receiverId&&x.closedAt&&inR(x.closedAt))u(x.receiverId).closed++;
+    if(x.updatedAt&&inR(x.updatedAt)&&Array.isArray(x.editorIds))[...new Set(x.editorIds.filter(Boolean))].forEach(e=>{u(e).edit++});
+  });
+  return {f,t,rows:Object.values(U).sort((a,b)=>b.n-a.n||b.edit-a.edit)}}
+function renderActivity(){
+  if(!S.isAdmin){$('#ac-table').innerHTML='<tbody><tr><td class="empty">เฉพาะผู้ดูแลระบบ</td></tr></tbody>';return}
+  const k=S.acR||'today';document.querySelectorAll('#ac-r button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.r===k)));
+  const D=acData();if(k!=='custom'){$('#ac-from').value=D.f;$('#ac-to').value=D.t}
+  const T=D.rows.reduce((a,r)=>{['n','done','follow','inc','closed','edit','order'].forEach(x=>a[x]+=r[x]);return a},{n:0,done:0,follow:0,inc:0,closed:0,edit:0,order:0});
+  $('#ac-count').textContent=D.rows.length+' คน · ช่วง '+D.f+(D.t!==D.f?' ถึง '+D.t:'');
+  $('#ac-table').innerHTML='<thead><tr><th>ผู้ใช้</th><th>รับเรื่อง</th><th>จบ</th><th>ติดตาม/รอซ่อม</th><th>บันทึกไม่ครบ</th><th>ปิดเคส (ในช่วงนี้)</th><th>เคสที่แก้ไข/เพิ่มข้อมูล</th><th>สั่งซื้ออะไหล่</th><th>ล่าสุดเมื่อ</th></tr></thead><tbody>'+
+   (D.rows.map(r=>'<tr class="click" data-ac="'+esc(r.id)+'" tabindex="0"><td><b>'+esc(who({receiverId:r.id}))+'</b></td><td class="num">'+r.n+'</td><td class="num">'+r.done+'</td><td class="num">'+r.follow+'</td><td class="num">'+r.inc+'</td><td class="num">'+r.closed+'</td><td class="num">'+r.edit+'</td><td class="num">'+r.order+'</td><td class="meta">'+esc(r.last?fmt(r.last):'-')+'</td></tr>').join('')||'<tr><td colspan="9" class="empty">ช่วงนี้ยังไม่มีการบันทึกเรื่องในแอป</td></tr>')+
+   (D.rows.length?'<tr style="font-weight:700"><td>รวม</td><td class="num">'+T.n+'</td><td class="num">'+T.done+'</td><td class="num">'+T.follow+'</td><td class="num">'+T.inc+'</td><td class="num">'+T.closed+'</td><td class="num">'+T.edit+'</td><td class="num">'+T.order+'</td><td></td></tr>':'')+'</tbody>';
+  const sel=S.acSel,r=D.rows.find(x=>x.id===sel);
+  $('#ac-detail').innerHTML=r?'<h3 style="margin:0 0 8px">รายการเคสของ '+esc(who({receiverId:r.id}))+' ('+r.rows.length+')</h3><div class="tbl-wrap"><table><thead><tr><th>เลขรับเรื่อง</th><th>เวลา</th><th>ลูกค้า</th><th>ช่องทาง</th><th>เรื่อง</th><th>สถานะ</th></tr></thead><tbody>'+r.rows.sort((a,b)=>String(b.contactAt).localeCompare(String(a.contactAt))).map(t=>'<tr class="click" data-open="'+esc(t.ticketNo)+'" tabindex="0"><td class="mono">'+esc(t.ticketNo)+'</td><td class="num">'+esc(fmt(t.contactAt))+'</td><td>'+esc(t.name||'-')+'</td><td>'+esc(t.channel||'-')+'</td><td>'+esc(t.category||'-')+'</td><td>'+pill(t)+'</td></tr>').join('')+'</tbody></table></div>':'';
+  if(r&&typeof bindRows==='function')bindRows($('#ac-detail'));
+}
+document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
+  const b=t.closest('#ac-r button');if(b){S.acR=b.dataset.r;renderActivity();return}
+  if(t.closest('#ac-csv')){const D=acData(),q=v=>/[",\n\r]/.test(v)?'"'+String(v).replace(/"/g,'""')+'"':String(v);const L=[['ผู้ใช้','รับเรื่อง','จบ','ติดตาม/รอซ่อม','บันทึกไม่ครบ','ปิดเคส','แก้ไข/เพิ่มข้อมูล','สั่งซื้ออะไหล่'],...D.rows.map(r=>[who({receiverId:r.id}),r.n,r.done,r.follow,r.inc,r.closed,r.edit,r.order])].map(r=>r.map(q).join(',')).join('\n');saveFile('user-activity-'+D.f+'_'+D.t+'.csv','﻿'+L);return}
+  const tr=t.closest('#ac-table tr[data-ac]');if(tr){S.acSel=S.acSel===tr.dataset.ac?null:tr.dataset.ac;renderActivity()}});
+document.addEventListener('change',e=>{if(e.target&&(e.target.id==='ac-from'||e.target.id==='ac-to')){S.acR='custom';renderActivity()}});
+
+/* ---------- ประกาศแจ้งทุกวัน: เด้งครั้งเดียวต่อวันเมื่อเปิดแอป ---------- */
+function ntDaily(){try{
+  if(!S.notices||!S.notices.length||typeof ntActive!=='function'||document.getElementById('nt-pop'))return;
+  const act=S.notices.filter(ntActive);if(!act.length)return;
+  const day=isoDate(new Date().toISOString()),key='em-nt-day-'+(S.uid||'anon');
+  let seen='';try{seen=localStorage.getItem(key)||''}catch(e){}if(seen===day)return;
+  const o=document.createElement('div');o.id='nt-pop';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');
+  o.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px';
+  const list=act.sort((a,b)=>(a.type==='stop'?0:1)-(b.type==='stop'?0:1)).map(n=>{const it=typeof ntItems==='function'?ntItems(n):[];return '<div style="padding:10px 12px;margin:8px 0;border-radius:10px;background:var(--sunk,#f6f9f7);border-left:5px solid '+(n.type==='stop'?'#b00020':n.type==='warn'?'#e08a00':'#0f9145')+'"><b>'+((NT_TYPE[n.type]||{}).ico||'')+' '+esc(n.title)+'</b>'+(it.length?'<div class="meta">'+esc(it.join(', '))+'</div>':'')+(n.body?'<div style="margin-top:4px">'+esc(n.body)+'</div>':'')+'</div>'}).join('');
+  o.innerHTML='<div style="background:var(--surface,#fff);color:var(--ink,#1c232b);border-radius:14px;max-width:560px;width:100%;max-height:85vh;overflow:auto;padding:18px 20px;box-shadow:0 20px 50px rgba(0,0,0,.35)"><h3 style="margin:0 0 4px">📢 ประกาศวันนี้ ('+act.length+')</h3><div class="meta">แจ้งวันละครั้งเมื่อเปิดแอป · ดูย้อนหลังได้ที่เมนูประกาศ</div>'+list+'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap"><a href="#notices" id="nt-pop-all" style="align-self:center">ดูประกาศทั้งหมด</a><button type="button" class="primary" id="nt-pop-ok">รับทราบ</button></div></div>';
+  document.body.appendChild(o);
+  const close=()=>{try{localStorage.setItem(key,day)}catch(e){}o.remove()};
+  o.querySelector('#nt-pop-ok').onclick=close;o.querySelector('#nt-pop-all').onclick=close;
+}catch(e){}}
 function renderNotices(){
   const act=S.notices.filter(ntActive).sort((a,b)=>(a.type==='stop'?0:1)-(b.type==='stop'?0:1)||String(b.at).localeCompare(String(a.at)));
   const urgent=act.filter(n=>n.type!=='info');
@@ -3838,7 +3896,7 @@ function refresh(viewOnly){
   if(S.view==='forms')renderForms();
   if(S.view==='kpi')renderKpi();
   if(S.view==='users')renderUsers();
-  if(S.view==='notices')renderNotices();if(S.view==='product')renderProduct();if(S.view==='dto')renderDto();if(S.view==='notes')renderNotes();
+  if(S.view==='activity')renderActivity();if(S.view==='notices')renderNotices();if(S.view==='product')renderProduct();if(S.view==='dto')renderDto();if(S.view==='notes')renderNotes();
   if(!viewOnly){updateLookup();updateModels();resolveNames(S.tickets.flatMap(t=>[t.receiverId,...(t.editorIds||[])]))}
 }
 function banner(kind,html){$('#banner').innerHTML=html?`<div class="banner ${kind}">${html}</div>`:''}
@@ -3884,7 +3942,7 @@ function applyGate(){
   db.collection('topics').onSnapshot(s=>{S.topics=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.title.localeCompare(b.title,'th'));refresh(true)},()=>{});
   db.doc('links/list').onSnapshot(s=>{const d=s.exists?s.data():null;S.linksMeta=d?{importedAt:d.importedAt||'',file:d.file||'',sheet:d.sheet||''}:null;S.links=d?.rows||[];refresh(true)},()=>{});
   db.doc('dealers/list').onSnapshot(s=>{const d=s.exists?s.data():null;S.dealerMeta=d;S.dealers=d?.rows||[];refresh(true)},()=>{});
-  db.collection('notices').onSnapshot(s=>{S.notices=s.docs.map(d=>d.data());renderNotices()},()=>{});
+  db.collection('notices').onSnapshot(s=>{S.notices=s.docs.map(d=>d.data());renderNotices();setTimeout(ntDaily,1200)},()=>{});
   db.collection('edits').onSnapshot(s=>{S.edits={};s.docs.forEach(d=>S.edits[d.id]=d.data());rebuildAll();refresh()},()=>{});
   db.collection('removals').onSnapshot(s=>{S.removals={};s.docs.forEach(d=>S.removals[d.id]=d.data());rebuildAll();refresh()},fail);
   // team settings decide menus and buttons; until they load everyone sees the full menu
