@@ -3872,7 +3872,15 @@ let VIPC={k:'',m:null};
 function vipNm(s){return String(s||'').trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'').replace(/\s+/g,'')}
 function vipKeys(r){const o=[];r.forEach(c=>{const s=String(c||''),dg=digits(s);if(/^[ก-๙]{2,}\s+[ก-๙]{2,}$/.test(s.trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'')))o.push('n'+vipNm(s));{const pl=s.replace(/[\s\-.]/g,'');if(/^[0-9๐-๙]?[ก-ฮ]{1,3}[0-9๐-๙]{1,4}$/.test(pl))o.push('l'+pl)}if(dg.length>=9&&dg.length<=11&&!/[A-Za-z]/.test(s))o.push('p'+dg.slice(-9));(s.toUpperCase().match(/[A-Z0-9]{17}/g)||[]).forEach(v=>o.push('v'+v))});return o}
 function vipIdx(){const T=S.topics.filter(x=>x.id!==DTO_ID&&/นางฟ้า|VIP/i.test(x.title||'')).sort((a,b)=>String(b.importedAt||'').localeCompare(String(a.importedAt||''))).slice(0,1);const key=T.map(x=>x.id+':'+(x.rows||[]).length).join('|');if(VIPC.m&&VIPC.k===key)return VIPC.m;const m=new Map();T.forEach(t=>(t.rows||[]).forEach(r=>vipKeys(r).forEach(k=>{if(!m.has(k))m.set(k,{t,r})})));VIPC={k:key,m};return m}
-function vipOf(r){const m=vipIdx();if(!m.size)return null;for(const k of vipKeys(r)){if(m.has(k))return {k,...m.get(k)}}const hay=r.join('').replace(/\s+/g,'');for(const k of m.keys()){if(k[0]==='n'&&k.length>7&&hay.includes(k.slice(1)))return {k,...m.get(k)}}return null}
+let VIPA={k:'',w:null};
+function vipAssign(){const dt=S.topics.find(x=>x.id===DTO_ID),m=vipIdx();if(!dt||!m.size||!dt.rows)return null;
+ const key=(dt.importedAt||'')+'|'+dt.rows.length+'|'+VIPC.k;if(VIPA.w&&VIPA.k===key)return VIPA.w;
+ const w=new WeakMap(),vs=new Map();m.forEach(x=>{if(!vs.has(x.r))vs.set(x.r,x.t)});
+ const dk=dt.rows.map(r=>({r,keys:new Set(vipKeys(r)),hay:r.join('').replace(/\s+/g,'')}));
+ vs.forEach((t,vr)=>{const vk=vipKeys(vr);let best=null,bs=0;dk.forEach(d=>{if(w.has(d.r))return;let s=0;vk.forEach(k=>{if(d.keys.has(k))s+=k[0]==='l'?2:3;else if(k[0]==='n'&&k.length>7&&d.hay.includes(k.slice(1)))s+=3});if(s>bs){bs=s;best=d}});
+  if(best){const kk=vk.find(k=>m.get(k)&&m.get(k).r===vr)||vk[0];w.set(best.r,{k:kk,t,r:vr})}});
+ VIPA={k:key,w};return w}
+function vipOf(r){const w=vipAssign();return w?(w.get(r)||null):null}
 function vipB(r){const h=vipOf(r);return h?' <button type="button" class="pill vip" data-vip="'+esc(h.k)+'" title="กดดูข้อมูล VIP บัตรนางฟ้า">★ VIP บัตรนางฟ้า</button>':''}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-vip],#dto-vip');if(!b)return;
  if(b.id==='dto-vip'){S.dtoVip=!S.dtoVip;S.dtoN=30;renderDto();return}
