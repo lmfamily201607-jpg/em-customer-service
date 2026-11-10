@@ -679,7 +679,7 @@ progress{width:100%;accent-color:var(--accent)}
     <div class="tbl-wrap"><table id="ac-table"></table></div>
     <div id="ac-detail" style="margin-top:14px"></div>
     <h3 style="margin:22px 0 6px">กิจกรรมทั้งหมดในแอป (ทุกเมนู)</h3>
-    <p class="sub" style="margin:0 0 6px">บันทึกอัตโนมัติว่าแต่ละคนเข้าเมนูไหน บันทึก/แก้ไข/ลบข้อมูลอะไร และส่งออกไฟล์อะไร · เริ่มนับตั้งแต่วันที่เปิดใช้ฟังก์ชันนี้</p>
+    <p class="sub" style="margin:0 0 6px">บันทึกอัตโนมัติว่าแต่ละคนเข้าเมนูไหน บันทึก/แก้ไข/ลบข้อมูลอะไร และส่งออกไฟล์อะไร · รวมประวัติย้อนหลังจากข้อมูลเดิมตั้งแต่เริ่มระบบ (เลือกช่วงวันที่ให้กว้างขึ้นเพื่อดูย้อนหลัง)</p>
     <p class="meta" id="ac-act-count" style="margin:0 0 6px"></p>
     <div class="tbl-wrap"><table id="ac-act-sum"></table></div>
     <h4 id="ac-act-title" style="margin:14px 0 6px"></h4>
@@ -3655,7 +3655,7 @@ async function actHist(){
   try{(await S.db.collection('notices').get()).docs.forEach(d=>{const x=d.data();push(x.by,x.at,'ลงประกาศ',x.title||'');if(x.off&&x.offBy)push(x.offBy,x.offAt,'ปิดประกาศ',x.title||'')})}catch(e){}
   ACT_H={at:Date.now(),rows:R};return R}
 async function renderActLog(){
-  const sum=$('#ac-act-sum'),lg=$('#ac-act-log');if(!sum||!lg)return;
+  const sum=$('#ac-act-sum'),lg=$('#ac-act-log');if(!sum||!lg)return;sum.innerHTML='<tbody><tr><td class="empty">กำลังโหลดประวัติ...</td></tr></tbody>';
   const [f,t]=acRange(),rows=[...(await actLoad()),...(await actHist())].filter(x=>x.at&&isoDate(x.at)>=f&&isoDate(x.at)<=t);
   const U={};rows.forEach(x=>{const o=U[x.uid]||(U[x.uid]={uid:x.uid,name:x.name||'',n:0,open:0,save:0,del:0,exp:0,menus:{},last:''});o.n++;if(x.action==='เปิดเมนู'){o.open++;o.menus[x.detail]=(o.menus[x.detail]||0)+1}else if(/^ลบ/.test(x.action))o.del++;else if(/ดาวน์โหลด|ส่งออก/.test(x.action))o.exp++;else if(/บันทึก|แก้ไข|รับเรื่อง|ปิดเคส|กู้คืน|ลงประกาศ|ปิดประกาศ/.test(x.action))o.save++;if(x.at>o.last)o.last=x.at});
   const L=Object.values(U).sort((a,b)=>b.n-a.n);
