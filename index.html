@@ -3641,16 +3641,29 @@ function actWrap(db){if(!db||db.__aw||typeof db.doc!=='function')return;db.__aw=
     ['set','delete'].forEach(m=>{const f=d[m];if(typeof f!=='function')return;d[m]=function(...a){const r=f.apply(this,a);Promise.resolve(r).then(()=>{const k=co+'|'+m;const x=ACT_BUF.get(k)||{op:m,label:ACT_TH[co]||co,id,n:0};x.n++;x.id=id;ACT_BUF.set(k,x);if(ACT_T)clearTimeout(ACT_T);ACT_T=setTimeout(actFlush,2500)},()=>{});return r}});return d}}
 let ACT_CACHE={at:0,rows:[]};
 async function actLoad(force){if(!force&&Date.now()-ACT_CACHE.at<20000)return ACT_CACHE.rows;try{const s=await S.db.collection('audit/_activity/log').get();ACT_CACHE={at:Date.now(),rows:s.docs.map(d=>d.data())}}catch(e){}return ACT_CACHE.rows}
+let ACT_H={at:0,rows:[]};
+async function actHist(){
+  if(Date.now()-ACT_H.at<60000)return ACT_H.rows;
+  const R=[],push=(uid,at,action,detail)=>{if(uid&&at)R.push({uid,at:String(at),view:'',action,detail:'(ย้อนหลัง) '+(detail||''),hist:1})};
+  const au=new Set(),ad=[];
+  for(const id of knownIds()){try{(await S.db.collection('audit/'+id+'/log').get()).docs.forEach(d=>{const x=d.data();if(x.ticketId)au.add(x.ticketId);if(x.action==='delete'||x.action==='restore')return;push(x.by||id,x.at,'แก้ไขเคส',(x.ticketId||'')+(x.changes&&x.changes.length?' · '+x.changes.map(c=>c.field).join(', '):''))})}catch(e){}}
+  try{S.all.filter(x=>x.source!=='legacy').forEach(x=>{const no=x.ticketNo||x.id||'';
+    push(x.receiverId,x.createdAt||x.contactAt,'รับเรื่องเคส',no);
+    if(x.closedAt)push(x.receiverId,x.closedAt,'ปิดเคส',no);
+    if(x.updatedAt&&x.updatedAt!==x.createdAt&&!au.has(x.id)&&!au.has(x.ticketNo)&&Array.isArray(x.editorIds))[...new Set(x.editorIds.filter(Boolean))].forEach(e=>push(e,x.updatedAt,'แก้ไขเคส',no))})}catch(e){}
+  try{(await S.db.collection('removals').get()).docs.forEach(d=>{const x=d.data();push(x.by,x.at,'ลบเคส',(x.ticketNo||'')+(x.reason?' · '+x.reason:''));if(x.restoredBy)push(x.restoredBy,x.restoredAt,'กู้คืนเคส',x.ticketNo||'')})}catch(e){}
+  try{(await S.db.collection('notices').get()).docs.forEach(d=>{const x=d.data();push(x.by,x.at,'ลงประกาศ',x.title||'');if(x.off&&x.offBy)push(x.offBy,x.offAt,'ปิดประกาศ',x.title||'')})}catch(e){}
+  ACT_H={at:Date.now(),rows:R};return R}
 async function renderActLog(){
   const sum=$('#ac-act-sum'),lg=$('#ac-act-log');if(!sum||!lg)return;
-  const [f,t]=acRange(),rows=(await actLoad()).filter(x=>x.at&&isoDate(x.at)>=f&&isoDate(x.at)<=t);
-  const U={};rows.forEach(x=>{const o=U[x.uid]||(U[x.uid]={uid:x.uid,name:x.name||'',n:0,open:0,save:0,del:0,exp:0,menus:{},last:''});o.n++;if(x.action==='เปิดเมนู'){o.open++;o.menus[x.detail]=(o.menus[x.detail]||0)+1}else if(x.action==='ลบข้อมูล')o.del++;else if(/ดาวน์โหลด|ส่งออก/.test(x.action))o.exp++;else if(/บันทึก|แก้ไข/.test(x.action))o.save++;if(x.at>o.last)o.last=x.at});
+  const [f,t]=acRange(),rows=[...(await actLoad()),...(await actHist())].filter(x=>x.at&&isoDate(x.at)>=f&&isoDate(x.at)<=t);
+  const U={};rows.forEach(x=>{const o=U[x.uid]||(U[x.uid]={uid:x.uid,name:x.name||'',n:0,open:0,save:0,del:0,exp:0,menus:{},last:''});o.n++;if(x.action==='เปิดเมนู'){o.open++;o.menus[x.detail]=(o.menus[x.detail]||0)+1}else if(/^ลบ/.test(x.action))o.del++;else if(/ดาวน์โหลด|ส่งออก/.test(x.action))o.exp++;else if(/บันทึก|แก้ไข|รับเรื่อง|ปิดเคส|กู้คืน|ลงประกาศ|ปิดประกาศ/.test(x.action))o.save++;if(x.at>o.last)o.last=x.at});
   const L=Object.values(U).sort((a,b)=>b.n-a.n);
   $('#ac-act-count').textContent='กิจกรรมทั้งหมด '+rows.length.toLocaleString()+' รายการ · '+L.length+' คน';
-  sum.innerHTML='<thead><tr><th>ผู้ใช้</th><th>กิจกรรมทั้งหมด</th><th>เปิดเมนู</th><th>บันทึก/แก้ไข</th><th>ลบ</th><th>ส่งออกไฟล์</th><th>เมนูที่ใช้บ่อย</th><th>ล่าสุดเมื่อ</th></tr></thead><tbody>'+(L.map(o=>'<tr class="click" data-au="'+esc(o.uid)+'" tabindex="0"'+(S.acU===o.uid?' style="outline:2px solid var(--accent)"':'')+'><td><b>'+esc(who({receiverId:o.uid})||o.name)+'</b></td><td class="num">'+o.n+'</td><td class="num">'+o.open+'</td><td class="num">'+o.save+'</td><td class="num">'+o.del+'</td><td class="num">'+o.exp+'</td><td class="meta">'+esc(Object.entries(o.menus).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([m,c])=>m+' ('+c+')').join(', ')||'-')+'</td><td class="meta">'+esc(fmt(o.last))+'</td></tr>').join('')||'<tr><td colspan="8" class="empty">ช่วงนี้ยังไม่มีบันทึกการใช้งาน (เริ่มบันทึกตั้งแต่วันที่เปิดใช้ฟังก์ชันนี้)</td></tr>')+'</tbody>';
+  sum.innerHTML='<thead><tr><th>ผู้ใช้</th><th>กิจกรรมทั้งหมด</th><th>เปิดเมนู</th><th>บันทึก/แก้ไข</th><th>ลบ</th><th>ส่งออกไฟล์</th><th>เมนูที่ใช้บ่อย</th><th>ล่าสุดเมื่อ</th></tr></thead><tbody>'+(L.map(o=>'<tr class="click" data-au="'+esc(o.uid)+'" tabindex="0"'+(S.acU===o.uid?' style="outline:2px solid var(--accent)"':'')+'><td><b>'+esc(who({receiverId:o.uid})||o.name)+'</b></td><td class="num">'+o.n+'</td><td class="num">'+o.open+'</td><td class="num">'+o.save+'</td><td class="num">'+o.del+'</td><td class="num">'+o.exp+'</td><td class="meta">'+esc(Object.entries(o.menus).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([m,c])=>m+' ('+c+')').join(', ')||'-')+'</td><td class="meta">'+esc(fmt(o.last))+'</td></tr>').join('')||'<tr><td colspan="8" class="empty">ช่วงนี้ยังไม่มีข้อมูลการใช้งาน</td></tr>')+'</tbody>';
   const sel=S.acU,Q=rows.filter(x=>!sel||x.uid===sel).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,300);
   lg.innerHTML='<thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>เมนู</th><th>ทำอะไร</th><th>รายละเอียด</th></tr></thead><tbody>'+(Q.map(x=>'<tr><td class="num">'+esc(fmt(x.at))+'</td><td>'+esc(who({receiverId:x.uid})||x.name)+'</td><td>'+esc(x.view?VIEW_NAME(x.view):'-')+'</td><td>'+esc(x.action)+'</td><td class="clip">'+esc(x.detail||'')+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">ไม่มีรายการ</td></tr>')+'</tbody>';
-  const h=$('#ac-act-title');if(h)h.textContent=sel?'ไทม์ไลน์ของ '+(who({receiverId:sel})||''):'ไทม์ไลน์ล่าสุด (300 รายการ) · กดชื่อคนเพื่อดูเฉพาะคนนั้น';
+  const h=$('#ac-act-title');if(h)h.textContent=sel?'ไทม์ไลน์ของ '+(who({receiverId:sel})||''):'ไทม์ไลน์ล่าสุด (300 รายการ) · กดชื่อคนเพื่อดูเฉพาะคนนั้น · รายการ "(ย้อนหลัง)" ดึงจากข้อมูลเดิมตั้งแต่เริ่มระบบ (การเปิดเมนู/ส่งออกก่อนเริ่มบันทึกไม่มีข้อมูล)';
 }
 document.addEventListener('click',e=>{const tr=e.target.closest&&e.target.closest('#ac-act-sum tr[data-au]');if(tr){S.acU=S.acU===tr.dataset.au?null:tr.dataset.au;renderActLog()}});
 /* ---------- ประกาศแจ้งทุกวัน: เด้งครั้งเดียวต่อวันเมื่อเปิดแอป ---------- */
