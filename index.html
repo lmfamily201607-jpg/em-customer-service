@@ -1378,7 +1378,7 @@ let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeou
 (function(){const st=document.createElement('style');st.textContent=[
 '#v-intake .grid2{grid-template-columns:1fr!important;width:calc(100vw - 48px);margin-left:calc(50% - 50vw + 24px)}',
 '#intake-form{padding:0;overflow-x:auto;overflow-y:hidden}',
-'#intake-form .fields{display:grid;grid-template-columns:160px 90px 140px 95px 140px 95px 150px 190px 190px 80px 90px;gap:0;margin:0;width:max-content}',
+'#intake-form .fields{display:grid;grid-template-columns:190px 80px 150px 95px 150px 100px 150px 190px 190px 80px 90px;gap:0;margin:0;width:max-content}',
 '#intake-form .fields>.f{margin:0;border-right:1px solid var(--line,#d9ddd9);border-bottom:1px solid var(--line,#d9ddd9);display:flex;flex-direction:column;min-width:0}',
 '#intake-form .fields>.f>label{display:block;background:#4a5650;color:#fff;padding:9px 12px;font-size:.88em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
 '#intake-form .fields>.f>input,#intake-form .fields>.f>select,#intake-form .fields>.f>textarea{border:0;border-radius:0;background:var(--panel,#fff);padding:10px 12px;min-height:44px;flex:1}',
@@ -1390,6 +1390,7 @@ let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeou
 '#intake-form .fields>.f.chk>input{flex:none;min-height:0;width:auto}',
 '#intake-form .actions{position:sticky;left:0;padding:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--sunk,#f6f9f7)}',
 '#intake-form .fields>#f-who-cell{grid-column:2;grid-row:1}',
+'#intake-form .fields:not(.show-more)>.f:has(#f-phone),#intake-form .fields:not(.show-more)>.f:has(#f-model),#intake-form .fields:not(.show-more)>.f:has(#f-vin),#intake-form .fields:not(.show-more)>.f:has(#f-note),#intake-form .fields:not(.show-more)>.f:has(#f-callback){display:none}',
 "#intake-form .fields>.f:has(#f-contactAt){grid-column:1;grid-row:1}",
 "#intake-form .fields>.f:has(#f-channel){grid-column:3;grid-row:1}",
 "#intake-form .fields>.f:has(#f-urgency){grid-column:4;grid-row:1}",
@@ -1410,7 +1411,7 @@ let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeou
 ].join('\n');document.head.appendChild(st)})();
 function mountIntake(){
   const f=$('#intake-form');
-  f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-copyrow" title="คัดลอกเป็นแถวเดียว วางต่อท้ายชีต Log Case ได้เลย">คัดลอกเป็นแถวชีต</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
+  f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-copyrow" title="คัดลอกเป็นแถวเดียว วางต่อท้ายชีต Log Case ได้เลย">คัดลอกเป็นแถวชีต</button><button type="button" id="f-clear">ล้างฟอร์ม</button><button type="button" id="f-more" aria-expanded="false" title="เบอร์ติดต่อ รุ่นรถ VIN หมายเหตุ ติดต่อกลับลูกค้า">+ ข้อมูลเพิ่มเติม</button><span class="meta" id="f-msg"></span></div>`;
   f.addEventListener('submit',saveIntake);
   // ดูแลโดย: ชื่อผู้ล็อกอิน (ใส่ให้อัตโนมัติ) เหมือนคอลัมน์ในชีต
   {const fl=f.querySelector('.fields');if(fl&&!$('#f-who-cell')){const w=document.createElement('div');w.className='f';w.id='f-who-cell';w.innerHTML='<label>ดูแลโดย</label><div class="whov"></div>';fl.appendChild(w);const setW=()=>{const x=$('#f-who-cell .whov');if(x)x.textContent=(typeof personName==='function'&&S.uid?whoFix(personName(S.uid)||''):'')||'-'};setW();[800,2500,6000].forEach(ms=>setTimeout(setW,ms))}}
@@ -3806,6 +3807,7 @@ function copyRow(){
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,fb);else fb();
 }
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='f-copyrow')copyRow()});
+document.addEventListener('click',e=>{const b=e.target&&e.target.id==='f-more'?e.target:null;if(!b)return;const fl=$('#intake-form .fields');const on=fl.classList.toggle('show-more');b.setAttribute('aria-expanded',String(on));b.textContent=on?'− ซ่อนข้อมูลเพิ่มเติม':'+ ข้อมูลเพิ่มเติม'});
 
 /* ล้างกรอง: ปุ่มล้างตัวกรองในทุกหน้าที่มีช่องค้นหา/ตัวกรอง */
 (function(){const SKIP=/^(ask-ai|tp-pick|d-day|d-month|kp-month|kp-day|kp-person|kp-sub|nt-.*)$/;
