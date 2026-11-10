@@ -558,7 +558,7 @@ progress{width:100%;accent-color:var(--accent)}
         <label class="f chk" style="font-size:13px"><input type="checkbox" id="sc-app" checked> เฉพาะที่บันทึกในแอป</label>
       </div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>เลขรับเรื่อง</th><th>เวลา</th><th>ลูกค้า</th><th>ช่องทาง</th><th>เรื่อง / รายละเอียด</th><th>ดูแลโดย</th><th>สถานะ</th><th></th></tr></thead>
+        <thead><tr><th>วันที่</th><th>เวลา</th><th>ดูแลโดย</th><th>ช่องทางการติดต่อ</th><th>ความเร่งด่วน</th><th>Customer Name</th><th>ประเภทรถ</th><th>การติดต่อเรื่อง</th><th>รายละเอียดของปัญหา</th><th>สิ่งที่แจ้งกลับลูกค้า</th><th>TICKET</th><th>สถานะ</th><th></th></tr></thead>
         <tbody id="sc-rows"></tbody>
       </table></div>
     </div>
@@ -1331,6 +1331,10 @@ function readForm(p){
 
 /* saved cases list (intake tab) */
 S.scWhen='today';
+/* รายการเรื่องที่บันทึกแล้ว: หน้าตาเหมือนชีต Log Case */
+function scDate(t){const d=new Date(t.contactAt);return isNaN(d)?'':d.getDate()+'/'+(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(2)}
+function scTime(t){const d=new Date(t.contactAt);return isNaN(d)?'':d.toLocaleTimeString('en-US')}
+(function(){const st=document.createElement('style');st.textContent='.saved-cases .tbl-wrap{overflow:auto;max-height:70vh;border:1px solid var(--line,#d9ddd9);border-radius:8px}.saved-cases table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.93em}.saved-cases th{position:sticky;top:0;z-index:2;background:#4a5650;color:#fff;white-space:nowrap;padding:10px 12px;text-align:left;font-weight:600}.saved-cases td{padding:7px 12px;border-bottom:1px solid var(--line,#e3e7e3);vertical-align:middle;white-space:nowrap;background:var(--panel,#fff)}.saved-cases tr:hover td{background:color-mix(in srgb,var(--panel,#fff) 85%,#2e7d32)}.saved-cases td.sct{white-space:normal;min-width:240px;max-width:340px;display:table-cell;line-height:1.35}.saved-cases td.scn{min-width:150px}.scp{display:inline-block;padding:2px 10px;border-radius:6px;font-size:.92em;font-weight:600}.scp-who{background:#222;color:#fff}.scp-ch{background:#0b8043;color:#fff}.scp-u0{background:#0f9d58;color:#fff}.scp-u1{background:#d93025;color:#fff}.scp-vm{background:#fbd5ee;color:#8a1e6b}.scp-vb{background:#f5b400;color:#3a2a00}.scp-vo{background:#e0e0e0;color:#333}.scp-cat{background:#e8eaed;color:#202124;font-weight:500}';document.head.appendChild(st)})();
 function renderSaved(){
   const csel=$('#sc-channel'),cc=csel.value;
   csel.innerHTML='<option value="">ทุกช่องทาง</option>'+[...new Set([...CHANNELS,...S.all.map(t=>t.channel).filter(Boolean)])].map(c=>`<option${c===cc?' selected':''}>${esc(c)}</option>`).join('');
@@ -1346,12 +1350,12 @@ function renderSaved(){
   $('#sc-count').textContent=`(${L.length.toLocaleString()})`;
   document.querySelectorAll('#sc-when button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.w===S.scWhen)));
   $('#sc-rows').innerHTML=L.slice(0,150).map(t=>`<tr class="click" data-open="${esc(t.ticketNo)}" tabindex="0">
-    <td class="mono">${esc(t.ticketNo)}</td><td class="num">${esc(fmt(t.contactAt))}</td>
-    <td>${esc(t.name||'-')}<div class="meta">${esc(t.phone||'')}</div></td><td>${esc(t.channel||'-')}</td>
-    <td class="clip"><b style="font-weight:600">${esc(t.category||'-')}</b><div class="meta">${esc((t.detail||'').slice(0,90))}</div></td>
-    <td>${esc(who(t))}</td><td>${pill(t)}</td>
+    <td class="num">${esc(scDate(t))}<div class="meta mono">${esc(t.ticketNo)}</div></td><td class="num">${esc(scTime(t))}</td>
+    <td><span class="scp scp-who">${esc(who(t))}</span></td><td><span class="scp scp-ch">${esc(t.channel||'-')}</span></td><td><span class="scp scp-u${t.urgency==='ปกติ'||!t.urgency?'0':'1'}">${esc(t.urgency||'ปกติ')}</span></td>
+    <td class="scn">${esc(t.name||'-')}<div class="meta">${esc(t.phone||'')}</div></td><td>${t.vehicleType?`<span class="scp scp-v${t.vehicleType==='มอเตอร์ไซค์'?'m':t.vehicleType==='จักรยาน'?'b':'o'}">${esc(t.vehicleType)}</span>`:''}</td>
+    <td><span class="scp scp-cat">${esc(t.category||'-')}</span></td><td class="sct">${esc(t.detail||'')}</td><td class="sct">${esc(t.answer||'')}</td><td class="mono">${esc(t.refTicket||'')}</td><td>${pill(t)}</td>
     <td><div class="sc-act">${t.source!=='legacy'&&S.canWrite?`<button type="button" data-edit="${esc(t.ticketNo)}" title="แก้ไขหรือเพิ่มข้อมูลในเรื่องนี้">เพิ่มข้อมูล</button>`:''}<button type="button" data-again="${esc(t.ticketNo)}" title="เปิดเรื่องใหม่ โดยใช้ข้อมูลลูกค้าเดิม">เรื่องใหม่</button></div></td></tr>`).join('')
-    ||`<tr><td colspan="8" class="empty">${S.scWhen==='today'?'วันนี้ยังไม่มีเรื่องตามตัวกรอง':'ไม่มีเรื่องตามตัวกรอง'}</td></tr>`;
+    ||`<tr><td colspan="13" class="empty">${S.scWhen==='today'?'วันนี้ยังไม่มีเรื่องตามตัวกรอง':'ไม่มีเรื่องตามตัวกรอง'}</td></tr>`;
   bindRows($('#sc-rows'));
   $('#sc-rows').querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=S.all.find(x=>x.ticketNo===b.dataset.edit);if(t)editTicket(t)});
   $('#sc-rows').querySelectorAll('[data-again]').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=S.all.find(x=>x.ticketNo===b.dataset.again);if(t)prefillFrom(t)});
