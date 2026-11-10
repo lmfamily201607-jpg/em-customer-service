@@ -3870,9 +3870,9 @@ const DTO_ID='ggrabdto';
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('#dto-more,#dto-view');if(!t)return;if(t.id==='dto-more')S.dtoN=(S.dtoN||30)+30;else S.dtoView=S.dtoView==='table'?'cards':'table';renderDto()})})();
 let VIPC={k:'',m:null};
 function vipNm(s){return String(s||'').trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'').replace(/\s+/g,'')}
-function vipKeys(r){const o=[];r.forEach(c=>{const s=String(c||''),dg=digits(s);if(/^[ก-๙]{2,}\s+[ก-๙]{2,}$/.test(s.trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'')))o.push('n'+vipNm(s));if(dg.length>=9&&dg.length<=11&&!/[A-Za-z]/.test(s))o.push('p'+dg.slice(-9));(s.toUpperCase().match(/[A-Z0-9]{17}/g)||[]).forEach(v=>o.push('v'+v))});return o}
+function vipKeys(r){const o=[];r.forEach(c=>{const s=String(c||''),dg=digits(s);if(/^[ก-๙]{2,}\s+[ก-๙]{2,}$/.test(s.trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'')))o.push('n'+vipNm(s));{const pl=s.replace(/[\s\-.]/g,'');if(/^[0-9๐-๙]?[ก-ฮ]{1,3}[0-9๐-๙]{1,4}$/.test(pl))o.push('l'+pl)}if(dg.length>=9&&dg.length<=11&&!/[A-Za-z]/.test(s))o.push('p'+dg.slice(-9));(s.toUpperCase().match(/[A-Z0-9]{17}/g)||[]).forEach(v=>o.push('v'+v))});return o}
 function vipIdx(){const T=S.topics.filter(x=>x.id!==DTO_ID&&/นางฟ้า|VIP/i.test(x.title||''));const key=T.map(x=>x.id+':'+(x.rows||[]).length).join('|');if(VIPC.m&&VIPC.k===key)return VIPC.m;const m=new Map();T.forEach(t=>(t.rows||[]).forEach(r=>vipKeys(r).forEach(k=>{if(!m.has(k))m.set(k,{t,r})})));VIPC={k:key,m};return m}
-function vipOf(r){const m=vipIdx();if(!m.size)return null;for(const k of vipKeys(r)){if(m.has(k))return {k,...m.get(k)}}return null}
+function vipOf(r){const m=vipIdx();if(!m.size)return null;for(const k of vipKeys(r)){if(m.has(k))return {k,...m.get(k)}}const hay=r.join('').replace(/\s+/g,'');for(const k of m.keys()){if(k[0]==='n'&&k.length>7&&hay.includes(k.slice(1)))return {k,...m.get(k)}}return null}
 function vipB(r){const h=vipOf(r);return h?' <button type="button" class="pill vip" data-vip="'+esc(h.k)+'" title="กดดูข้อมูล VIP บัตรนางฟ้า">★ VIP บัตรนางฟ้า</button>':''}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-vip],#dto-vip');if(!b)return;
  if(b.id==='dto-vip'){S.dtoVip=!S.dtoVip;S.dtoN=30;renderDto();return}
