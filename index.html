@@ -1376,9 +1376,9 @@ let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeou
 
 /* รับเรื่องลูกค้า: กรอกเป็นแถวเดียวเหมือนหัวคอลัมน์ในชีต Log Case */
 (function(){const st=document.createElement('style');st.textContent=[
-'#v-intake .grid2{grid-template-columns:1fr!important}',
+'#v-intake .grid2{grid-template-columns:1fr!important;width:calc(100vw - 48px);margin-left:calc(50% - 50vw + 24px)}',
 '#intake-form{padding:0;overflow-x:auto;overflow-y:hidden}',
-'#intake-form .fields{display:grid;grid-template-columns:200px 120px 200px 130px 200px 130px 200px 290px 290px 130px 130px;gap:0;margin:0;width:max-content}',
+'#intake-form .fields{display:grid;grid-template-columns:175px 100px 155px 105px 155px 105px 165px 230px 230px 95px 105px;gap:0;margin:0;width:max-content}',
 '#intake-form .fields>.f{margin:0;border-right:1px solid var(--line,#d9ddd9);border-bottom:1px solid var(--line,#d9ddd9);display:flex;flex-direction:column;min-width:0}',
 '#intake-form .fields>.f>label{display:block;background:#4a5650;color:#fff;padding:9px 12px;font-size:.88em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
 '#intake-form .fields>.f>input,#intake-form .fields>.f>select,#intake-form .fields>.f>textarea{border:0;border-radius:0;background:var(--panel,#fff);padding:10px 12px;min-height:44px;flex:1}',
@@ -1405,7 +1405,7 @@ let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeou
 "#intake-form .fields>.f:has(#f-vin){grid-column:5 / span 2;grid-row:2}",
 "#intake-form .fields>.f:has(#f-note){grid-column:7 / span 3;grid-row:2}",
 "#intake-form .fields>.f:has(#f-callback){grid-column:10 / span 2;grid-row:2}",
-'@media(max-width:900px){#intake-form{overflow:visible}#intake-form .fields{width:auto;grid-template-columns:1fr 1fr}#intake-form .fields>.f,#intake-form .fields>#f-who-cell{grid-column:auto!important;grid-row:auto!important}#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:span 2!important}}',
+'@media(max-width:900px){#v-intake .grid2{width:auto!important;margin-left:0!important}#intake-form{overflow:visible}#intake-form .fields{width:auto;grid-template-columns:1fr 1fr}#intake-form .fields>.f,#intake-form .fields>#f-who-cell{grid-column:auto!important;grid-row:auto!important}#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:span 2!important}}',
 '@media(max-width:560px){#intake-form .fields{grid-template-columns:1fr}#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:auto!important}}'
 ].join('\n');document.head.appendChild(st)})();
 function mountIntake(){
