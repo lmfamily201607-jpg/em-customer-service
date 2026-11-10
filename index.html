@@ -1374,28 +1374,46 @@ document.querySelectorAll('#sc-when button').forEach(b=>b.onclick=()=>{S.scWhen=
 let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeout(renderSaved,200)});
 ['sc-status','sc-channel','sc-who','sc-app'].forEach(id=>$('#'+id).addEventListener('change',renderSaved));
 
-/* รับเรื่องลูกค้า: ฟอร์มหน้าตาเหมือนแถวชีต Log Case (หัวช่องสีเขียวเทาเข้ม ช่องกรอกเป็นตาราง) */
+/* รับเรื่องลูกค้า: กรอกเป็นแถวเดียวเหมือนหัวคอลัมน์ในชีต Log Case */
 (function(){const st=document.createElement('style');st.textContent=[
 '#v-intake .grid2{grid-template-columns:1fr!important}',
-'#intake-form{padding:0;overflow:hidden}',
-'#intake-form .fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin:0}',
+'#intake-form{padding:0;overflow-x:auto;overflow-y:hidden}',
+'#intake-form .fields{display:grid;grid-template-columns:200px 120px 200px 130px 200px 130px 200px 290px 290px 130px 130px;gap:0;margin:0;width:max-content}',
 '#intake-form .fields>.f{margin:0;border-right:1px solid var(--line,#d9ddd9);border-bottom:1px solid var(--line,#d9ddd9);display:flex;flex-direction:column;min-width:0}',
-'#intake-form .fields>.f>label{display:block;background:#4a5650;color:#fff;padding:8px 12px;font-size:.86em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+'#intake-form .fields>.f>label{display:block;background:#4a5650;color:#fff;padding:9px 12px;font-size:.88em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
 '#intake-form .fields>.f>input,#intake-form .fields>.f>select,#intake-form .fields>.f>textarea{border:0;border-radius:0;background:var(--panel,#fff);padding:10px 12px;min-height:44px;flex:1}',
-'#intake-form .fields>.f>textarea{resize:vertical;min-height:96px}',
+'#intake-form .fields>.f>textarea{resize:vertical;min-height:110px}',
 '#intake-form .fields>.f:focus-within>label{background:#0f9145}',
+'#intake-form .whov{padding:10px 12px;min-height:44px;display:flex;align-items:center;font-weight:600}',
 '#intake-form .fields>.f.chk{flex-direction:row;align-items:center;gap:8px;padding:10px 12px!important;align-self:stretch!important}',
 '#intake-form .fields>.f.chk>label{background:none;color:inherit;padding:0;font-weight:500;white-space:normal}',
 '#intake-form .fields>.f.chk>input{flex:none;min-height:0;width:auto}',
-'#intake-form .actions{padding:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--sunk,#f6f9f7)}',
-"#intake-form .f:has(#f-contactAt){grid-column:span 2}","#intake-form .f:has(#f-channel){grid-column:span 2}","#intake-form .f:has(#f-urgency){grid-column:span 2}","#intake-form .f:has(#f-name){grid-column:span 2}","#intake-form .f:has(#f-phone){grid-column:span 2}","#intake-form .f:has(#f-vehicleType){grid-column:span 2}","#intake-form .f:has(#f-model){grid-column:span 2}","#intake-form .f:has(#f-vin){grid-column:span 2}","#intake-form .f:has(#f-category){grid-column:span 2}","#intake-form .f:has(#f-detail){grid-column:span 3}","#intake-form .f:has(#f-answer){grid-column:span 3}","#intake-form .f:has(#f-refTicket){grid-column:span 2}","#intake-form .f:has(#f-status){grid-column:span 2}","#intake-form .f:has(#f-note){grid-column:span 2}","#intake-form .f:has(#f-callback){grid-column:span 6}",
-'@media(max-width:900px){#intake-form .fields{grid-template-columns:1fr 1fr}#intake-form .fields>.f{grid-column:span 1!important}#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:span 2!important}}',
-'@media(max-width:560px){#intake-form .fields{grid-template-columns:1fr}#intake-form .fields>.f,#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:span 1!important}}'
+'#intake-form .actions{position:sticky;left:0;padding:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--sunk,#f6f9f7)}',
+'#intake-form .fields>#f-who-cell{grid-column:2;grid-row:1}',
+"#intake-form .fields>.f:has(#f-contactAt){grid-column:1;grid-row:1}",
+"#intake-form .fields>.f:has(#f-channel){grid-column:3;grid-row:1}",
+"#intake-form .fields>.f:has(#f-urgency){grid-column:4;grid-row:1}",
+"#intake-form .fields>.f:has(#f-name){grid-column:5;grid-row:1}",
+"#intake-form .fields>.f:has(#f-vehicleType){grid-column:6;grid-row:1}",
+"#intake-form .fields>.f:has(#f-category){grid-column:7;grid-row:1}",
+"#intake-form .fields>.f:has(#f-detail){grid-column:8;grid-row:1}",
+"#intake-form .fields>.f:has(#f-answer){grid-column:9;grid-row:1}",
+"#intake-form .fields>.f:has(#f-refTicket){grid-column:10;grid-row:1}",
+"#intake-form .fields>.f:has(#f-status){grid-column:11;grid-row:1}",
+"#intake-form .fields>.f:has(#f-phone){grid-column:1 / span 2;grid-row:2}",
+"#intake-form .fields>.f:has(#f-model){grid-column:3 / span 2;grid-row:2}",
+"#intake-form .fields>.f:has(#f-vin){grid-column:5 / span 2;grid-row:2}",
+"#intake-form .fields>.f:has(#f-note){grid-column:7 / span 3;grid-row:2}",
+"#intake-form .fields>.f:has(#f-callback){grid-column:10 / span 2;grid-row:2}",
+'@media(max-width:900px){#intake-form{overflow:visible}#intake-form .fields{width:auto;grid-template-columns:1fr 1fr}#intake-form .fields>.f,#intake-form .fields>#f-who-cell{grid-column:auto!important;grid-row:auto!important}#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:span 2!important}}',
+'@media(max-width:560px){#intake-form .fields{grid-template-columns:1fr}#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:auto!important}}'
 ].join('\n');document.head.appendChild(st)})();
 function mountIntake(){
   const f=$('#intake-form');
   f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-copyrow" title="คัดลอกเป็นแถวเดียว วางต่อท้ายชีต Log Case ได้เลย">คัดลอกเป็นแถวชีต</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
   f.addEventListener('submit',saveIntake);
+  // ดูแลโดย: ชื่อผู้ล็อกอิน (ใส่ให้อัตโนมัติ) เหมือนคอลัมน์ในชีต
+  {const fl=f.querySelector('.fields');if(fl&&!$('#f-who-cell')){const w=document.createElement('div');w.className='f';w.id='f-who-cell';w.innerHTML='<label>ดูแลโดย</label><div class="whov"></div>';fl.appendChild(w);const setW=()=>{const x=$('#f-who-cell .whov');if(x)x.textContent=(typeof personName==='function'&&S.uid?whoFix(personName(S.uid)||''):'')||'-'};setW();[800,2500,6000].forEach(ms=>setTimeout(setW,ms))}}
   // วันเวลาเด้งเอง: ใส่เวลาปัจจุบันให้ และอัปเดตทุกวินาทีจนกว่าจะบันทึก (ถ้าพนักงานแก้เองจะไม่เปลี่ยนทับ)
   {const c=$('#f-contactAt');if(c){c.step='1';const nowL=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())};
    c.value=nowL();c.addEventListener('input',e=>{if(e.isTrusted)c.dataset.t='1'});
