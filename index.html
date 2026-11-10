@@ -1374,6 +1374,24 @@ document.querySelectorAll('#sc-when button').forEach(b=>b.onclick=()=>{S.scWhen=
 let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeout(renderSaved,200)});
 ['sc-status','sc-channel','sc-who','sc-app'].forEach(id=>$('#'+id).addEventListener('change',renderSaved));
 
+/* รับเรื่องลูกค้า: ฟอร์มหน้าตาเหมือนแถวชีต Log Case (หัวช่องสีเขียวเทาเข้ม ช่องกรอกเป็นตาราง) */
+(function(){const st=document.createElement('style');st.textContent=[
+'#v-intake .grid2{grid-template-columns:1fr!important}',
+'#intake-form{padding:0;overflow:hidden}',
+'#intake-form .fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin:0}',
+'#intake-form .fields>.f{margin:0;border-right:1px solid var(--line,#d9ddd9);border-bottom:1px solid var(--line,#d9ddd9);display:flex;flex-direction:column;min-width:0}',
+'#intake-form .fields>.f>label{display:block;background:#4a5650;color:#fff;padding:8px 12px;font-size:.86em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+'#intake-form .fields>.f>input,#intake-form .fields>.f>select,#intake-form .fields>.f>textarea{border:0;border-radius:0;background:var(--panel,#fff);padding:10px 12px;min-height:44px;flex:1}',
+'#intake-form .fields>.f>textarea{resize:vertical;min-height:96px}',
+'#intake-form .fields>.f:focus-within>label{background:#0f9145}',
+'#intake-form .fields>.f.chk{flex-direction:row;align-items:center;gap:8px;padding:10px 12px!important;align-self:stretch!important}',
+'#intake-form .fields>.f.chk>label{background:none;color:inherit;padding:0;font-weight:500;white-space:normal}',
+'#intake-form .fields>.f.chk>input{flex:none;min-height:0;width:auto}',
+'#intake-form .actions{padding:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--sunk,#f6f9f7)}',
+"#intake-form .f:has(#f-contactAt){grid-column:span 2}","#intake-form .f:has(#f-channel){grid-column:span 2}","#intake-form .f:has(#f-urgency){grid-column:span 2}","#intake-form .f:has(#f-name){grid-column:span 2}","#intake-form .f:has(#f-phone){grid-column:span 2}","#intake-form .f:has(#f-vehicleType){grid-column:span 2}","#intake-form .f:has(#f-model){grid-column:span 2}","#intake-form .f:has(#f-vin){grid-column:span 2}","#intake-form .f:has(#f-category){grid-column:span 2}","#intake-form .f:has(#f-detail){grid-column:span 3}","#intake-form .f:has(#f-answer){grid-column:span 3}","#intake-form .f:has(#f-refTicket){grid-column:span 2}","#intake-form .f:has(#f-status){grid-column:span 2}","#intake-form .f:has(#f-note){grid-column:span 2}","#intake-form .f:has(#f-callback){grid-column:span 6}",
+'@media(max-width:900px){#intake-form .fields{grid-template-columns:1fr 1fr}#intake-form .fields>.f{grid-column:span 1!important}#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:span 2!important}}',
+'@media(max-width:560px){#intake-form .fields{grid-template-columns:1fr}#intake-form .fields>.f,#intake-form .fields>.f:has(#f-detail),#intake-form .fields>.f:has(#f-answer),#intake-form .fields>.f:has(#f-note),#intake-form .fields>.f:has(#f-callback){grid-column:span 1!important}}'
+].join('\n');document.head.appendChild(st)})();
 function mountIntake(){
   const f=$('#intake-form');
   f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-copyrow" title="คัดลอกเป็นแถวเดียว วางต่อท้ายชีต Log Case ได้เลย">คัดลอกเป็นแถวชีต</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
