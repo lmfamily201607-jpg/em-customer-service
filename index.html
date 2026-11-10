@@ -3870,7 +3870,7 @@ const DTO_ID='ggrabdto';
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('#dto-more,#dto-view');if(!t)return;if(t.id==='dto-more')S.dtoN=(S.dtoN||30)+30;else S.dtoView=S.dtoView==='table'?'cards':'table';renderDto()})})();
 let VIPC={k:'',m:null};
 function vipNm(s){return String(s||'').trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'').replace(/\s+/g,'')}
-function vipKeys(r){const o=[];r.forEach(c=>{const s=String(c||''),dg=digits(s);if(/^[ก-๙]{2,}\s+[ก-๙]{2,}$/.test(s.trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'')))o.push('n'+vipNm(s));{const pl=s.replace(/[\s\-.]/g,'');if(/^[0-9๐-๙]?[ก-ฮ]{1,3}[0-9๐-๙]{1,4}$/.test(pl))o.push('l'+pl)}if(dg.length>=9&&dg.length<=11&&!/[A-Za-z]/.test(s))o.push('p'+dg.slice(-9));(s.toUpperCase().match(/[A-Z0-9]{17}/g)||[]).forEach(v=>o.push('v'+v))});return o}
+function vipKeys(r){const o=[];r.forEach(c=>{const s=String(c||''),dg=digits(s);if(/^[ก-๙]{2,}\s+[ก-๙]{2,}$/.test(s.trim().replace(/^(นางสาว|น\.ส\.|นาย|นาง|คุณ)\s*/,'')))o.push('n'+vipNm(s));{const pm=s.replace(/[\s\-.]/g,'').match(/^([0-9๐-๙]?[ก-ฮ]{1,3}[0-9๐-๙]{1,4})(?![0-9๐-๙])/);if(pm&&s.length<30)o.push('l'+pm[1])}if(dg.length>=9&&dg.length<=11&&!/[A-Za-z]/.test(s))o.push('p'+dg.slice(-9));(s.toUpperCase().match(/[A-Z0-9]{17}/g)||[]).forEach(v=>o.push('v'+v))});return o}
 function vipIdx(){const T=S.topics.filter(x=>x.id!==DTO_ID&&/นางฟ้า|VIP/i.test(x.title||'')).sort((a,b)=>String(b.importedAt||'').localeCompare(String(a.importedAt||''))).slice(0,1);const key=T.map(x=>x.id+':'+(x.rows||[]).length).join('|');if(VIPC.m&&VIPC.k===key)return VIPC.m;const m=new Map();T.forEach(t=>(t.rows||[]).forEach(r=>vipKeys(r).forEach(k=>{if(!m.has(k))m.set(k,{t,r})})));VIPC={k:key,m};return m}
 const VIP_BEN=['ส่วนลดค่าอะไหล่ EM Motor 20%','ฟรีค่าบริการตลอดชีพ ในการเข้ารับบริการของ บจก. อีเอ็ม มอเตอร์ และ บจก. ไลฟ์ มูฟวิ่ง'];
 const VIP_CON=['เข้ารับบริการที่ สาขา รามอินทรา กม.6 เท่านั้น','ก่อนเข้ารับบริการ แจ้ง EM Service เพื่อลงคิวและแสดงบัตรทางช่องทางแชทเพื่อลงคิว','แสดงบัตรต่อเจ้าหน้าที่ผู้ให้บริการเพื่อยืนยันการใช้สิทธิ์','สิทธิประโยชน์นี้ไม่สามารถใช้แทนกันได้ เฉพาะบุคคลที่มีรายชื่อตามหน้าบัตรเท่านั้น','สิทธิประโยชน์นี้ไม่สามารถแลกเปลี่ยนเป็นเงินสดได้'];
@@ -3878,11 +3878,11 @@ function vipR(r){const h=vipOf(r);if(!h)return '';return '<div class="vip-rights
 let VIPA={k:'',w:null};
 function vipAssign(){const dt=S.topics.find(x=>x.id===DTO_ID),m=vipIdx();if(!dt||!m.size||!dt.rows)return null;
  const key=(dt.importedAt||'')+'|'+dt.rows.length+'|'+VIPC.k;if(VIPA.w&&VIPA.k===key)return VIPA.w;
- const w=new WeakMap(),vs=new Map();m.forEach(x=>{if(!vs.has(x.r))vs.set(x.r,x.t)});
+ const w=new WeakMap(),vs=new Map(),used=new Set();m.forEach(x=>{if(!vs.has(x.r))vs.set(x.r,x.t)});
  const dk=dt.rows.map(r=>({r,keys:new Set(vipKeys(r)),hay:r.join('').replace(/\s+/g,'')}));
  vs.forEach((t,vr)=>{const vk=vipKeys(vr);let best=null,bs=0;dk.forEach(d=>{if(w.has(d.r))return;let s=0;vk.forEach(k=>{if(d.keys.has(k))s+=k[0]==='l'?2:3;else if(k[0]==='n'&&k.length>7&&d.hay.includes(k.slice(1)))s+=3});if(s>bs){bs=s;best=d}});
-  if(best){const kk=vk.find(k=>m.get(k)&&m.get(k).r===vr)||vk[0];w.set(best.r,{k:kk,t,r:vr})}});
- VIPA={k:key,w};return w}
+  if(best){const kk=vk.find(k=>m.get(k)&&m.get(k).r===vr)||vk[0];w.set(best.r,{k:kk,t,r:vr});used.add(vr)}});
+ VIPA={k:key,w,vs,used};return w}
 function vipOf(r){const w=vipAssign();return w?(w.get(r)||null):null}
 function vipB(r){const h=vipOf(r);return h?' <button type="button" class="pill vip" data-vip="'+esc(h.k)+'" title="กดดูข้อมูล VIP บัตรนางฟ้า">★ VIP บัตรนางฟ้า</button>':''}
 document.addEventListener('click',e=>{const pb=e.target.closest&&e.target.closest('#dto-chips button[data-pj]');if(pb){const P=S.dtoP||(S.dtoP={});if(pb.dataset.pv&&P[pb.dataset.pj]!==pb.dataset.pv)P[pb.dataset.pj]=pb.dataset.pv;else delete P[pb.dataset.pj];S.dtoN=30;renderDto();return}const b=e.target.closest&&e.target.closest('[data-vip],#dto-vip');if(!b)return;
@@ -3899,7 +3899,7 @@ function renderDto(){
   {let pc=$('#dto-chips');if(!pc){pc=document.createElement('div');pc.id='dto-chips';$('#dto-filters').after(pc)}
  const P=S.dtoP||(S.dtoP={}),pcols=t.cols.map((n,j)=>({n,j})).filter(x=>/โปรโมชั่น|promotion|ป้ายเหลือง|ของแถม/i.test(x.n)).map(x=>{const c={};t.rows.forEach(r=>{const v=(r[x.j]||'').trim();if(v)c[v]=(c[v]||0)+1});return {...x,c}}).filter(x=>{const k=Object.keys(x.c).length;return k>=2&&k<=30});
  pc.innerHTML=pcols.map(x=>'<div class="dto-pg"><span class="meta">'+esc(x.n)+'</span><div class="chips"><button type="button" data-pj="'+x.j+'" data-pv="" aria-pressed="'+(!P[x.j])+'">ทั้งหมด</button>'+Object.entries(x.c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>'<button type="button" data-pj="'+x.j+'" data-pv="'+esc(v)+'" aria-pressed="'+(P[x.j]===v)+'">'+esc(v.length>34?v.slice(0,34)+'…':v)+' <small>'+n+'</small></button>').join('')+'</div></div>').join('')}
-if(vipIdx().size)$('#dto-filters').insertAdjacentHTML('beforeend','<div class="f"><label>VIP บัตรนางฟ้า</label><button type="button" id="dto-vip" aria-pressed="'+!!S.dtoVip+'">'+(S.dtoVip?'แสดงทั้งหมด':'แสดงเฉพาะ VIP ('+t.rows.filter(r=>vipOf(r)).length+')')+'</button></div>');$('#dto-filters').querySelectorAll('select').forEach(s=>s.onchange=()=>{if(s.value)F[s.dataset.j]=s.value;else delete F[s.dataset.j];renderDto()});
+if(vipIdx().size)$('#dto-filters').insertAdjacentHTML('beforeend','<div class="f"><label>VIP บัตรนางฟ้า</label><button type="button" id="dto-vip" aria-pressed="'+!!S.dtoVip+'">'+(S.dtoVip?'แสดงทั้งหมด':'แสดงเฉพาะ VIP ('+t.rows.filter(r=>vipOf(r)).length+')')+'</button>'+(()=>{const A=VIPA;if(!A||!A.vs)return '';const ms=[...A.vs.keys()].filter(v=>!A.used.has(v)).map(v=>v.find(c=>/^[ก-๙]{2,}\s+[ก-๙]{2,}$/.test(String(c).trim()))||v[0]);return ms.length?'<div class="meta" style="margin-top:4px">ไม่พบใน DTO ('+ms.length+'): '+esc(ms.join(', '))+'</div>':''})()+'</div>');$('#dto-filters').querySelectorAll('select').forEach(s=>s.onchange=()=>{if(s.value)F[s.dataset.j]=s.value;else delete F[s.dataset.j];renderDto()});
   const q=$('#dto-q').value.trim().toLowerCase(),qd=digits(q),jt=ix('โทร');
   const rows=t.rows.filter(r=>Object.entries(F).every(([j,v])=>r[j]===v)&&Object.entries(S.dtoP||{}).every(([j,v])=>r[j]===v)&&(!S.dtoVip||vipOf(r))&&(!q||r.join(' ').toLowerCase().includes(q)||(qd.length>=4&&digits(r.join(' ')).includes(qd))));
   $('#dto-count').textContent=`${rows.length.toLocaleString()} ราย${rows.length!==t.rows.length?` จาก ${t.rows.length.toLocaleString()}`:''}`;
