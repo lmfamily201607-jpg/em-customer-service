@@ -453,6 +453,15 @@ progress{width:100%;accent-color:var(--accent)}
           else if(e.key==='Escape'){b.focus()}}});
     })();
     </script>
+    <style id="em-sheet-tables">
+      /* ทุกตารางในแอป: หน้าตาแบบชีต (หัวตารางเขียวเทาเข้ม ลอยค้าง แถวอ่านง่าย) */
+      .tbl-wrap{max-height:75vh;overflow:auto;border:1px solid var(--line);border-radius:8px}
+      .tbl-wrap table{border-collapse:separate;border-spacing:0}
+      .tbl-wrap thead th,.tbl-wrap table>tr:first-child>th{position:sticky;top:0;z-index:2;background:#4a5650;color:#fff;font-weight:600;white-space:nowrap;padding:10px 12px;text-align:left;border-bottom:0}
+      .tbl-wrap tbody td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+      .tbl-wrap tbody tr:hover td{background:color-mix(in srgb,var(--surface) 85%,#2e7d32)}
+      .tbl-wrap tbody tr.click{cursor:pointer}
+    </style>
     <div class="wtabs" id="wtabs" role="tablist" aria-label="แท็บที่เปิดอยู่"></div>
   </div>
 </header>
