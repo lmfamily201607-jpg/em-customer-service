@@ -3608,6 +3608,7 @@ function acData(){const [f,t]=acRange(),inR=d=>{const x=d?isoDate(d):'';return !
     if(x.receiverId&&x.closedAt&&inR(x.closedAt))u(x.receiverId).closed++;
     if(x.updatedAt&&inR(x.updatedAt)&&Array.isArray(x.editorIds))[...new Set(x.editorIds.filter(Boolean))].forEach(e=>{u(e).edit++});
   });
+  try{knownIds().forEach(id=>u(id))}catch(_){}
   return {f,t,rows:Object.values(U).sort((a,b)=>b.n-a.n||b.edit-a.edit)}}
 function renderActivity(){
   if(!S.isAdmin){$('#ac-table').innerHTML='<tbody><tr><td class="empty">เฉพาะผู้ดูแลระบบ</td></tr></tbody>';return}
@@ -3657,9 +3658,9 @@ async function actHist(){
 async function renderActLog(){
   const sum=$('#ac-act-sum'),lg=$('#ac-act-log');if(!sum||!lg)return;sum.innerHTML='<tbody><tr><td class="empty">กำลังโหลดประวัติ...</td></tr></tbody>';
   const [f,t]=acRange(),rows=[...(await actLoad()),...(await actHist())].filter(x=>x.at&&isoDate(x.at)>=f&&isoDate(x.at)<=t);
-  const U={};rows.forEach(x=>{const o=U[x.uid]||(U[x.uid]={uid:x.uid,name:x.name||'',n:0,open:0,save:0,del:0,exp:0,clk:0,srch:0,menus:{},last:''});o.n++;if(x.action==='เปิดเมนู'){o.open++;o.menus[x.detail]=(o.menus[x.detail]||0)+1}else if(x.action==='กดปุ่ม')o.clk++;else if(x.action==='ค้นหา/กรอง')o.srch++;else if(/^ลบ/.test(x.action))o.del++;else if(/ดาวน์โหลด|ส่งออก/.test(x.action))o.exp++;else if(/บันทึก|แก้ไข|รับเรื่อง|ปิดเคส|กู้คืน|ลงประกาศ|ปิดประกาศ/.test(x.action))o.save++;if(x.at>o.last)o.last=x.at});
+  const U={};try{knownIds().forEach(id=>{U[id]={uid:id,name:'',n:0,open:0,save:0,del:0,exp:0,clk:0,srch:0,menus:{},last:''}})}catch(_){}rows.forEach(x=>{const o=U[x.uid]||(U[x.uid]={uid:x.uid,name:x.name||'',n:0,open:0,save:0,del:0,exp:0,clk:0,srch:0,menus:{},last:''});o.n++;if(x.action==='เปิดเมนู'){o.open++;o.menus[x.detail]=(o.menus[x.detail]||0)+1}else if(x.action==='กดปุ่ม')o.clk++;else if(x.action==='ค้นหา/กรอง')o.srch++;else if(/^ลบ/.test(x.action))o.del++;else if(/ดาวน์โหลด|ส่งออก/.test(x.action))o.exp++;else if(/บันทึก|แก้ไข|รับเรื่อง|ปิดเคส|กู้คืน|ลงประกาศ|ปิดประกาศ/.test(x.action))o.save++;if(x.at>o.last)o.last=x.at});
   const L=Object.values(U).sort((a,b)=>b.n-a.n);
-  $('#ac-act-count').textContent='กิจกรรมทั้งหมด '+rows.length.toLocaleString()+' รายการ · '+L.length+' คน';
+  $('#ac-act-count').textContent='กิจกรรมทั้งหมด '+rows.length.toLocaleString()+' รายการ · '+L.length+' คน (ทุกคนในระบบ)';
   sum.innerHTML='<thead><tr><th>ผู้ใช้</th><th>กิจกรรมทั้งหมด</th><th>เปิดเมนู</th><th>กดปุ่ม</th><th>ค้นหา/กรอง</th><th>บันทึก/แก้ไข</th><th>ลบ</th><th>ส่งออกไฟล์</th><th>เมนูที่ใช้บ่อย</th><th>ล่าสุดเมื่อ</th></tr></thead><tbody>'+(L.map(o=>'<tr class="click" data-au="'+esc(o.uid)+'" tabindex="0"'+(S.acU===o.uid?' style="outline:2px solid var(--accent)"':'')+'><td><b>'+esc(who({receiverId:o.uid})||o.name)+'</b></td><td class="num">'+o.n+'</td><td class="num">'+o.open+'</td><td class="num">'+o.clk+'</td><td class="num">'+o.srch+'</td><td class="num">'+o.save+'</td><td class="num">'+o.del+'</td><td class="num">'+o.exp+'</td><td class="meta">'+esc(Object.entries(o.menus).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([m,c])=>m+' ('+c+')').join(', ')||'-')+'</td><td class="meta">'+esc(fmt(o.last))+'</td></tr>').join('')||'<tr><td colspan="10" class="empty">ช่วงนี้ยังไม่มีข้อมูลการใช้งาน</td></tr>')+'</tbody>';
   const sel=S.acU,Q=rows.filter(x=>!sel||x.uid===sel).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,300);
   lg.innerHTML='<thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>เมนู</th><th>ทำอะไร</th><th>รายละเอียด</th></tr></thead><tbody>'+(Q.map(x=>'<tr><td class="num">'+esc(fmt(x.at))+'</td><td>'+esc(who({receiverId:x.uid})||x.name)+'</td><td>'+esc(x.view?VIEW_NAME(x.view):'-')+'</td><td>'+esc(x.action)+'</td><td class="clip">'+esc(x.detail||'')+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">ไม่มีรายการ</td></tr>')+'</tbody>';
