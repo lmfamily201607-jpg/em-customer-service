@@ -433,6 +433,32 @@ progress{width:100%;accent-color:var(--accent)}
       #tabs.em-grouped .emg-panel a:focus-visible,#tabs.em-grouped .emg-panel .emg-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;background:var(--accent-soft)}
       @media (max-width:760px){#tabs.em-grouped .emg-panel a,#tabs.em-grouped .emg-panel .emg-item{min-height:46px}.emg-btn{min-height:46px}}
     </style>
+<style id="em-modern">
+/* ปรับหน้าตาให้ทันสมัย: เปลี่ยนเฉพาะสี มุมโค้ง เงา ไม่ย้ายตำแหน่งข้อมูล */
+body{background:linear-gradient(180deg,#f4f8f5 0,#eef3f0 100%);-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+header{box-shadow:0 1px 0 rgba(16,24,20,.05),0 6px 20px -12px rgba(16,24,20,.25)}
+.panel,.tbl-wrap,.kpi,.kband,.saved-cases,.req,.wc-out,.dl-grid{border-radius:14px!important;box-shadow:0 1px 2px rgba(16,24,20,.05),0 8px 24px -14px rgba(16,24,20,.18)}
+.panel{border-color:rgba(16,24,20,.07)!important}
+.tbl-wrap{overflow:auto}
+h1,h2,h3{letter-spacing:-.01em}
+button,.btn,select,input,textarea{border-radius:10px!important;transition:box-shadow .15s,border-color .15s,background-color .15s,transform .05s}
+button{box-shadow:0 1px 1px rgba(16,24,20,.04)}
+button:hover:not(:disabled){box-shadow:0 3px 10px -4px rgba(16,24,20,.3);border-color:#b9cfc2}
+button:active:not(:disabled){transform:translateY(1px)}
+button.primary,.primary{background:linear-gradient(180deg,#14a051,#0d8a40)!important;border-color:#0d8a40!important;color:#fff!important;box-shadow:0 4px 12px -5px rgba(13,138,64,.55)}
+button.primary:hover:not(:disabled){filter:brightness(1.05);box-shadow:0 6px 16px -6px rgba(13,138,64,.6)}
+input,select,textarea{background:#fff!important;border:1px solid #d3dfd8!important}
+input:focus,select:focus,textarea:focus{outline:none!important;border-color:#14a051!important;box-shadow:0 0 0 3px rgba(20,160,81,.18)!important}
+.pill{border-radius:999px!important}
+thead th{background:#f3f7f4}
+tbody tr{transition:background-color .12s}
+tbody tr:hover{background:#f4faf6}
+.tabs .tab,.wtab,.seg button{border-radius:10px!important}
+a{transition:color .12s}
+::-webkit-scrollbar{height:10px;width:10px}::-webkit-scrollbar-thumb{background:#c7d6cd;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#a9bfb1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background:#0f1512}:root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select,:root:not([data-theme="light"]) textarea{background:#151d19!important;border-color:#2b3a33!important}:root:not([data-theme="light"]) thead th{background:#18211d}:root:not([data-theme="light"]) tbody tr:hover{background:#17211c}}
+</style>
+
     <script>
     // Menu polish: hover to switch between open menus, keep panels on screen, arrow-key navigation
     (function(){
