@@ -1307,7 +1307,6 @@ function formFields(p,t={}){
     <div class="f"><label for="${p}-contactAt">วันเวลาที่ติดต่อ</label><input type="datetime-local" id="${p}-contactAt" value="${toLocalInput(t.contactAt)}"></div>
     <div class="f"><label for="${p}-channel">ช่องทางการติดต่อ${r('channel')}</label><select id="${p}-channel">${opts(CHANNELS,t.channel||'','เลือกช่องทาง')}</select></div>
     <div class="f"><label for="${p}-urgency">ความเร่งด่วน</label><select id="${p}-urgency">${opts(URGENCY,t.urgency||'ปกติ')}</select></div>
-    <div class="f full"><label for="${p}-note">หมายเหตุ</label><textarea id="${p}-note" rows="2">${esc(t.note)}</textarea></div>
     <div class="f"><label for="${p}-name">Customer Name${r('name')}</label><input id="${p}-name" value="${esc(t.name)}" maxlength="120" autocomplete="off"></div>
     <div class="f"><label for="${p}-phone">เบอร์ติดต่อ</label><input id="${p}-phone" value="${esc(t.phone)}" inputmode="tel" maxlength="30" autocomplete="off"></div>
     <div class="f"><label for="${p}-vehicleType">ประเภทรถ${r('vehicleType')}</label><select id="${p}-vehicleType">${opts(VEHICLES,t.vehicleType||'','เลือกประเภทรถ')}</select></div>
@@ -1318,6 +1317,7 @@ function formFields(p,t={}){
     <div class="f full"><label for="${p}-answer">สิ่งที่แจ้งกลับลูกค้า${r('answer')}</label><textarea id="${p}-answer" rows="4">${esc(t.answer)}</textarea></div>
     <div class="f"><label for="${p}-refTicket">TICKET</label><input id="${p}-refTicket" value="${esc(t.refTicket)}" maxlength="40" class="mono" autocomplete="off"></div>
     <div class="f"><label for="${p}-status">สถานะ</label><select id="${p}-status">${opts(CASE_STATUS,caseStatus(t))}</select></div>
+    <div class="f full"><label for="${p}-note">หมายเหตุ</label><textarea id="${p}-note" rows="2">${esc(t.note)}</textarea></div>
     <div class="f chk" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="${p}-callback"${t.callback?' checked':''}><label for="${p}-callback">ติดต่อกลับลูกค้าเพื่อปิดงานแล้ว</label></div>
   </div>`;
 }
@@ -1372,7 +1372,7 @@ let scT;$('#sc-q').addEventListener('input',()=>{clearTimeout(scT);scT=setTimeou
 
 function mountIntake(){
   const f=$('#intake-form');
-  f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
+  f.innerHTML=formFields('f')+`<div class="actions"><button class="primary" type="submit" id="f-save">บันทึกและออกเลขรับเรื่อง</button><button type="button" id="f-copy">คัดลอกข้อมูล</button><button type="button" id="f-copyrow" title="คัดลอกเป็นแถวเดียว วางต่อท้ายชีต Log Case ได้เลย">คัดลอกเป็นแถวชีต</button><button type="button" id="f-clear">ล้างฟอร์ม</button><span class="meta" id="f-msg"></span></div>`;
   f.addEventListener('submit',saveIntake);
   $('#f-clear').onclick=()=>{mountIntake();updateLookup();if(!S.canWrite)lockWrites()};
   ['f-phone','f-vin','f-name'].forEach(id=>$('#'+id).addEventListener('input',updateLookup));
@@ -3750,6 +3750,17 @@ function copyIntake(){
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,fb);else fb();
 }
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='f-copy')copyIntake()});
+function copyRow(){
+  const t=readForm('f'),ca=($('#f-contactAt').value||'').trim(),d=ca?new Date(ca):new Date(),dd=isNaN(d)?new Date():d;
+  const cell=v=>{v=String(v==null?'':v);return /[\t\n\r"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const row=[dd.getDate()+'/'+(dd.getMonth()+1)+'/'+String(dd.getFullYear()).slice(2),dd.toLocaleTimeString('en-US'),(typeof personName==='function'&&S.uid?whoFix(personName(S.uid)||''):''),t.channel,t.urgency,t.name,t.vehicleType,t.category,t.detail,t.answer,t.refTicket,t.status];
+  if(!t.name&&!t.detail){toast('ยังไม่มีข้อมูลในฟอร์ม');return}
+  const txt=row.map(cell).join('\t');
+  const ok=()=>toast('คัดลอกเป็นแถวชีตแล้ว นำไปวางในชีต Log Case ได้เลย');
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(e){toast('คัดลอกไม่สำเร็จ')}ta.remove()};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,fb);else fb();
+}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='f-copyrow')copyRow()});
 
 /* ล้างกรอง: ปุ่มล้างตัวกรองในทุกหน้าที่มีช่องค้นหา/ตัวกรอง */
 (function(){const SKIP=/^(ask-ai|tp-pick|d-day|d-month|kp-month|kp-day|kp-person|kp-sub|nt-.*)$/;
