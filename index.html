@@ -693,6 +693,7 @@ a{transition:color .12s}
   <section id="v-dto" hidden>
     <h2>GRAB เช่าซื้อ (DTO)</h2>
     <p class="sub" id="dto-sub"></p>
+    <div id="dto-imp" hidden style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px"><button type="button" class="primary" id="dto-imp-btn">นำเข้าข้อมูล DTO (Excel)</button><input type="file" id="dto-imp-file" accept=".xlsx,.xls" hidden><span class="meta" id="dto-imp-msg"></span></div>
     <div class="rsearch"><div class="f"><label for="dto-q">ค้นหา ชื่อ / เบอร์โทร / เลขตัวถัง / ทะเบียน</label><input id="dto-q" type="search" autocomplete="off" placeholder="เช่น สมชาย, 064..., MPPAH3..., 1กด 4711"></div></div>
     <div class="filters" id="dto-filters" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));margin-bottom:10px"></div>
     <p class="meta" id="dto-count" style="margin:0 0 6px"></p>
@@ -3891,6 +3892,21 @@ document.addEventListener('input',e=>{if(e.target&&(e.target.id==='pd-q'||e.targ
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='pd-cat')renderProduct()});
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='d-import')location.hash='#import'});
 const DTO_ID='ggrabdto';
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='dto-imp-btn')$('#dto-imp-file').click()});
+document.addEventListener('change',async e=>{if(!e.target||e.target.id!=='dto-imp-file')return;const f=e.target.files[0];e.target.value='';if(!f)return;if(!S.isAdmin||!S.db){toast('เฉพาะผู้ดูแลระบบ');return}
+ const msg=$('#dto-imp-msg');
+ try{msg.textContent='กำลังอ่านไฟล์…';const {wb}=readWorkbook(await f.arrayBuffer());
+  const nm=wb.SheetNames.find(n=>/DTO|Grab|เช่าซื้อ/i.test(n))||wb.SheetNames[0];
+  const g=mapGeneric({name:nm,rows:sheetRows(wb.Sheets[nm])});
+  const drop=g.cols.map((c,j)=>/บัตรประชาชน|เลขบัตร|ID\s?card/i.test(String(c))?j:-1).filter(j=>j>=0);
+  const cols=g.cols.filter((_,j)=>!drop.includes(j)),rows=g.rows.map(r=>r.filter((_,j)=>!drop.includes(j)));
+  if(!rows.length){msg.textContent='ไม่พบข้อมูลในชีต '+nm;return}
+  const cur=S.topics.find(x=>x.id===DTO_ID);
+  if(!confirm('นำเข้า DTO จากไฟล์ "'+f.name+'" (ชีต '+nm+', '+rows.length+' ราย)\nข้อมูล DTO เดิม'+(cur?' ('+cur.rows.length+' ราย)':'')+' จะถูกแทนที่ทั้งหมด ตกลงไหม?')){msg.textContent='ยกเลิกแล้ว';return}
+  await S.db.doc('topics/'+DTO_ID).set({title:(cur&&cur.title)||nm,file:f.name,cols,rows,truncated:g.truncated,importedAt:new Date().toISOString(),updatedBy:S.uid});
+  msg.textContent='นำเข้าแล้ว '+rows.length+' ราย'+(drop.length?' (ไม่นำเข้าคอลัมน์เลขบัตรประชาชน)':'');toast('นำเข้า DTO '+rows.length+' ราย แล้ว')}
+ catch(err){msg.textContent='นำเข้าไม่สำเร็จ: '+errText(err)}});
+
 /* GRAB DTO: ตารางเต็มจอ อ่านง่าย */
 (function(){const st=document.createElement('style');st.textContent='#v-dto{width:calc(100vw - 48px);max-width:none;margin-left:calc(50% - 50vw + 24px)}#v-dto .tbl-wrap{max-height:calc(100vh - 250px);min-height:320px;overflow:auto;border:1px solid var(--line,#d9ddd9);border-radius:10px}#v-dto table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.95em}#v-dto th{position:sticky;top:0;z-index:3;white-space:nowrap;padding:10px 14px;background:var(--sunk,#eef1ee);border-bottom:2px solid var(--line,#cfd5cf);text-align:left}#v-dto td{white-space:nowrap;padding:9px 14px;background:var(--panel,#fff);border-bottom:1px solid var(--line,#e3e7e3)}#v-dto tbody tr:nth-child(even) td{background:var(--sunk,#f4f6f4)}#v-dto tbody tr:hover td{background:color-mix(in srgb,var(--panel,#fff) 82%,#2e7d32)}#v-dto th:first-child,#v-dto td:first-child{position:sticky;left:0;z-index:2;border-right:1px solid var(--line,#d9ddd9)}#v-dto th:first-child{z-index:4}@media(max-width:700px){#v-dto{width:calc(100vw - 24px);margin-left:calc(50% - 50vw + 12px)}}';document.head.appendChild(st)})();
 /* GRAB DTO: ผลค้นหาเป็นการ์ดประวัติลูกค้า */
@@ -3919,7 +3935,7 @@ document.addEventListener('click',e=>{const pb=e.target.closest&&e.target.closes
  const h=vipIdx().get(b.dataset.vip);if(!h)return;let p=$('#vip-pop');if(p)p.remove();p=document.createElement('div');p.id='vip-pop';
  p.innerHTML='<div class="vp-box"><button type="button" class="vp-x" aria-label="ปิด">×</button><h3>★ VIP บัตรนางฟ้า</h3><p class="meta">'+esc(h.t.title)+'</p><dl>'+h.t.cols.map((c,j)=>h.r[j]&&c!=='สิทธิ์'?'<div><dt>'+esc(c)+'</dt><dd>'+esc(h.r[j])+'</dd></div>':'').join('')+'</dl><div class="vip-rights"><b>สิทธิประโยชน์</b><ul>'+VIP_BEN.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><b>เงื่อนไขการใช้งาน</b><ol>'+VIP_CON.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol></div></div>';
  p.addEventListener('click',ev=>{if(ev.target===p||ev.target.closest('.vp-x'))p.remove()});document.body.appendChild(p)});
-function renderDto(){
+function renderDto(){ const di=$('#dto-imp');if(di)di.hidden=!S.isAdmin;
   const t=S.topics.find(x=>x.id===DTO_ID),tb=$('#dto-table');
   if(!t){tb.innerHTML='';$('#dto-count').textContent='';$('#dto-filters').innerHTML='';$('#dto-sub').textContent=S.topics.length?'ยังไม่มีข้อมูลลูกค้า DTO ให้ผู้ดูแลนำเข้าในเมนูนำเข้าข้อมูล':'กำลังโหลด…';return}
   const F=S.dtoF||(S.dtoF={}),ix=n=>t.cols.indexOf(n);
