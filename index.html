@@ -326,6 +326,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#dealer" data-v="dealer">Dealer</a>
       <a href="#links" data-v="links">Link การทำงาน</a>
       <a href="#assistant" data-v="assistant">ผู้ช่วยตอบคำถาม</a>
+      <a href="#teamdata" data-v="teamdata">ข้อมูลทีม</a>
       <a href="#repair" data-v="repair">วิเคราะห์อาการเสีย</a>
       <a href="#export" data-v="export">ส่งออกข้อมูล</a>
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
@@ -371,7 +372,7 @@ progress{width:100%;accent-color:var(--accent)}
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
-        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','kb','links']],
+        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','links']],
         ['rep','📈','รายงาน',['kpi','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
@@ -769,7 +770,7 @@ a{transition:color .12s}
   <section id="v-assistant" hidden>
     <div class="as-head">
       <h2>ผู้ช่วยตอบคำถาม</h2>
-      <div class="seg as-mode" role="group" aria-label="โหมด"><button type="button" data-mode="ask" aria-pressed="true">ถามผู้ช่วย</button><button type="button" data-mode="data" aria-pressed="false">เปิดดูข้อมูลทีม</button></div>
+      
     </div>
 
     <!-- Mode 1: ask -->
@@ -1223,7 +1224,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','repair','export','kb','import','kpi','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','repair','export','kb','import','kpi','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1283,7 +1284,7 @@ function memberPerm(id){
 function myPerm(){
   if(S.isAdmin)return {role:'admin',menus:[...MENU_ALL,'kpi','users'],edit:'any',del:'any',exp:true};
   const p=memberPerm(S.uid);
-  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');if(!p.menus.includes('notes'))p.menus.push('notes');
+  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');if(!p.menus.includes('notes'))p.menus.push('notes');if(p.menus.includes('assistant')&&!p.menus.includes('teamdata'))p.menus.push('teamdata');
   if(p.exp&&!p.menus.includes('export'))p.menus.push('export');
   if(!S.canWrite){p.edit='none';p.del='none'}
   return p;
@@ -1335,7 +1336,7 @@ function closeTab(v){
   if(v===S.view)location.hash=S.openTabs[Math.min(i,S.openTabs.length-1)];else renderTabs();
 }
 function go(v){
-  if(v==='data'){v='assistant';S.asMode='data'} // old link to the former ข้อมูลทีม tab
+  if(v==='data')v='teamdata'; // old link to the former ข้อมูลทีม tab
   if(!VIEWS.includes(v))v='dashboard';if(S.view!==v)actView(v);
   if(S.permReady){const m=myPerm().menus;if(!m.includes(v))v=m[0]}
   // remember where each tab was scrolled, and return there when switching back
@@ -1348,7 +1349,7 @@ function go(v){
   document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   if(['repair','search','intake','import','parts'].includes(v)){ensureDms();ensureNcr()}
   if(['parts','import','product'].includes(v))ensureParts();
-  if(v==='assistant')setAsMode(S.asMode||'ask');
+  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();
   renderTabs();
   refresh(true);
 }
@@ -2164,11 +2165,13 @@ $('#tp-pick').addEventListener('change',e=>pickTopic(e.target.value));
 // assistant page: one mode at a time keeps the screen calm
 function setAsMode(m){
   const ai=$('#ask-ai')?.closest('label');if(ai)ai.hidden=!S.sample;
-  S.asMode=m;$('#as-ask').hidden=m!=='ask';$('#as-data').hidden=m!=='data';
+  S.asMode='ask';$('#as-ask').hidden=false;
   document.querySelectorAll('.as-mode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===m)));
-  if(m==='data')renderTopics();else $('#ask-q').focus();
+  $('#ask-q').focus();
 }
 document.querySelectorAll('.as-mode button').forEach(b=>b.onclick=()=>setAsMode(b.dataset.mode));
+// ข้อมูลทีม is its own page now (ฐานความรู้ group); move the former assistant data panel into it
+(()=>{const d=$('#as-data');if(!d)return;const s=document.createElement('section');s.id='v-teamdata';s.hidden=true;s.innerHTML='<h2>ข้อมูลทีม</h2>';d.hidden=false;s.appendChild(d);$('#v-assistant').after(s)})();
 const ASK_SUGGEST=['ลูกค้าแจ้งรถเสียแต่ไม่บอกรายละเอียด','เงื่อนไขรับประกันแบตเตอรี่','ค่าขนส่งอะไหล่','ลูกค้าถามจุดชาร์จ EM Changer','การผ่อนชำระ'];
 $('#ask-sugg').innerHTML=ASK_SUGGEST.map(s=>`<button type="button">${esc(s)}</button>`).join('');
 $('#ask-sugg').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('#ask-q').value=b.textContent;$('#ask-btn').click()});
@@ -2651,7 +2654,7 @@ function showHits(h){
   box.innerHTML=quickHtml(qa)+`<h4>ผลค้นด้วยคำ <span class="meta">${h.docs.length} เอกสาร · ${nRows} แถวจากข้อมูลทีม</span></h4>`
     +(h.docs.length||nRows?'':'<div class="meta">ไม่พบคำนี้ในคลังข้อมูลอ้างอิงหรือข้อมูลทีม ลองใช้คำอื่น เช่น ชื่อรุ่น เบอร์โทร หรือคำสั้นลง</div>')
     +h.docs.map(({k})=>`<details class="hit"><summary>${k.cat?`<span class="tag">${esc(k.cat)}</span>`:''}<b>${esc(k.title)}</b><span class="meta">${esc(k.ref||'')}</span></summary><p>${kwMark(k.content,h.p)}</p></details>`).join('')
-    +Object.values(tabs).map(({t,rows})=>`<details class="hit"${nRows<=12?' open':''}><summary><span class="tag">ข้อมูลทีม</span><b>${esc(t.title)}</b><span class="meta">${rows.length} แถว</span></summary>${rows.slice(0,15).map(r=>`<div class="hit-row">${t.cols.map((c,j)=>r[j]?`<span><b>${esc(c||'คอลัมน์ '+(j+1))}</b>${kwMark(String(r[j]),h.p)}</span>`:'').join('')}</div>`).join('<hr style="border:0;border-top:1px dashed var(--line);margin:6px 0">')}${rows.length>15?`<div class="meta" style="margin-top:6px">และอีก ${rows.length-15} แถว · ดูทั้งหมดในโหมด "เปิดดูข้อมูลทีม"</div>`:''}</details>`).join('');
+    +Object.values(tabs).map(({t,rows})=>`<details class="hit"${nRows<=12?' open':''}><summary><span class="tag">ข้อมูลทีม</span><b>${esc(t.title)}</b><span class="meta">${rows.length} แถว</span></summary>${rows.slice(0,15).map(r=>`<div class="hit-row">${t.cols.map((c,j)=>r[j]?`<span><b>${esc(c||'คอลัมน์ '+(j+1))}</b>${kwMark(String(r[j]),h.p)}</span>`:'').join('')}</div>`).join('<hr style="border:0;border-top:1px dashed var(--line);margin:6px 0">')}${rows.length>15?`<div class="meta" style="margin-top:6px">และอีก ${rows.length-15} แถว · ดูทั้งหมดที่เมนู "ข้อมูลทีม"</div>`:''}</details>`).join('');
 }
 // Step 2, AI: only what the search found goes to the model (focused, cheaper, fewer wrong guesses).
 // With no hits at all, the closest few documents still go along so the model can say it found nothing.
@@ -4069,7 +4072,7 @@ function refresh(viewOnly){
   if(S.view==='intake')renderSaved();
   if(S.view==='parts')renderParts2();
   if(S.view==='links')renderLinks();
-  if(S.view==='assistant'&&S.asMode==='data')renderTopics();
+  if(S.view==='teamdata')renderTopics();
   if(S.view==='export'){renderExport();renderRemovals()}
   if(S.view==='kb')renderKB();
   if(S.view==='import')renderImport();
