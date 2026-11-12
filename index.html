@@ -969,7 +969,7 @@ a{transition:color .12s}
         <div class="period"><button type="button" id="kp-prev" aria-label="เดือนก่อน">‹</button><input type="month" id="kp-month" aria-label="เลือกเดือน"><button type="button" id="kp-next" aria-label="เดือนถัดไป">›</button><select id="kp-person" aria-label="เจ้าหน้าที่" style="width:auto"></select></div>
       </div>
       <div class="chips" id="kp-tabs" role="group" aria-label="หัวข้อ KPI">
-        <button type="button" data-kt="ov" aria-pressed="true">ภาพรวม 4 ตัวชี้วัด</button><button type="button" data-kt="sum" aria-pressed="false">1. สรุปข้อมูล</button><button type="button" data-kt="rate" aria-pressed="false">2. อัตราเคส</button><button type="button" data-kt="sched" aria-pressed="false">3. ตารางการทำงาน</button><button type="button" data-kt="fast" aria-pressed="false">4. ตอบกลับภายใน <span id="kp-min">3</span> นาที</button>
+        <button type="button" data-kt="ov" aria-pressed="true">ภาพรวม 4 ตัวชี้วัด</button><button type="button" data-kt="sum" aria-pressed="false">1. สรุปข้อมูล</button><button type="button" data-kt="rate" aria-pressed="false">2. อัตราเคส</button><button type="button" data-kt="sched" aria-pressed="false">3. ตารางการทำงาน</button><button type="button" data-kt="fast" aria-pressed="false">4. ตอบกลับภายใน <span id="kp-min">3</span> นาที</button><button type="button" data-kt="f4" aria-pressed="false">5. KPI 4 ตามสูตร</button>
       </div>
       <div class="chips" id="kp-gran" role="group" aria-label="ช่วงเวลา" style="margin-top:8px"><button type="button" data-g="month" aria-pressed="true">รายเดือน</button><button type="button" data-g="week" aria-pressed="false">รายสัปดาห์</button><button type="button" data-g="day" aria-pressed="false">รายวัน</button><select id="kp-sub" aria-label="เลือกช่วง" style="width:auto" hidden></select><input type="date" id="kp-day" aria-label="เลือกวันที่จากปฏิทิน" style="width:auto" hidden></div>
       <div id="kp-view"></div>
@@ -3298,8 +3298,8 @@ function renderKpi(){
   $('#kp-goal').textContent=`เป้าหมาย: อัตราตอบ ≥ ${c.reply}% · อัตราปิด ≥ ${c.close}% · ตอบกลับภายใน ${c.replyMin} นาที`;
   document.querySelectorAll('#kp-tabs button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kt===K.tab)));
   const view=$('#kp-view');
-  if(!M.length){view.innerHTML=`<div class="empty">${K.loaded?`ยังไม่มีข้อมูล KPI ของ${esc(kpiMonthName(K.month))} กด "นำเข้าจาก Excel" หรือ "บันทึกข้อมูลรายวัน"`:'กำลังโหลด…'}</div>`;$('#kp-person-box').innerHTML='';return}
-  ({ov:kpiViewOv,sum:kpiViewSum,rate:kpiViewRate,sched:kpiViewSched,fast:kpiViewFast})[K.tab](view,kpiGranRows(M),people,c);
+  if(!M.length&&K.tab!=='f4'){view.innerHTML=`<div class="empty">${K.loaded?`ยังไม่มีข้อมูล KPI ของ${esc(kpiMonthName(K.month))} กด "นำเข้าจาก Excel" หรือ "บันทึกข้อมูลรายวัน"`:'กำลังโหลด…'}</div>`;$('#kp-person-box').innerHTML='';return}
+  ({ov:kpiViewOv,sum:kpiViewSum,rate:kpiViewRate,sched:kpiViewSched,fast:kpiViewFast,f4:kpiViewF4})[K.tab](view,kpiGranRows(M),people,c);
   view.querySelectorAll('tr[data-kp]').forEach(r=>{const pick=()=>{K.person=K.person===r.dataset.kp?'':r.dataset.kp;renderKpi()};r.onclick=pick;r.onkeydown=e=>{if(e.key==='Enter')pick()}});
   if(K.tab==='ov'||K.tab==='sum'||K.tab==='rate')renderKpiPerson(M);else $('#kp-person-box').innerHTML='';
 }
@@ -3424,6 +3424,52 @@ function renderKpiPerson(M){
         :'<tr><td colspan="11" class="empty">ไม่มีข้อมูลในเดือนนี้</td></tr>'}</tbody></table></div></div>`;
   box.querySelector('[data-kp-add]').onclick=()=>kpiForm({agent:K.person,date:isoDate(new Date().toISOString())});
   box.querySelectorAll('[data-kp-edit]').forEach(b=>b.onclick=()=>kpiForm(K.rows.find(r=>kpiId(r.date,r.agent)===b.dataset.kpEdit)));
+}
+/* ---------- KPI 4 ตามสูตร (ตัวเลขรายวันต่อคน เก็บในคอลเลกชัน kpi4) ---------- */
+const K4={rows:[],on:false};
+const K4F=[
+  {t:'1. อัตราการตอบกลับภายใน 3 นาที',f:'(จำนวนสาย/แชทที่ตอบใน 3 นาที ÷ สาย/แชททั้งหมด) × 100',a:'r3a',b:'r3b',la:'สาย/แชทที่ตอบใน 3 นาที',lb:'สาย/แชททั้งหมด',pct:1},
+  {t:'2. คะแนนความพึงพอใจ (CSAT)',f:'ผลรวมคะแนนประเมิน ÷ จำนวนผู้ประเมินทั้งหมด (เต็ม 5)',a:'csS',b:'csN',la:'ผลรวมคะแนนประเมิน',lb:'จำนวนผู้ประเมินทั้งหมด'},
+  {t:'3. อัตราการปิดเคสภายใน 1 วัน',f:'(จำนวนเคสที่ปิดใน 24 ชม. ÷ จำนวนเคสที่เปิดทั้งหมด) × 100',a:'c1a',b:'c1b',la:'เคสที่ปิดใน 24 ชม.',lb:'เคสที่เปิดทั้งหมด',pct:1},
+  {t:'4. อัตราปิดการขายอะไหล่ใน 24 ชม.',f:'(เคสสั่งซื้ออะไหล่ที่ปิดการขายใน 24 ชม. ÷ เคสสอบถามอะไหล่ทั้งหมด) × 100',a:'p1a',b:'p1b',la:'เคสสั่งซื้ออะไหล่ที่ปิดการขายใน 24 ชม.',lb:'เคสสอบถามอะไหล่ทั้งหมด',pct:1}];
+function ensureKpi4(){if(K4.on||!S.db||!S.isAdmin)return;K4.on=true;
+  S.db.collection('kpi4').onSnapshot(s=>{K4.rows=s.docs.map(d=>d.data()).filter(r=>r&&r.date&&r.agent);if(S.view==='kpi'&&K.tab==='f4')renderKpi()},()=>{K4.on=false})}
+const k4v=(f,o)=>{const a=o[f.a]||0,b=o[f.b]||0;return b?(f.pct?(a/b*100).toFixed(1)+'%':(a/b).toFixed(2)+' / 5'):'-'};
+function k4sum(rows){const o={};K4F.forEach(f=>{o[f.a]=0;o[f.b]=0});rows.forEach(r=>K4F.forEach(f=>{o[f.a]+=Number(r[f.a])||0;o[f.b]+=Number(r[f.b])||0}));return o}
+function kpiViewF4(view,_r,people){
+  ensureKpi4();
+  const M=K4.rows.filter(r=>r.date.startsWith(K.month)).sort((a,b)=>a.date.localeCompare(b.date)||a.agent.localeCompare(b.agent));
+  const names=[...new Set([...(people||[]),...M.map(r=>r.agent)])].filter(n=>M.some(r=>r.agent===n));
+  const row=(n,rs,tot)=>{const o=k4sum(rs);return '<tr'+(tot?' class="kp-total"':'')+'><td><b>'+esc(n)+'</b></td>'+K4F.map(f=>'<td class="num"><b>'+k4v(f,o)+'</b><div class="meta">'+(o[f.a]||0)+' / '+(o[f.b]||0)+'</div></td>').join('')+'</tr>'};
+  view.innerHTML='<div class="panel"><div class="kp-head"><h3 style="margin:0">KPI 4 ตามสูตร · '+esc(kpiMonthName(K.month))+'</h3><button type="button" class="primary" id="k4-add">บันทึกตัวเลขรายวัน</button></div>'
+    +'<div class="tbl-wrap"><table><thead><tr><th>เจ้าหน้าที่</th>'+K4F.map(f=>'<th>'+esc(f.t)+'<div class="meta" style="font-weight:400">'+esc(f.f)+'</div></th>').join('')+'</tr></thead><tbody>'
+    +(M.length?names.map(n=>row(n,M.filter(r=>r.agent===n))).join('')+row('รวมทุกคน',M,1):'<tr><td colspan="5" class="empty">ยังไม่มีตัวเลขของเดือนนี้ กด "บันทึกตัวเลขรายวัน"</td></tr>')
+    +'</tbody></table></div><p class="meta">ตัวเลขเล็กใต้เปอร์เซ็นต์คือ ตัวตั้ง / ตัวหาร ของเดือนนั้น</p></div>'
+    +'<div class="panel" style="margin-top:12px"><h3>รายการรายวัน</h3><div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th>เจ้าหน้าที่</th>'+K4F.map((f,i)=>'<th>'+(i+1)+'. '+esc(f.la)+' / '+esc(f.lb)+'</th>').join('')+'<th></th></tr></thead><tbody>'
+    +(M.map(r=>'<tr><td>'+esc(r.date)+'</td><td>'+esc(r.agent)+'</td>'+K4F.map(f=>'<td class="num">'+(r[f.a]??0)+' / '+(r[f.b]??0)+'</td>').join('')+'<td><button type="button" class="link" data-k4e="'+esc(kpiId(r.date,r.agent))+'">แก้ไข</button></td></tr>').join('')||'<tr><td colspan="7" class="empty">ไม่มีรายการ</td></tr>')
+    +'</tbody></table></div></div>';
+  $('#k4-add').onclick=()=>k4Form();
+  view.querySelectorAll('[data-k4e]').forEach(b=>b.onclick=()=>k4Form(K4.rows.find(r=>kpiId(r.date,r.agent)===b.dataset.k4e)));
+}
+function k4Form(r){
+  r=r||{date:isoDate(new Date().toISOString())};const old=r.agent&&K4.rows.find(x=>x.date===r.date&&x.agent===r.agent);
+  const num=(k,l)=>'<div class="f"><label for="k4-'+k+'">'+esc(l)+'</label><input id="k4-'+k+'" type="number" min="0" step="any" inputmode="decimal" value="'+(r[k]??'')+'"></div>';
+  modal('<div class="modal-head"><div><h3>'+(old?'แก้ไข':'บันทึก')+'ตัวเลข KPI 4 ตามสูตร</h3><div class="meta">ตัวเลขของแต่ละคนในวันนั้น (ตัวตั้ง และ ตัวหาร ของแต่ละสูตร)</div></div><button class="x" data-close>ปิด</button></div>'
+    +'<form id="k4f" novalidate><div class="fields">'
+    +'<div class="f"><label for="k4-date">วันที่ <span class="req">*</span></label><input id="k4-date" type="date" value="'+esc(r.date||'')+'"'+(old?' disabled':'')+'></div>'
+    +'<div class="f"><label for="k4-agent">เจ้าหน้าที่ <span class="req">*</span></label><input id="k4-agent" list="k4-people" value="'+esc(r.agent||'')+'"'+(old?' disabled':'')+' autocomplete="off"><datalist id="k4-people">'+kpiPeople(K.rows).map(p=>'<option value="'+esc(p)+'">').join('')+'</datalist></div>'
+    +K4F.map(f=>num(f.a,f.la)+num(f.b,f.lb)).join('')
+    +'</div><div class="actions"><button class="primary" type="submit">บันทึก</button>'+(old?'<button type="button" class="danger" id="k4-del">ลบรายการนี้</button>':'')+'<span class="meta" id="k4-msg"></span></div></form>');
+  $('#k4f').onsubmit=async e=>{e.preventDefault();const msg=$('#k4-msg'),v=id=>$('#k4-'+id).value;
+    const date=v('date'),agent=kpiName(v('agent'),date);
+    if(!date||!agent){msg.textContent='ใส่วันที่และชื่อเจ้าหน้าที่';return}
+    const data={date,agent,updatedAt:new Date().toISOString(),updatedBy:S.uid||''};
+    K4F.forEach(f=>{[f.a,f.b].forEach(k=>{const t=v(k).trim();data[k]=t===''?0:Math.max(0,Number(t)||0)})});
+    for(const f of K4F){if(f.pct&&data[f.a]>data[f.b]){msg.textContent='"'+f.la+'" ต้องไม่มากกว่า "'+f.lb+'"';return}}
+    if(data.csS>5*data.csN){msg.textContent='คะแนนรวมเกินเต็ม 5 ต่อคน ตรวจตัวเลข CSAT อีกครั้ง';return}
+    try{await S.db.doc('kpi4/'+kpiId(date,agent)).set(data);closeModal();toast('บันทึกแล้ว')}catch(err){msg.textContent='บันทึกไม่สำเร็จ: '+errText(err)}};
+  const d=$('#k4-del');if(d)d.onclick=async()=>{if(d.dataset.sure!=='1'){d.dataset.sure='1';d.textContent='กดอีกครั้งเพื่อยืนยันลบ';return}
+    try{await S.db.doc('kpi4/'+kpiId(r.date,r.agent)).delete();closeModal();toast('ลบแล้ว')}catch(err){$('#k4-msg').textContent='ลบไม่สำเร็จ: '+errText(err)}};
 }
 function kpiForm(r){
   r=r||{date:isoDate(new Date().toISOString())};const old=r.agent&&r.date&&K.rows.find(x=>x.date===r.date&&x.agent===r.agent);
