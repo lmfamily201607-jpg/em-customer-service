@@ -53,6 +53,41 @@
     return r;
   }
 
+  /* ---------- live "someone updated" notice (broadcast, no extra table) ---------- */
+  const COLL_TH = { tickets: 'เคสลูกค้า', kb: 'คลังข้อมูลอ้างอิง', topics: 'ข้อมูลทีม', dealers: 'Dealer', links: 'Link การทำงาน', notices: 'ประกาศ', pimg: 'รูปสินค้า', parts: 'ราคาอะไหล่', bom: 'BOM', kpi: 'KPI', legacy: 'ข้อมูลเดิม', repairs: 'งานซ่อม', ncr: 'NCR', dms: 'DMS' };
+  const QUIET = new Set(['audit', 'seen', 'members', 'counters', 'edits', 'removals', 'invites']);
+  let nch = null, pend = null;
+  function nchan() {
+    if (nch) return nch;
+    nch = sb.channel('em-notify').on('broadcast', { event: 'upd' }, ({ payload }) => {
+      if (!payload || !me || payload.id === me.id) return;
+      showUpd(payload);
+    }).subscribe();
+    return nch;
+  }
+  function notify(path) {
+    const c = first(path);
+    if (QUIET.has(c) || !me) return;
+    nchan();
+    if (!pend) {
+      pend = { colls: {}, n: 0 };
+      setTimeout(() => { const p = pend; pend = null; try { nch.send({ type: 'broadcast', event: 'upd', payload: { id: me.id, name: me.name, colls: Object.keys(p.colls), n: p.n } }); } catch (e) {} }, 3000);
+    }
+    pend.colls[c] = 1; pend.n++;
+  }
+  function showUpd(p) {
+    let box = document.getElementById('em-upd');
+    if (!box) { box = document.createElement('div'); box.id = 'em-upd'; box.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2000;display:flex;flex-direction:column;gap:8px;max-width:340px'; document.body.appendChild(box); }
+    const what = (p.colls || []).map((c) => COLL_TH[c] || c).join(', ');
+    const t = document.createElement('div');
+    t.style.cssText = 'background:#fff;color:#111;border:1px solid #cfe3d8;border-left:4px solid #0a7d4a;border-radius:10px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.15);font:14px/1.4 Prompt,"Noto Sans Thai",sans-serif;cursor:pointer';
+    t.innerHTML = '<b>🔔 ' + String(p.name || 'มีผู้ใช้').replace(/[<>&]/g, '') + ' อัปเดตข้อมูล</b><div style="color:#555;font-size:13px">' + what.replace(/[<>&]/g, '') + (p.n > 1 ? ' · ' + p.n + ' รายการ' : '') + ' · ข้อมูลในหน้านี้อัปเดตให้แล้ว</div>';
+    t.onclick = () => t.remove();
+    box.appendChild(t);
+    while (box.children.length > 3) box.firstChild.remove();
+    setTimeout(() => t.remove(), 8000);
+  }
+
   const listeners = new Set();
   let channel = null;
   function ensureChannel() {
@@ -89,9 +124,9 @@
     };
     const api = {
       get: read,
-      async set(data) { const { error } = await sb.from('em_docs').upsert({ path, coll: first(path), data }); if (error) throw errOf(error); },
+      async set(data) { const { error } = await sb.from('em_docs').upsert({ path, coll: first(path), data }); if (error) throw errOf(error); notify(path); },
       async update(patch) { const s = await read(); await api.set({ ...(s.exists ? s.data() : {}), ...patch }); },
-      async delete() { const { error } = await sb.from('em_docs').delete().eq('path', path); if (error) throw errOf(error); },
+      async delete() { const { error } = await sb.from('em_docs').delete().eq('path', path); if (error) throw errOf(error); notify(path); },
       onSnapshot(cb, onErr) {
         const run = async () => { try { cb(await read()); } catch (e) { onErr && onErr(e); } };
         const l = { match: (p) => p === path, run };
@@ -199,7 +234,7 @@
         });
         if (!approved) continue;
       }
-      hide();
+      hide(); nchan();
       // sign-out link in the header
       window.addEventListener('DOMContentLoaded', () => {});
       setTimeout(() => {
