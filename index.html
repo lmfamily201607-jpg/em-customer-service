@@ -327,6 +327,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#links" data-v="links">Link การทำงาน</a>
       <a href="#assistant" data-v="assistant">ผู้ช่วยตอบคำถาม</a>
       <a href="#teamdata" data-v="teamdata">ข้อมูลทีม</a>
+      <a href="#onsite" data-v="onsite">อะไหล่ SET ช่าง onsite</a>
       <a href="#repair" data-v="repair">วิเคราะห์อาการเสีย</a>
       <a href="#export" data-v="export">ส่งออกข้อมูล</a>
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
@@ -372,7 +373,7 @@ progress{width:100%;accent-color:var(--accent)}
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
-        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','links']],
+        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','links']],
         ['rep','📈','รายงาน',['kpi','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
@@ -747,6 +748,20 @@ a{transition:color .12s}
     </div>
     <p class="meta" id="dl-count" style="margin:0 0 10px"></p>
     <div class="dl-grid" id="dl-list"></div>
+  </section>
+
+  <!-- Onsite technician parts sets -->
+  <section id="v-onsite" hidden>
+    <h2>อะไหล่ SET ช่าง onsite</h2>
+    <p class="sub" id="os-sub">ชุดอะไหล่ที่ช่าง onsite เตรียมไป แยกตามรุ่นและอาการเสีย ค้นหาด้วยชื่ออะไหล่ SKU หรืออาการได้</p>
+    <div id="os-imp" hidden style="margin-bottom:10px"><button type="button" class="primary" id="os-imp-btn">นำเข้าไฟล์ SET (Excel)</button> <input type="file" id="os-imp-file" accept=".xlsx,.xls" hidden> <span class="meta" id="os-msg"></span></div>
+    <div class="rsearch">
+      <div class="f"><label for="os-q">ค้นหา อะไหล่ / SKU / อาการ</label><input id="os-q" type="search" placeholder="เช่น คอนโทรลเลอร์, ENX30006, ชาร์จไม่เข้า" autocomplete="off"></div>
+      <div class="f"><label for="os-m">รุ่น</label><select id="os-m"></select></div>
+      <div class="f"><label for="os-t">ประเภท</label><select id="os-t"></select></div>
+    </div>
+    <p class="meta" id="os-count" style="margin:0 0 10px"></p>
+    <div id="os-list"></div>
   </section>
 
   <!-- Work links -->
@@ -1224,7 +1239,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','repair','export','kb','import','kpi','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','onsite','repair','export','kb','import','kpi','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1284,7 +1299,7 @@ function memberPerm(id){
 function myPerm(){
   if(S.isAdmin)return {role:'admin',menus:[...MENU_ALL,'kpi','users'],edit:'any',del:'any',exp:true};
   const p=memberPerm(S.uid);
-  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');if(!p.menus.includes('notes'))p.menus.push('notes');if(p.menus.includes('assistant')&&!p.menus.includes('teamdata'))p.menus.push('teamdata');
+  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');if(!p.menus.includes('notes'))p.menus.push('notes');if(p.menus.includes('assistant')&&!p.menus.includes('teamdata'))p.menus.push('teamdata');if(p.menus.includes('parts')&&!p.menus.includes('onsite'))p.menus.push('onsite');
   if(p.exp&&!p.menus.includes('export'))p.menus.push('export');
   if(!S.canWrite){p.edit='none';p.del='none'}
   return p;
@@ -1349,7 +1364,7 @@ function go(v){
   document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   if(['repair','search','intake','import','parts'].includes(v)){ensureDms();ensureNcr()}
   if(['parts','import','product'].includes(v))ensureParts();
-  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();
+  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}
   renderTabs();
   refresh(true);
 }
@@ -2040,6 +2055,48 @@ const ZIPMAP={"10100":"กรุงเทพมหานคร:ป้อมป�
 const METRO=['กรุงเทพ','นนทบุรี','ปทุมธานี','สมุทรปราการ','นครปฐม','สมุทรสาคร'];
 function zipInfo(z){const s=ZIPMAP[z];if(!s)return null;const provs=[],dists=[];s.split(';').forEach(x=>{const [p,a]=x.split(':');provs.push(p.replace('มหานคร',''));(a||'').split(',').forEach(d=>d&&dists.push(d))});
   return {provs,dists,metro:provs.some(p=>METRO.includes(p)),label:s.split(';').map(x=>{const [p,a]=x.split(':');return (p==='กรุงเทพมหานคร'?'เขต':'อำเภอ')+a.split(',').join(', ')+' '+p}).join(' / ')}}
+/* ---------- อะไหล่ SET ช่าง onsite (stored in the app database; admin imports the Excel) ---------- */
+const OS={rows:[],meta:null,on:false};
+function ensureOnsite(){if(OS.on||!S.db)return;OS.on=true;
+  S.db.collection('onset').onSnapshot(s=>{const d=s.docs.map(x=>x.data()).sort((a,b)=>(a.part||0)-(b.part||0));OS.meta=d[0]||null;OS.rows=d.flatMap(x=>x.rows||[]);if(S.view==='onsite')renderOnsite()},()=>{OS.on=false})}
+async function onsetImport(file){
+  const {wb}=readWorkbook(await file.arrayBuffer());let best=null;
+  wb.SheetNames.forEach(n=>{const rows=sheetRows(wb.Sheets[n]);const h=(rows[0]||[]).map(c=>String(c).trim());if(h.some(x=>x.includes('ชื่ออะไหล่'))&&h.some(x=>/model/i.test(x)))best={n,rows}});
+  if(!best)throw new Error('ไม่พบหัวตาราง Model / ชื่ออะไหล่ ในไฟล์');
+  const H=best.rows[0].map(c=>String(c).trim().toLowerCase()),ix=k=>H.findIndex(x=>x.includes(k));
+  const iM=ix('model'),iT=ix('type'),iS=ix('อาการ'),iK=ix('standard'),iP=ix('ชื่ออะไหล่'),iQ=ix('จำนวน'),iU=ix('sku'),iR=ix('price');
+  const cur={},out=[];
+  best.rows.slice(1).forEach(r=>{const g=i=>i<0?'':String(r[i]??'').trim();if(!r.some(c=>String(c).trim()))return;
+    if(g(iM))cur.m=g(iM);if(g(iT))cur.t=g(iT);if(g(iS))cur.s=g(iS);if(g(iK))cur.k=g(iK);
+    if(g(iP)){const pr=iR<0?'':r[iR];out.push([cur.m||'',cur.t||'',cur.s||'',cur.k||'',g(iP),g(iQ),g(iU),typeof pr==='number'?pr:''])}});
+  if(!out.length)throw new Error('ไม่พบรายการอะไหล่');
+  const old=(await S.db.collection('onset').get()).docs.map(d=>d.id),keep=new Set(),now=new Date().toISOString();
+  for(let i=0,p=1;i<out.length;i+=120,p++){const id='p'+p;keep.add(id);
+    await S.db.doc('onset/'+id).set({part:p,rows:out.slice(i,i+120),...(p===1?{file:file.name,importedAt:now,count:out.length}:{})})}
+  for(const id of old)if(!keep.has(id))await S.db.doc('onset/'+id).delete();
+  return out.length}
+function renderOnsite(){
+  const R=OS.rows;$('#os-imp').hidden=!S.isAdmin;
+  $('#os-sub').textContent=OS.meta?'ชุดอะไหล่ที่ช่าง onsite เตรียมไป แยกตามรุ่นและอาการเสีย · '+R.length+' รายการ จากไฟล์ '+(OS.meta.file||'')+' นำเข้าเมื่อ '+fmt(OS.meta.importedAt):(S.isAdmin?'ยังไม่มีข้อมูล กดปุ่ม "นำเข้าไฟล์ SET" เพื่อนำเข้า':'ยังไม่มีข้อมูล ให้ผู้ดูแลระบบนำเข้าไฟล์');
+  const uniq=a=>[...new Set(a.filter(Boolean))];
+  const ms=$('#os-m'),ts=$('#os-t'),mv=ms.value,tv=ts.value;
+  ms.innerHTML='<option value="">ทุกรุ่น</option>'+uniq(R.map(r=>r[0])).map(x=>'<option'+(x===mv?' selected':'')+'>'+esc(x)+'</option>').join('');
+  ts.innerHTML='<option value="">ทุกประเภท</option>'+uniq(R.map(r=>r[1])).map(x=>'<option'+(x===tv?' selected':'')+'>'+esc(x)+'</option>').join('');
+  const q=$('#os-q').value.trim().toLowerCase(),m=ms.value,t=ts.value;
+  const sets=new Map();
+  R.forEach(r=>{if(m&&r[0]!==m)return;if(t&&r[1]!==t)return;(sets.get(r[0]+'||'+r[2])||sets.set(r[0]+'||'+r[2],{m:r[0],t:r[1],s:r[2],rows:[]}).get(r[0]+'||'+r[2])).rows.push(r)});
+  let L=[...sets.values()];
+  if(q)L=L.filter(g=>(g.m+' '+g.s+' '+g.rows.map(r=>r[4]+' '+r[6]).join(' ')).toLowerCase().includes(q));
+  $('#os-count').textContent=R.length?'พบ '+L.length+' ชุด':'';
+  $('#os-list').innerHTML=L.map((g,i)=>'<details class="panel" style="margin-bottom:8px"'+(L.length<=6?' open':'')+'><summary><b>'+esc(g.m)+'</b> · '+esc(g.s)+' <span class="meta">'+g.rows.length+' รายการ · '+esc(g.t)+'</span></summary>'
+    +'<div class="tbl-wrap"><table><thead><tr><th>ชื่ออะไหล่</th><th>จำนวน</th><th>SKU</th><th>ราคา</th><th>ประเภท</th></tr></thead><tbody>'
+    +g.rows.map(r=>'<tr><td>'+esc(r[4])+'</td><td>'+esc(r[5])+'</td><td class="mono">'+esc(r[6])+'</td><td>'+(r[7]!==''?Number(r[7]).toLocaleString('th-TH'):'')+'</td><td>'+esc(r[3])+'</td></tr>').join('')
+    +'</tbody></table></div><button type="button" class="link" data-os-copy="'+i+'">คัดลอกรายการ</button></details>').join('')||'<div class="empty">'+(R.length?'ไม่พบชุดที่ตรงกับเงื่อนไข':'')+'</div>';
+  $('#os-list').querySelectorAll('[data-os-copy]').forEach(b=>b.onclick=async()=>{const g=L[+b.dataset.osCopy];const txt=g.m+' · '+g.s+'\n'+g.rows.map(r=>'- '+r[4]+(r[5]?' x'+r[5]:'')+(r[6]?' ('+r[6]+')':'')).join('\n');try{await navigator.clipboard.writeText(txt);toast('คัดลอกแล้ว')}catch(e){toast('คัดลอกไม่สำเร็จ')}})}
+['#os-q','#os-m','#os-t'].forEach(s=>$(s).addEventListener(s==='#os-q'?'input':'change',renderOnsite));
+$('#os-imp-btn').onclick=()=>$('#os-imp-file').click();
+$('#os-imp-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#os-msg');msg.textContent='กำลังนำเข้า…';
+  try{const n=await onsetImport(f);msg.textContent='นำเข้าแล้ว '+n+' รายการ';toast('นำเข้า SET ช่าง onsite แล้ว '+n+' รายการ')}catch(err){msg.textContent='นำเข้าไม่สำเร็จ: '+(err&&err.message||err);}};
 function renderDealers(){
   const L=S.dealers;
   const rsel=$('#dl-region'),cur=rsel.value;
@@ -4080,7 +4137,7 @@ function refresh(viewOnly){
   if(S.view==='intake')renderSaved();
   if(S.view==='parts')renderParts2();
   if(S.view==='links')renderLinks();
-  if(S.view==='teamdata')renderTopics();
+  if(S.view==='teamdata')renderTopics();if(S.view==='onsite')renderOnsite();
   if(S.view==='export'){renderExport();renderRemovals()}
   if(S.view==='kb')renderKB();
   if(S.view==='import')renderImport();
