@@ -3498,6 +3498,12 @@ async function krImport(file){
   if(!sheets.length)throw new Error('ไม่พบชีตข้อมูล Zaapi (ภาพรวม / รายเดือน / ช่วงเวลา) ในไฟล์');
   await S.db.doc('kpirep/zaapi').set({sheets,file:file.name,importedAt:new Date().toISOString()});return sheets.length}
 function krCell(v,h){if(typeof v!=='number')return esc(v);if(/%|สัดส่วน/.test(h||''))return (v*100).toFixed(1)+'%';return Number.isInteger(v)?v.toLocaleString('th-TH'):(Math.round(v*10)/10).toLocaleString('th-TH')}
+function krRef(){
+  const s=KR.z&&KR.z.sheets&&KR.z.sheets.find(x=>/รายเดือน/.test(x.name));if(!s)return '';
+  const h=s.rows[0].map(String),ix=k=>h.findIndex(x=>x.includes(k));
+  const defs=[['ทิกเก็ตที่สร้าง (รายการ)',ix('ทิกเก็ตที่สร้าง'),v=>v.toLocaleString('th-TH')],['เวลาตอบกลับ มัธยฐาน (นาที)',ix('ตอบกลับ (นาที)'),v=>String(Math.round(v*10)/10)],['เวลาปิดทิกเก็ต มัธยฐาน (ชั่วโมง)',ix('ปิดทิกเก็ต (ชั่วโมง)'),v=>String(Math.round(v*10)/10)]];
+  const byM=KR_MON.map(m=>s.rows.slice(1).find(r=>String(r[0]).startsWith(m)));
+  return defs.filter(d=>d[1]>=0).map(d=>'<tr style="background:var(--sunk)"><td><b>อ้างอิงจาก Zaapi</b></td><td class="meta">'+esc(d[0])+'</td><td></td>'+byM.map(r=>'<td class="num">'+(r&&typeof r[d[1]]==='number'&&r[d[1]]>0?d[2](r[d[1]]):'-')+'</td>').join('')+'<td></td></tr>').join('')}
 function renderKrep(){
   if(!S.isAdmin){$('#kr-gate').innerHTML=S.me?'<div class="banner warn">หน้านี้ดูได้เฉพาะผู้ดูแลระบบ</div>':'<div class="empty">กำลังตรวจสิทธิ์…</div>';$('#kr-body').hidden=true;return}
   $('#kr-gate').innerHTML='';$('#kr-body').hidden=false;ensureKrep();
@@ -3508,7 +3514,8 @@ function renderKrep(){
   $('#kr-s1').innerHTML='<div class="panel" style="margin-top:12px"><h3>ส่วนที่ 1: ตัวชี้วัดประสิทธิภาพหลัก (KPI) · ปี '+Y+'</h3><div class="tbl-wrap"><table><thead><tr><th>หัวข้อ KPI</th><th>สูตรการคำนวณ</th><th>เป้าหมาย</th>'+KR_MON.map(m=>'<th>'+m+'</th>').join('')+'<th>เฉลี่ยทั้งปี (YTD)</th></tr></thead><tbody>'
     +K4F.map(f=>{const cell=rs=>{const o=k4sum(rs);return '<td class="num'+k4cls(f,o)+'">'+(rs.length?k4v(f,o):'-')+'</td>'};
       return '<tr><td><b>'+esc(f.t)+'</b></td><td class="meta">'+esc(f.f)+'</td><td class="num"><b>'+(f.pct?f.g+'%':f.g.toFixed(2))+'</b></td>'+KR_MON.map((_,m)=>cell(mon(m))).join('')+cell(R)+'</tr>'}).join('')
-    +'</tbody></table></div><p class="meta">เขียว = ผ่านเป้าหมาย แดง = ต่ำกว่าเป้าหมาย · กรอกตัวเลขรายวันได้ที่ KPI รายบุคคล แท็บ 5</p></div>';
+    +krRef()
+    +'</tbody></table></div><p class="meta">เขียว = ผ่านเป้าหมาย แดง = ต่ำกว่าเป้าหมาย · กรอกตัวเลขรายวันได้ที่ KPI รายบุคคล แท็บ 5 · แถวสีเทา "อ้างอิงจาก Zaapi" ดึงจากไฟล์ที่นำเข้า (ค่ากลางรายเดือน ไม่ใช่สูตร KPI จึงไม่เทียบเป้า)</p></div>';
   // 2) voice of customer (typed by hand, saved per year)
   $('#kr-s2').innerHTML='<div class="panel" style="margin-top:12px"><h3>ส่วนที่ 2: สรุปความคิดเห็นลูกค้า (จำนวนครั้ง) · ปี '+Y+'</h3><div class="tbl-wrap"><table><thead><tr><th>หมวดหมู่</th><th>รายละเอียด</th><th>แนวโน้ม</th>'+KR_MON.map(m=>'<th>'+m+'</th>').join('')+'<th>รวม</th></tr></thead><tbody>'
     +KR_VOC.map((g,gi)=>g[2].map((it,ii)=>{const key=Y+'_'+gi+'_'+ii,a=(KR.voc[key]||[]);const sum=a.reduce((s,x)=>s+(Number(x)||0),0);
