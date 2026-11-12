@@ -3428,23 +3428,24 @@ function renderKpiPerson(M){
 /* ---------- KPI 4 ตามสูตร (ตัวเลขรายวันต่อคน เก็บในคอลเลกชัน kpi4) ---------- */
 const K4={rows:[],on:false};
 const K4F=[
-  {t:'1. อัตราการตอบกลับภายใน 3 นาที',f:'(จำนวนสาย/แชทที่ตอบใน 3 นาที ÷ สาย/แชททั้งหมด) × 100',a:'r3a',b:'r3b',la:'สาย/แชทที่ตอบใน 3 นาที',lb:'สาย/แชททั้งหมด',pct:1},
-  {t:'2. คะแนนความพึงพอใจ (CSAT)',f:'ผลรวมคะแนนประเมิน ÷ จำนวนผู้ประเมินทั้งหมด (เต็ม 5)',a:'csS',b:'csN',la:'ผลรวมคะแนนประเมิน',lb:'จำนวนผู้ประเมินทั้งหมด'},
-  {t:'3. อัตราการปิดเคสภายใน 1 วัน',f:'(จำนวนเคสที่ปิดใน 24 ชม. ÷ จำนวนเคสที่เปิดทั้งหมด) × 100',a:'c1a',b:'c1b',la:'เคสที่ปิดใน 24 ชม.',lb:'เคสที่เปิดทั้งหมด',pct:1},
-  {t:'4. อัตราปิดการขายอะไหล่ใน 24 ชม.',f:'(เคสสั่งซื้ออะไหล่ที่ปิดการขายใน 24 ชม. ÷ เคสสอบถามอะไหล่ทั้งหมด) × 100',a:'p1a',b:'p1b',la:'เคสสั่งซื้ออะไหล่ที่ปิดการขายใน 24 ชม.',lb:'เคสสอบถามอะไหล่ทั้งหมด',pct:1}];
+  {t:'1. อัตราการตอบกลับภายใน 3 นาที',f:'(จำนวนสาย/แชทที่ตอบใน 3 นาที ÷ สาย/แชททั้งหมด) × 100',a:'r3a',b:'r3b',la:'สาย/แชทที่ตอบใน 3 นาที',lb:'สาย/แชททั้งหมด',pct:1,g:90},
+  {t:'2. คะแนนความพึงพอใจ (CSAT)',f:'ผลรวมคะแนนประเมิน ÷ จำนวนผู้ประเมินทั้งหมด (เต็ม 5)',a:'csS',b:'csN',la:'ผลรวมคะแนนประเมิน',lb:'จำนวนผู้ประเมินทั้งหมด',g:4.5},
+  {t:'3. อัตราการปิดเคสภายใน 1 วัน',f:'(จำนวนเคสที่ปิดใน 24 ชม. ÷ จำนวนเคสที่เปิดทั้งหมด) × 100',a:'c1a',b:'c1b',la:'เคสที่ปิดใน 24 ชม.',lb:'เคสที่เปิดทั้งหมด',pct:1,g:85},
+  {t:'4. อัตราปิดการขายอะไหล่ใน 24 ชม.',f:'(เคสสั่งซื้ออะไหล่ที่ปิดการขายใน 24 ชม. ÷ เคสสอบถามอะไหล่ทั้งหมด) × 100',a:'p1a',b:'p1b',la:'เคสสั่งซื้ออะไหล่ที่ปิดการขายใน 24 ชม.',lb:'เคสสอบถามอะไหล่ทั้งหมด',pct:1,g:80}];
 function ensureKpi4(){if(K4.on||!S.db||!S.isAdmin)return;K4.on=true;
   S.db.collection('kpi4').onSnapshot(s=>{K4.rows=s.docs.map(d=>d.data()).filter(r=>r&&r.date&&r.agent);if(S.view==='kpi'&&K.tab==='f4')renderKpi()},()=>{K4.on=false})}
+const k4cls=(f,o)=>{const b=o[f.b]||0;if(!b)return '';const v=f.pct?(o[f.a]||0)/b*100:(o[f.a]||0)/b;return v>=f.g?' kp-ok':' kp-bad'};
 const k4v=(f,o)=>{const a=o[f.a]||0,b=o[f.b]||0;return b?(f.pct?(a/b*100).toFixed(1)+'%':(a/b).toFixed(2)+' / 5'):'-'};
 function k4sum(rows){const o={};K4F.forEach(f=>{o[f.a]=0;o[f.b]=0});rows.forEach(r=>K4F.forEach(f=>{o[f.a]+=Number(r[f.a])||0;o[f.b]+=Number(r[f.b])||0}));return o}
 function kpiViewF4(view,_r,people){
   ensureKpi4();
   const M=K4.rows.filter(r=>r.date.startsWith(K.month)).sort((a,b)=>a.date.localeCompare(b.date)||a.agent.localeCompare(b.agent));
   const names=[...new Set([...(people||[]),...M.map(r=>r.agent)])].filter(n=>M.some(r=>r.agent===n));
-  const row=(n,rs,tot)=>{const o=k4sum(rs);return '<tr'+(tot?' class="kp-total"':'')+'><td><b>'+esc(n)+'</b></td>'+K4F.map(f=>'<td class="num"><b>'+k4v(f,o)+'</b><div class="meta">'+(o[f.a]||0)+' / '+(o[f.b]||0)+'</div></td>').join('')+'</tr>'};
+  const row=(n,rs,tot)=>{const o=k4sum(rs);return '<tr'+(tot?' class="kp-total"':'')+'><td><b>'+esc(n)+'</b></td>'+K4F.map(f=>'<td class="num'+k4cls(f,o)+'"><b>'+k4v(f,o)+'</b><div class="meta">'+(o[f.a]||0)+' / '+(o[f.b]||0)+'</div></td>').join('')+'</tr>'};
   view.innerHTML='<div class="panel"><div class="kp-head"><h3 style="margin:0">KPI 4 ตามสูตร · '+esc(kpiMonthName(K.month))+'</h3><button type="button" class="primary" id="k4-add">บันทึกตัวเลขรายวัน</button></div>'
-    +'<div class="tbl-wrap"><table><thead><tr><th>เจ้าหน้าที่</th>'+K4F.map(f=>'<th>'+esc(f.t)+'<div class="meta" style="font-weight:400">'+esc(f.f)+'</div></th>').join('')+'</tr></thead><tbody>'
+    +'<div class="tbl-wrap"><table><thead><tr><th>เจ้าหน้าที่</th>'+K4F.map(f=>'<th>'+esc(f.t)+'<div class="meta" style="font-weight:400">'+esc(f.f)+'</div><div style="font-weight:600">เป้าหมาย ≥ '+(f.pct?f.g+'%':f.g.toFixed(2))+'</div></th>').join('')+'</tr></thead><tbody>'
     +(M.length?names.map(n=>row(n,M.filter(r=>r.agent===n))).join('')+row('รวมทุกคน',M,1):'<tr><td colspan="5" class="empty">ยังไม่มีตัวเลขของเดือนนี้ กด "บันทึกตัวเลขรายวัน"</td></tr>')
-    +'</tbody></table></div><p class="meta">ตัวเลขเล็กใต้เปอร์เซ็นต์คือ ตัวตั้ง / ตัวหาร ของเดือนนั้น</p></div>'
+    +'</tbody></table></div><p class="meta">ตัวเลขเล็กใต้เปอร์เซ็นต์คือ ตัวตั้ง / ตัวหาร ของเดือนนั้น · เขียว = ผ่านเป้าหมาย แดง = ต่ำกว่าเป้าหมาย</p></div>'
     +'<div class="panel" style="margin-top:12px"><h3>รายการรายวัน</h3><div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th>เจ้าหน้าที่</th>'+K4F.map((f,i)=>'<th>'+(i+1)+'. '+esc(f.la)+' / '+esc(f.lb)+'</th>').join('')+'<th></th></tr></thead><tbody>'
     +(M.map(r=>'<tr><td>'+esc(r.date)+'</td><td>'+esc(r.agent)+'</td>'+K4F.map(f=>'<td class="num">'+(r[f.a]??0)+' / '+(r[f.b]??0)+'</td>').join('')+'<td><button type="button" class="link" data-k4e="'+esc(kpiId(r.date,r.agent))+'">แก้ไข</button></td></tr>').join('')||'<tr><td colspan="7" class="empty">ไม่มีรายการ</td></tr>')
     +'</tbody></table></div></div>';
