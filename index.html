@@ -3779,13 +3779,35 @@ M.innerHTML='<div class="kd-grid4">'+cards+'</div>'
 +'<div class="kd-box"><h3>แท็กที่ใช้มากสุด</h3><div class="kd-legend"><span><i class="kd-a"></i>'+KD_M[a]+'</span><span><i class="kd-b"></i>'+KD_M[b]+'</span></div>'+tags+'</div></div>'
 +'<div class="kd-cols"><div class="kd-box"><h3>คะแนนความพึงพอใจรายเดือน</h3>'+csat+(crit?'<h4>ข้อที่คะแนนต่ำสุด (เต็ม 5)</h4>'+crit:'')+'</div>'
 +'<div class="kd-box"><h3>ความคิดเห็นลูกค้า (จำนวนครั้ง)</h3><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>หัวข้อ</th><th>'+KD_M[a]+'</th><th>'+KD_M[b]+'</th><th>ต่าง</th></tr></thead><tbody>'+voc+'</tbody></table></div></div></div>'
-+'<p class="meta kd-foot">ข้อมูลจากไฟล์ '+esc(d.file||'')+' · นำเข้าเมื่อ '+fmt(d.importedAt)+' · เวลาและ % มาจาก Zaapi (ค่ามัธยฐาน) · ▲▼ สีเขียว = ดีขึ้น สีแดง = แย่ลง สีเทา = ไม่ตัดสิน</p>'}
++kdYear(d)+'<p class="meta kd-foot">ข้อมูลจากไฟล์ '+esc(d.file||'')+' · นำเข้าเมื่อ '+fmt(d.importedAt)+' · เวลาและ % มาจาก Zaapi (ค่ามัธยฐาน) · ▲▼ สีเขียว = ดีขึ้น สีแดง = แย่ลง สีเทา = ไม่ตัดสิน</p>'}
 $('#kd-imp-btn').onclick=()=>$('#kd-imp-file').click();
 $('#kd-imp-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#kd-msg');msg.textContent='กำลังนำเข้า…';
 try{const {wb}=readWorkbook(await f.arrayBuffer()),R={};wb.SheetNames.forEach(n=>{if(wb.Sheets[n])R[n.trim()]=sheetRows(wb.Sheets[n])});
 const d=kdParse(R);if(!(d.kpi&&d.kpi.length)&&!d.tags.length&&!d.ov.cr.some(x=>x!=null))throw new Error('ไม่พบตารางตัวชี้วัดในไฟล์นี้');
 d.file=f.name;d.importedAt=new Date().toISOString();await S.db.doc('kpidash/main').set(d);KD.a=KD.b=null;msg.textContent='นำเข้าแล้ว';toast('นำเข้าแดชบอร์ด KPI แล้ว')}
 catch(err){msg.textContent='นำเข้าไม่สำเร็จ: '+(err&&err.message||err)}};
+function kdYear(d){
+const ov=d.ov||{},mo=d.mo||{},cs=d.cs||{n:[],s:[]};
+const cr=m=>(ov.cr&&ov.cr[m]!=null)?ov.cr[m]:(mo.cr?mo.cr[m]:null);
+const ms=[...Array(12).keys()].filter(m=>kdHas(d,m));
+if(!ms.length)return '';
+const sm=f=>ms.reduce((s,m)=>s+(f(m)||0),0);
+const tot=sm(cr),cl=sm(m=>ov.cc&&ov.cc[m]),rc=sm(m=>ov.recv&&ov.recv[m]),csn=sm(m=>cs.n[m]),css=sm(m=>cs.s[m]);
+const stat=(l,v)=>'<div class="kd-card"><div class="kd-ch"><span class="kd-kt">'+l+'</span></div><div class="kd-big">'+v+'</div></div>';
+const n0=v=>(Math.round(v)).toLocaleString('th-TH');
+const cards=stat('ทิกเก็ตที่สร้างทั้งปี',n0(tot))+stat('ทิกเก็ตที่ปิดแล้วทั้งปี',n0(cl))+stat('ข้อความที่ได้รับทั้งปี',n0(rc))+stat('คะแนนความพึงพอใจเฉลี่ย',csn?(Math.round(css/csn*100)/100)+'<small> / 5 ('+csn+' ฟอร์ม)</small>':'-');
+const hd='<tr><th>ตัวชี้วัด</th><th class="num">เป้า</th>'+ms.map(m=>'<th class="num">'+KD_M[m]+'</th>').join('')+'<th class="num">เฉลี่ย</th></tr>';
+const rowK=(l,g,pct,arr)=>{const vals=ms.map(m=>arr[m]).filter(x=>x!=null);const av=vals.length?vals.reduce((s,x)=>s+x,0)/vals.length:null;
+return '<tr><td>'+esc(l)+'</td><td class="num">'+kdF(g,pct)+'</td>'+ms.map(m=>{const v=arr[m];const ok=v!=null&&g!=null?v>=g:null;return '<td class="num"'+(ok==null?'':' style="color:'+(ok?'#0b6b35':'#b0281f')+';font-weight:600"')+'>'+kdF(v,pct)+'</td>'}).join('')+'<td class="num"><b>'+kdF(av,pct)+'</b></td></tr>'};
+let rows=(d.kpi||[]).map((k,i)=>rowK('KPI '+(i+1)+' '+k.t.replace(/^\s*\d+\.\s*/,''),k.g,k.pct,k.v)).join('');
+const csAvg=ms.map(m=>cs.n[m]?cs.s[m]/cs.n[m]:null);
+const pm=KR&&KR.pt&&KR.pt.m;
+const prow=pm?'<tr><td>แชตสั่งซื้ออะไหล่ (ไลน์ EM SERVICE CENTER)</td><td class="num">-</td>'+ms.map(m=>{const v=pm['2026-'+String(m+1).padStart(2,'0')];return '<td class="num">'+(typeof v==='number'?v.toLocaleString('th-TH'):'-')+'</td>'}).join('')+'<td class="num">-</td></tr>':'';
+const trow=(l,arr)=>'<tr><td>'+l+'</td><td class="num">-</td>'+ms.map(m=>'<td class="num">'+kdF(arr[m],false,0)+'</td>').join('')+'<td class="num">'+n0(sm(m=>arr[m]))+'</td></tr>';
+rows+=trow('ทิกเก็ตที่สร้าง',ms.map((x,i)=>0).length?[...Array(12).keys()].map(cr):[])+trow('ทิกเก็ตที่ปิดแล้ว',ov.cc||[])+prow;
+const crow=rowK('คะแนนความพึงพอใจ (เต็ม 5)',4.5,false,[...Array(12).keys()].map(m=>cs.n[m]?cs.s[m]/cs.n[m]:null));
+const chart=kdChart([{n:'สร้าง',c:'#0f9145',v:[...Array(12).keys()].map(cr)},{n:'ปิดแล้ว',c:'#8cc63f',v:ov.cc||[]}],-1,-1);
+return '<h2 style="margin:22px 0 10px">สรุปรวมทั้งปี 2026</h2><div class="kd-grid4">'+cards+'</div><div class="kd-cols"><div class="kd-box"><h3>ตัวชี้วัดรายเดือนทั้งปี</h3><div class="tbl-wrap"><table class="kd-tbl"><thead>'+hd+'</thead><tbody>'+rows+crow+'</tbody></table></div></div><div class="kd-box"><h3>ทิกเก็ตที่สร้าง vs ปิดแล้ว ทั้งปี</h3>'+chart+'</div></div>'}
 function kpiForm(r){
   r=r||{date:isoDate(new Date().toISOString())};const old=r.agent&&r.date&&K.rows.find(x=>x.date===r.date&&x.agent===r.agent);
   const num=(k,lab)=>`<div class="f"><label for="kf-${k}">${lab}</label><input id="kf-${k}" type="number" min="0" inputmode="numeric" value="${r[k]??''}"></div>`;
