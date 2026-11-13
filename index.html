@@ -3922,6 +3922,40 @@ function run(){clearTimeout(tm);tm=setTimeout(()=>{const v=document.getElementBy
 },80)}
 mo.observe(document.body,{childList:true,subtree:true});run();
 })();
+(function(){
+const MN=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const lab=m=>MN[+m.slice(5)-1]+' '+String((+m.slice(0,4)+543)%100);
+function back(m,n){let y=+m.slice(0,4),k=+m.slice(5)-1-n;while(k<0){k+=12;y--}return y+'-'+String(k+1).padStart(2,'0')}
+function chg(a,b,lowGood,unit){if(a==null||b==null)return '<span class="meta">-</span>';const d=a-b;if(Math.abs(d)<1e-9)return '<span class="meta">0</span>';const up=d>0;const good=lowGood?!up:up;
+ const t=unit==='%'?(up?'+':'')+d.toFixed(1)+' จุด':unit==='s'?(up?'+':'-')+kpiDur(Math.abs(d)):(up?'+':'')+Math.round(d).toLocaleString('en-US')+(b?' ('+(up?'+':'')+(d/b*100).toFixed(1)+'%)':'');
+ return '<b style="color:'+(good?'#0f9145':'#c0392b')+'">'+(up?'▲ ':'▼ ')+t+'</b>'}
+function build(){
+ const host=document.getElementById('v-kpi');if(!host||!K||!K.loaded||!K.rows||!K.rows.length)return;
+ const M=K.month||'';if(!/^\d{4}-\d{2}$/.test(M))return;
+ const ms=[back(M,2),back(M,1),M];
+ let people=kpiPeople(K.rows.filter(r=>ms.includes(String(r.date).slice(0,7))));
+ if(K.sel&&K.sel.size)people=people.filter(p=>K.sel.has(p));
+ const A={};people.forEach(p=>{A[p]=ms.map(m=>kpiAgg(K.rows.filter(r=>r.agent===p&&String(r.date).slice(0,7)===m)))});
+ people=people.filter(p=>A[p].some(a=>a.assigned>0||a.closed>0));
+ const defs=[['เคสที่ได้รับ',a=>a.assigned,0,'n',1],['เคสที่ปิดได้',a=>a.closed,0,'n',1],['อัตราปิด (%)',a=>a.closeRate,0,'%',1],['เวลาตอบเฉลี่ย (น้อย = ดี)',a=>a.replySec,1,'s',0]];
+ let h='<div class="card" id="kp-cmp3" style="margin-top:16px"><h3 style="margin:0 0 4px">เทียบ 3 เดือน · '+ms.map(lab).join(' → ')+'</h3><p class="meta" style="margin:0 0 10px">ตามเดือนที่เลือกด้านบน และคนที่เลือก (ถ้าไม่เลือก = ทุกคน) · ▲▼ เทียบ '+lab(ms[2])+' กับ '+lab(ms[1])+' · <i style="font-style:normal;font-weight:800;color:#c2410c;border:2px solid #ea580c;border-radius:999px;padding:0 8px">12</i> = สูงสุดของเดือนนั้น</p>';
+ if(!people.length){h+='<p class="meta">ไม่มีข้อมูล 3 เดือนนี้</p></div>'}else{
+ h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px">';
+ defs.forEach(([title,f,low,unit,ringOn])=>{
+  const vals=people.map(p=>A[p].map(a=>f(a)));
+  const mx=ms.map((m,j)=>Math.max(...vals.map(v=>v[j]==null?-1:v[j])));
+  h+='<div style="overflow:auto"><table class="kd-tbl" style="width:100%"><thead><tr><th>'+title+'</th>'+ms.map(m=>'<th class="num">'+lab(m)+'</th>').join('')+'<th>เปลี่ยนแปลง</th></tr></thead><tbody>';
+  people.forEach((p,i)=>{const v=vals[i];
+   h+='<tr><td>'+esc(p)+'</td>'+v.map((x,j)=>{let t=x==null?'-':unit==='s'?kpiDur(x):unit==='%'?x.toFixed(1)+'%':Math.round(x).toLocaleString('en-US');
+    if(ringOn&&x!=null&&x>0&&Math.abs(x-mx[j])<1e-9&&people.length>1)t='<span class="kd-ring">'+t+'</span>';return '<td class="num">'+t+'</td>'}).join('')+'<td>'+chg(v[2],v[1],low,unit)+'</td></tr>'});
+  h+='</tbody></table></div>'});
+ h+='</div></div>'}
+ const old=document.getElementById('kp-cmp3');if(old)old.remove();
+ host.insertAdjacentHTML('beforeend',h);
+}
+const _r=renderKpi;
+renderKpi=function(){const x=_r.apply(this,arguments);try{build()}catch(e){console.error(e)}return x};
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
