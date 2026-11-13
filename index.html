@@ -3568,7 +3568,7 @@ const KR={y:new Date().getFullYear(),voc:{},z:null,on:false};
 const KR_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const KR_VOC=[['5. หัวข้อที่ลูกค้าต้องการให้ปรับปรุง','ต้องลดลง',['รอสายนาน / ตอบแชทช้า','ข้อมูลอะไหล่ไม่ชัดเจน / เช็กสต็อกช้า','การประสานงานติดตามเคสล่าช้า','อื่นๆ (ระบุในหมายเหตุ)']],['6. หัวข้อที่ลูกค้าชม','ต้องเพิ่มขึ้น',['พนักงานพูดจาสุภาพ / เต็มใจบริการ','ให้ข้อมูลอะไหล่แม่นยำ / แนะนำดี','แก้ปัญหาและปิดเคสได้รวดเร็ว','อื่นๆ (ระบุในหมายเหตุ)']]];
 function ensureKrep(){if(KR.on||!S.db||!S.isAdmin)return;KR.on=true;ensureKpi4();
-  S.db.collection('kpirep').onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==='voc')KR.voc=d.data()||{};if(d.id==='zaapi')KR.z=d.data()||null;if(d.id==='csat')KR.cs=d.data()||null;if(d.id==='parts')KR.pt=d.data()||null;if(d.id==='p4')KR.p4=d.data()||null});if(S.view==='kpirep')renderKrep()},()=>{KR.on=false})}
+  S.db.collection('kpirep').onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==='voc')KR.voc=d.data()||{};if(d.id==='zaapi')KR.z=d.data()||null;if(d.id==='csat')KR.cs=d.data()||null;if(d.id==='parts')KR.pt=d.data()||null;if(d.id==='p4')KR.p4=d.data()||null});if(S.view==='kpirep')renderKrep();if(S.view==='kpidash')renderKd()},()=>{KR.on=false})}
 async function krImport(file){
   const {wb}=readWorkbook(await file.arrayBuffer());const sheets=[];
   wb.SheetNames.forEach(n=>{if(!/ภาพรวม|รายเดือน|ช่วงเวลา/.test(n))return;
@@ -3787,6 +3787,7 @@ const d=kdParse(R);if(!(d.kpi&&d.kpi.length)&&!d.tags.length&&!d.ov.cr.some(x=>x
 d.file=f.name;d.importedAt=new Date().toISOString();await S.db.doc('kpidash/main').set(d);KD.a=KD.b=null;msg.textContent='นำเข้าแล้ว';toast('นำเข้าแดชบอร์ด KPI แล้ว')}
 catch(err){msg.textContent='นำเข้าไม่สำเร็จ: '+(err&&err.message||err)}};
 function kdYear(d){
+ensureKrep();
 const ov=d.ov||{},mo=d.mo||{},cs=d.cs||{n:[],s:[]};
 const cr=m=>(ov.cr&&ov.cr[m]!=null)?ov.cr[m]:(mo.cr?mo.cr[m]:null);
 const ms=[...Array(12).keys()].filter(m=>kdHas(d,m));
@@ -3805,7 +3806,7 @@ const pm=KR&&KR.pt&&KR.pt.m;
 const prow=pm?'<tr><td>แชตสั่งซื้ออะไหล่ (ไลน์ EM SERVICE CENTER)</td><td class="num">-</td>'+ms.map(m=>{const v=pm['2026-'+String(m+1).padStart(2,'0')];return '<td class="num">'+(typeof v==='number'?v.toLocaleString('th-TH'):'-')+'</td>'}).join('')+'<td class="num">-</td></tr>':'';
 const trow=(l,arr)=>'<tr><td>'+l+'</td><td class="num">-</td>'+ms.map(m=>'<td class="num">'+kdF(arr[m],false,0)+'</td>').join('')+'<td class="num">'+n0(sm(m=>arr[m]))+'</td></tr>';
 rows+=trow('ทิกเก็ตที่สร้าง',ms.map((x,i)=>0).length?[...Array(12).keys()].map(cr):[])+trow('ทิกเก็ตที่ปิดแล้ว',ov.cc||[])+prow;
-const crow=rowK('คะแนนความพึงพอใจ (เต็ม 5)',4.5,false,[...Array(12).keys()].map(m=>cs.n[m]?cs.s[m]/cs.n[m]:null));
+const crow='';
 const chart=kdChart([{n:'สร้าง',c:'#0f9145',v:[...Array(12).keys()].map(cr)},{n:'ปิดแล้ว',c:'#8cc63f',v:ov.cc||[]}],-1,-1);
 return '<h2 style="margin:22px 0 10px">สรุปรวมทั้งปี 2026</h2><div class="kd-grid4">'+cards+'</div><div class="kd-cols"><div class="kd-box"><h3>ตัวชี้วัดรายเดือนทั้งปี</h3><div class="tbl-wrap"><table class="kd-tbl"><thead>'+hd+'</thead><tbody>'+rows+crow+'</tbody></table></div></div><div class="kd-box"><h3>ทิกเก็ตที่สร้าง vs ปิดแล้ว ทั้งปี</h3>'+chart+'</div></div>'}
 function kpiForm(r){
