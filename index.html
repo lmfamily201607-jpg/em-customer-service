@@ -3893,7 +3893,7 @@ inp.addEventListener('change',async e=>{
 (function(){
 const st=document.createElement('style');st.textContent='.kd-tbl td.kd-top{background:none!important;box-shadow:none!important;color:#c2410c!important;font-weight:800;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}.kd-top-note{font-size:.85em;margin:6px 0}.kd-top-note i{display:inline-block;font-style:normal;font-weight:800;color:#d97706;margin-right:6px}';document.head.appendChild(st);
 const SKIP=/ต่าง|เปลี่ยนแปลง|%|สัดส่วน|เป้า|เฉลี่ย|รวม/;
-const TIME=/เวลา|นาที|ชม|วินาที|ช้า|รอสาย/;
+const TIME=/เวลา|นาที|ชม|ชั่วโมง|มัธยฐาน|วินาที|ช้า|รอสาย/;
 const num=s=>{s=String(s).replace(/[,\s]/g,'');if(!/^[-+]?\d+(\.\d+)?%?$/.test(s))return null;return parseFloat(s)};
 function mark(t){
  t.querySelectorAll('td.kd-top').forEach(c=>c.classList.remove('kd-top'));
@@ -3905,7 +3905,7 @@ function mark(t){
  if(/^ตัวชี้วัด/.test(H[0])){
   rows.forEach(r=>{if(TIME.test(r.cells[0].textContent)||/^\s*KPI/.test(r.cells[0].textContent))return;
    const cs=[...r.cells].filter((c,i)=>i>0&&H[i]&&!SKIP.test(H[i])&&num(c.textContent)!==null);
-   if(cs.length<2)return;const m=Math.max(...cs.map(c=>num(c.textContent)));if(!(m>0))return;
+   if(cs.length<3)return;const m=Math.max(...cs.map(c=>num(c.textContent)));if(!(m>0))return;
    cs.forEach(c=>{if(num(c.textContent)===m)c.classList.add('kd-top')})});
  }else if(/^หัวข้อ/.test(H[0])){
   const dr=rows.filter(r=>!/^\s*รวม/.test(r.cells[0].textContent));
