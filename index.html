@@ -406,6 +406,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#repair" data-v="repair">วิเคราะห์อาการเสีย</a>
       <a href="#export" data-v="export">ส่งออกข้อมูล</a>
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
+      <a href="#replyguide" data-v="replyguide">วิธีตอบคำถามลูกค้า</a>
       <a href="#import" data-v="import">นำเข้าข้อมูล</a>
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
       
@@ -450,7 +451,7 @@ progress{width:100%;accent-color:var(--accent)}
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
-        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','links']],
+        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','links']],
         ['rep','📈','รายงาน',['kpi','kpidash','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
@@ -1055,6 +1056,13 @@ a{transition:color .12s}
     </div>
   </section>
 
+  <!-- Reply guide -->
+  <section id="v-replyguide" hidden>
+    <h2>วิธีตอบคำถามลูกค้า</h2>
+    <p class="sub">รวมคำถามที่ลูกค้าถามบ่อย พร้อมคำตอบที่ทีมใช้ร่วมกัน กดคัดลอกแล้วนำไปตอบได้เลย</p>
+    <div id="rg-body"></div>
+  </section>
+
   <!-- KPI REPORT -->
   <section id="v-kpirep" hidden>
     <h2>KPI REPORT</h2>
@@ -1343,7 +1351,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','onsite','repair','export','kb','import','kpi','kpirep','kpidash','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','onsite','repair','export','kb','replyguide','import','kpi','kpirep','kpidash','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1468,7 +1476,7 @@ function go(v){
   document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   if(['repair','search','intake','import','parts'].includes(v)){ensureDms();ensureNcr()}
   if(['parts','import','product'].includes(v))ensureParts();
-  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}if(v==='kpirep'){ensureKrep();renderKrep()}if(v==='kpidash'){ensureKd();renderKd()}
+  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}if(v==='kpirep'){ensureKrep();renderKrep()}if(v==='replyguide'&&window.__rgOpen)window.__rgOpen();if(v==='kpidash'){ensureKd();renderKd()}
   renderTabs();
   refresh(true);
 }
@@ -4019,7 +4027,7 @@ let tm;const mo=new MutationObserver(()=>run());
 function run(){clearTimeout(tm);tm=setTimeout(()=>{mo.disconnect();try{if(S.view==='kpidash')buildDash()}catch(e){console.error(e)}mo.observe(document.body,{childList:true,subtree:true})},120)}
 mo.observe(document.body,{childList:true,subtree:true});run();
 })();
-(function(){const st=document.createElement('style');st.id='tone-css';st.textContent="\nsection[id^=\"v-\"]{--tone:#0f9145;--tone-soft:#e1f3e7}\n#v-intake,#v-forms,#v-search,#v-notes,#v-dto,#v-dealer{--tone:#2563eb;--tone-soft:#e3ecfd}\n#v-product,#v-warranty,#v-parts,#v-onsite,#v-repair{--tone:#0d9488;--tone-soft:#dcf3f0}\n#v-assistant,#v-teamdata,#v-kb,#v-links{--tone:#d97706;--tone-soft:#fdeccf}\n#v-kpi,#v-kpirep,#v-kpidash,#v-activity,#v-export{--tone:#5f9a1c;--tone-soft:#eaf3dc}\n#v-import,#v-users{--tone:#475569;--tone-soft:#e8ecf1}\nsection[id^=\"v-\"] h2{border-left:5px solid var(--tone);padding-left:10px}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+2){--tone:#0d9488;--tone-soft:#dcf3f0}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+3){--tone:#2563eb;--tone-soft:#e3ecfd}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+4){--tone:#d97706;--tone-soft:#fdeccf}\nsection[id^=\"v-\"] .kpi{background:linear-gradient(180deg,var(--tone-soft),#fff 78%)!important;box-shadow:inset 0 4px 0 var(--tone),0 14px 30px -22px rgba(16,24,20,.28)!important}\nsection[id^=\"v-\"] .kpi:not(.warn):not(.bad) b{color:var(--tone)}\nsection[id^=\"v-\"] .card{box-shadow:inset 0 3px 0 var(--tone),0 2px 12px rgba(16,24,20,.05)}\nsection[id^=\"v-\"] thead th{background:var(--tone-soft);color:var(--ink);border-bottom:2px solid var(--tone)}\nsection[id^=\"v-\"] tbody tr:nth-child(even) td{background-color:rgba(16,24,20,.018)}\nsection[id^=\"v-\"] .chips button[aria-pressed=\"true\"],section[id^=\"v-\"] .seg button[aria-pressed=\"true\"]{background:var(--tone)!important;border-color:var(--tone)!important}\nsection[id^=\"v-\"] button.primary,section[id^=\"v-\"] .primary{background:linear-gradient(var(--tone),color-mix(in srgb,var(--tone) 78%,#000))!important;border-color:var(--tone)!important}\n#tabs .emg .emg-btn{border-bottom:3px solid transparent}\n";document.head.appendChild(st);const C=['#0f9145','#2563eb','#0d9488','#d97706','#5f9a1c','#475569'];function g(){document.querySelectorAll('#tabs .emg').forEach((e,i)=>{const b=e.querySelector('.emg-btn');if(b)b.style.borderBottomColor=C[i%C.length]})}g();new MutationObserver(g).observe(document.getElementById('tabs')||document.body,{childList:true})})();
+(function(){const st=document.createElement('style');st.id='tone-css';st.textContent="\nsection[id^=\"v-\"]{--tone:#0f9145;--tone-soft:#e1f3e7}\n#v-intake,#v-forms,#v-search,#v-notes,#v-dto,#v-dealer{--tone:#2563eb;--tone-soft:#e3ecfd}\n#v-product,#v-warranty,#v-parts,#v-onsite,#v-repair{--tone:#0d9488;--tone-soft:#dcf3f0}\n#v-assistant,#v-teamdata,#v-kb,#v-links,#v-replyguide{--tone:#d97706;--tone-soft:#fdeccf}\n#v-kpi,#v-kpirep,#v-kpidash,#v-activity,#v-export{--tone:#5f9a1c;--tone-soft:#eaf3dc}\n#v-import,#v-users{--tone:#475569;--tone-soft:#e8ecf1}\nsection[id^=\"v-\"] h2{border-left:5px solid var(--tone);padding-left:10px}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+2){--tone:#0d9488;--tone-soft:#dcf3f0}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+3){--tone:#2563eb;--tone-soft:#e3ecfd}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+4){--tone:#d97706;--tone-soft:#fdeccf}\nsection[id^=\"v-\"] .kpi{background:linear-gradient(180deg,var(--tone-soft),#fff 78%)!important;box-shadow:inset 0 4px 0 var(--tone),0 14px 30px -22px rgba(16,24,20,.28)!important}\nsection[id^=\"v-\"] .kpi:not(.warn):not(.bad) b{color:var(--tone)}\nsection[id^=\"v-\"] .card{box-shadow:inset 0 3px 0 var(--tone),0 2px 12px rgba(16,24,20,.05)}\nsection[id^=\"v-\"] thead th{background:var(--tone-soft);color:var(--ink);border-bottom:2px solid var(--tone)}\nsection[id^=\"v-\"] tbody tr:nth-child(even) td{background-color:rgba(16,24,20,.018)}\nsection[id^=\"v-\"] .chips button[aria-pressed=\"true\"],section[id^=\"v-\"] .seg button[aria-pressed=\"true\"]{background:var(--tone)!important;border-color:var(--tone)!important}\nsection[id^=\"v-\"] button.primary,section[id^=\"v-\"] .primary{background:linear-gradient(var(--tone),color-mix(in srgb,var(--tone) 78%,#000))!important;border-color:var(--tone)!important}\n#tabs .emg .emg-btn{border-bottom:3px solid transparent}\n";document.head.appendChild(st);const C=['#0f9145','#2563eb','#0d9488','#d97706','#5f9a1c','#475569'];function g(){document.querySelectorAll('#tabs .emg').forEach((e,i)=>{const b=e.querySelector('.emg-btn');if(b)b.style.borderBottomColor=C[i%C.length]})}g();new MutationObserver(g).observe(document.getElementById('tabs')||document.body,{childList:true})})();
 (function(){
 function apply(){const box=document.getElementById('kp-chips');if(!box)return;
  const btns=[...box.querySelectorAll('button:not(.vx-tg)')];
@@ -4030,6 +4038,35 @@ function apply(){const box=document.getElementById('kp-chips');if(!box)return;
  const n=K.sel&&K.sel.size||0;if(!K.chipOpen&&n)t.textContent='＋ เพิ่ม/เปลี่ยนชื่อ';
 }
 const _r2=renderKpi;renderKpi=function(){const x=_r2.apply(this,arguments);try{apply()}catch(e){console.error(e)}return x};
+})();
+(function(){
+const RG={items:[],on:false,cat:'',edit:null,err:''};
+const st=document.createElement('style');st.textContent='.rg-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:inset 4px 0 0 var(--tone)}.rg-q{font-weight:700;margin:0 0 6px}.rg-a{white-space:pre-wrap;margin:0 0 10px;color:var(--ink);line-height:1.6}.rg-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rg-cat{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--tone-soft);color:var(--ink);margin-left:6px;font-weight:500}.rg-form{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:grid;gap:8px}.rg-form input,.rg-form textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line)}.rg-form textarea{min-height:120px}';document.head.appendChild(st);
+const norm=s=>String(s||'').toLowerCase();
+function card(it){const adm=S.isAdmin;return '<div class="rg-card" data-id="'+esc(it.id)+'" data-text="'+esc(norm(it.q+' '+it.a+' '+it.cat))+'"><p class="rg-q">'+esc(it.q)+(it.cat?'<span class="rg-cat">'+esc(it.cat)+'</span>':'')+'</p><p class="rg-a">'+esc(it.a)+'</p><div class="rg-bar"><button class="primary" data-rg="copy" data-id="'+esc(it.id)+'">คัดลอกคำตอบ</button>'+(adm?'<button data-rg="edit" data-id="'+esc(it.id)+'">แก้ไข</button><button class="danger" data-rg="del" data-id="'+esc(it.id)+'">ลบ</button>':'')+'</div></div>'}
+function form(){const it=RG.edit==='new'?{cat:'',q:'',a:''}:RG.items.find(x=>x.id===RG.edit)||{cat:'',q:'',a:''};const cats=[...new Set(RG.items.map(x=>x.cat).filter(Boolean))];
+ return '<div class="rg-form"><b>'+(RG.edit==='new'?'เพิ่มคำถาม-คำตอบ':'แก้ไขคำถาม-คำตอบ')+'</b><input id="rg-cat" list="rg-cats" placeholder="หมวดหมู่ เช่น แจ้งซ่อม, อะไหล่, แบตเตอรี่" value="'+esc(it.cat||'')+'"><datalist id="rg-cats">'+cats.map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist><input id="rg-q" placeholder="คำถามของลูกค้า" value="'+esc(it.q||'')+'"><textarea id="rg-a" placeholder="คำตอบที่ใช้ตอบลูกค้า">'+esc(it.a||'')+'</textarea><div class="rg-bar"><button class="primary" data-rg="save">บันทึก</button><button data-rg="cancel">ยกเลิก</button></div></div>'}
+function render(){const box=document.getElementById('rg-body');if(!box)return;
+ const cats=[...new Set(RG.items.map(x=>x.cat).filter(Boolean))].sort();
+ let items=RG.items.slice().sort((a,b)=>(a.cat||'').localeCompare(b.cat||'')||(a.q||'').localeCompare(b.q||''));if(RG.cat)items=items.filter(x=>x.cat===RG.cat);
+ let h='';if(RG.err)h+='<p class="meta" style="color:var(--bad)">'+esc(RG.err)+'</p>';
+ h+='<div class="rg-bar" style="margin-bottom:10px"><input id="rg-search" type="search" placeholder="ค้นหาคำถามหรือคำตอบ" style="flex:1;min-width:200px;padding:8px 10px">'+(S.isAdmin?'<button class="primary" data-rg="new">＋ เพิ่มคำถาม-คำตอบ</button>':'')+'</div>';
+ if(cats.length)h+='<div class="chips"><button data-rg="cat" data-cat="" aria-pressed="'+(!RG.cat)+'">ทั้งหมด ('+RG.items.length+')</button>'+cats.map(c=>'<button data-rg="cat" data-cat="'+esc(c)+'" aria-pressed="'+(RG.cat===c)+'">'+esc(c)+'</button>').join('')+'</div>';
+ if(RG.edit)h+=form();
+ h+=items.length?items.map(card).join(''):'<div class="rg-card"><p class="rg-a">'+(RG.items.length?'ไม่มีรายการในหมวดนี้':'ยังไม่มีคำถาม-คำตอบ'+(S.isAdmin?' กด "＋ เพิ่มคำถาม-คำตอบ" เพื่อเริ่มได้เลย':''))+'</p></div>';
+ box.innerHTML=h}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='rg-search'){const q=norm(e.target.value.trim());document.querySelectorAll('#rg-body .rg-card[data-text]').forEach(c=>{c.style.display=!q||c.dataset.text.includes(q)?'':'none'})}});
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('#rg-body [data-rg]');if(!b)return;const a=b.dataset.rg,id=b.dataset.id;
+ if(a==='cat'){RG.cat=b.dataset.cat||'';render()}
+ else if(a==='new'){RG.edit='new';render();const q=document.getElementById('rg-q');if(q)q.focus()}
+ else if(a==='edit'){RG.edit=id;render()}
+ else if(a==='cancel'){RG.edit=null;render()}
+ else if(a==='copy'){const it=RG.items.find(x=>x.id===id);if(!it)return;try{await navigator.clipboard.writeText(it.a);toast('คัดลอกคำตอบแล้ว')}catch(err){toast('คัดลอกไม่สำเร็จ')}}
+ else if(a==='del'){if(b.dataset.sure!=='1'){b.dataset.sure='1';b.textContent='กดอีกครั้งเพื่อยืนยันลบ';return}try{await S.db.doc('replyguide/'+id).delete();toast('ลบแล้ว')}catch(err){toast('ลบไม่สำเร็จ: '+errText(err))}}
+ else if(a==='save'){const q=document.getElementById('rg-q').value.trim(),an=document.getElementById('rg-a').value.trim(),cat=document.getElementById('rg-cat').value.trim();if(!q||!an){toast('กรอกคำถามและคำตอบให้ครบ');return}
+  const id2=RG.edit==='new'?'r'+Date.now().toString(36):RG.edit;try{await S.db.doc('replyguide/'+id2).set({cat,q,a:an,updatedAt:new Date().toISOString(),updatedBy:S.uid||''});RG.edit=null;toast('บันทึกแล้ว')}catch(err){toast('บันทึกไม่สำเร็จ: '+errText(err))}}
+});
+window.__rgOpen=function(){if(!RG.on&&S.db){RG.on=true;S.db.collection('replyguide').onSnapshot(s=>{RG.err='';RG.items=s.docs.map(d=>({id:d.id,...d.data()}));if(S.view==='replyguide')render()},e=>{RG.on=false;RG.err='โหลดข้อมูลไม่สำเร็จ: '+errText(e);if(S.view==='replyguide')render()})}render()};
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
