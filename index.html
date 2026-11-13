@@ -3489,7 +3489,7 @@ const KR={y:new Date().getFullYear(),voc:{},z:null,on:false};
 const KR_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const KR_VOC=[['5. หัวข้อที่ลูกค้าต้องการให้ปรับปรุง','ต้องลดลง',['รอสายนาน / ตอบแชทช้า','ข้อมูลอะไหล่ไม่ชัดเจน / เช็กสต็อกช้า','การประสานงานติดตามเคสล่าช้า','อื่นๆ (ระบุในหมายเหตุ)']],['6. หัวข้อที่ลูกค้าชม','ต้องเพิ่มขึ้น',['พนักงานพูดจาสุภาพ / เต็มใจบริการ','ให้ข้อมูลอะไหล่แม่นยำ / แนะนำดี','แก้ปัญหาและปิดเคสได้รวดเร็ว','อื่นๆ (ระบุในหมายเหตุ)']]];
 function ensureKrep(){if(KR.on||!S.db||!S.isAdmin)return;KR.on=true;ensureKpi4();
-  S.db.collection('kpirep').onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==='voc')KR.voc=d.data()||{};if(d.id==='zaapi')KR.z=d.data()||null});if(S.view==='kpirep')renderKrep()},()=>{KR.on=false})}
+  S.db.collection('kpirep').onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==='voc')KR.voc=d.data()||{};if(d.id==='zaapi')KR.z=d.data()||null;if(d.id==='csat')KR.cs=d.data()||null});if(S.view==='kpirep')renderKrep()},()=>{KR.on=false})}
 async function krImport(file){
   const {wb}=readWorkbook(await file.arrayBuffer());const sheets=[];
   wb.SheetNames.forEach(n=>{if(!/ภาพรวม|รายเดือน|ช่วงเวลา/.test(n))return;
@@ -3510,6 +3510,7 @@ async function krImport(file){
   Object.keys(acc).forEach(k=>{proxy[k]=pr(acc[k])});Object.keys(tot).forEach(y=>{proxy['ytd_'+y]=pr(tot[y])});
   await S.db.doc('kpirep/zaapi').set({sheets,proxy,file:file.name,importedAt:new Date().toISOString()});return sheets.length}
 function krProxy(f,Y,m){const k=f.a==='r3a'?'r3':f.a==='c1a'?'c1':null;if(!k||!KR.z||!KR.z.proxy)return null;const p=KR.z.proxy[m<0?'ytd_'+Y:Y+'-'+String(m+1).padStart(2,'0')];return p&&typeof p[k]==='number'?p[k]:null}
+function krCs(Y,m){const c=KR.cs&&KR.cs.m;if(!c)return null;let s=0,n=0;Object.keys(c).forEach(k=>{if(k.slice(0,4)===Y&&(m<0||k.slice(5,7)===String(m+1).padStart(2,'0'))){s+=Number(c[k].s)||0;n+=Number(c[k].n)||0}});return n?{csS:s,csN:n}:null}
 function krCell(v,h){if(typeof v!=='number')return esc(v);if(/%|สัดส่วน/.test(h||''))return (v*100).toFixed(1)+'%';return Number.isInteger(v)?v.toLocaleString('th-TH'):(Math.round(v*10)/10).toLocaleString('th-TH')}
 function krRef(){
   const s=KR.z&&KR.z.sheets&&KR.z.sheets.find(x=>/รายเดือน/.test(x.name));if(!s)return '';
@@ -3525,10 +3526,10 @@ function renderKrep(){
   // 1) KPI metrics from KPI 4 data
   const R=K4.rows.filter(r=>r.date.startsWith(Y+'-')),mon=m=>R.filter(r=>r.date.slice(5,7)===String(m+1).padStart(2,'0'));
   $('#kr-s1').innerHTML='<div class="panel" style="margin-top:12px"><h3>ส่วนที่ 1: ตัวชี้วัดประสิทธิภาพหลัก (KPI) · ปี '+Y+'</h3><div class="tbl-wrap"><table><thead><tr><th>หัวข้อ KPI</th><th>สูตรการคำนวณ</th><th>เป้าหมาย</th>'+KR_MON.map(m=>'<th>'+m+'</th>').join('')+'<th>เฉลี่ยทั้งปี (YTD)</th></tr></thead><tbody>'
-    +K4F.map(f=>{const cell=(rs,m)=>{const o=k4sum(rs);if(!rs.length){const p=krProxy(f,Y,m);if(p!=null)return '<td class="num" style="font-style:italic;color:var(--muted)" title="ค่าประมาณจากตัวเลขรายวันรายคน ไม่ใช่สูตรเต็ม">≈'+(p*100).toFixed(1)+'%</td>'}return '<td class="num'+k4cls(f,o)+'">'+(rs.length?k4v(f,o):'-')+'</td>'};
+    +K4F.map(f=>{const cell=(rs,m)=>{const o=k4sum(rs);if(!rs.length&&f.a==='csS'){const c=krCs(Y,m);if(c)return '<td class="num'+k4cls(f,c)+'" title="จากแบบประเมิน Onsite (Google Form) '+c.csN+' คน">'+k4v(f,c)+' <span class="meta">('+c.csN+')</span></td>'}if(!rs.length){const p=krProxy(f,Y,m);if(p!=null)return '<td class="num" style="font-style:italic;color:var(--muted)" title="ค่าประมาณจากตัวเลขรายวันรายคน ไม่ใช่สูตรเต็ม">≈'+(p*100).toFixed(1)+'%</td>'}return '<td class="num'+k4cls(f,o)+'">'+(rs.length?k4v(f,o):'-')+'</td>'};
       return '<tr><td><b>'+esc(f.t)+'</b></td><td class="meta">'+esc(f.f)+'</td><td class="num"><b>'+(f.pct?f.g+'%':f.g.toFixed(2))+'</b></td>'+KR_MON.map((_,m)=>cell(mon(m),m)).join('')+cell(R,-1)+'</tr>'}).join('')
     +krRef()
-    +'</tbody></table></div><p class="meta">เขียว = ผ่านเป้าหมาย แดง = ต่ำกว่าเป้าหมาย · กรอกตัวเลขรายวันได้ที่ KPI รายบุคคล แท็บ 5 · ตัวเอียงสีเทา (≈) = ค่าประมาณจากตัวเลขรายวันรายคนในไฟล์ (ไม่ใช่สูตรเต็ม) · แถวสีเทา "อ้างอิงจาก Zaapi" ดึงจากไฟล์ที่นำเข้า (ค่ากลางรายเดือน ไม่ใช่สูตร KPI จึงไม่เทียบเป้า)</p></div>';
+    +'</tbody></table></div><p class="meta">เขียว = ผ่านเป้าหมาย แดง = ต่ำกว่าเป้าหมาย · กรอกตัวเลขรายวันได้ที่ KPI รายบุคคล แท็บ 5 · CSAT มาจากแบบประเมิน Onsite (ตัวเลขในวงเล็บ = จำนวนผู้ประเมิน) · ตัวเอียงสีเทา (≈) = ค่าประมาณจากตัวเลขรายวันรายคนในไฟล์ (ไม่ใช่สูตรเต็ม) · แถวสีเทา "อ้างอิงจาก Zaapi" ดึงจากไฟล์ที่นำเข้า (ค่ากลางรายเดือน ไม่ใช่สูตร KPI จึงไม่เทียบเป้า)</p></div>';
   // 2) voice of customer (typed by hand, saved per year)
   $('#kr-s2').innerHTML='<div class="panel" style="margin-top:12px"><h3>ส่วนที่ 2: สรุปความคิดเห็นลูกค้า (จำนวนครั้ง) · ปี '+Y+'</h3><div class="tbl-wrap"><table><thead><tr><th>หมวดหมู่</th><th>รายละเอียด</th><th>แนวโน้ม</th>'+KR_MON.map(m=>'<th>'+m+'</th>').join('')+'<th>รวม</th></tr></thead><tbody>'
     +KR_VOC.map((g,gi)=>g[2].map((it,ii)=>{const key=Y+'_'+gi+'_'+ii,a=(KR.voc[key]||[]);const sum=a.reduce((s,x)=>s+(Number(x)||0),0);
