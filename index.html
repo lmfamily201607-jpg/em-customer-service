@@ -161,6 +161,70 @@ tr.sel td{background:var(--accent-soft)}
 .u-menus label{display:flex;align-items:center;gap:6px;font-size:13px}
 .u-menus input{width:auto}
 #daily tr[data-agent]{cursor:pointer}
+/* KPI dashboard */
+#v-kpidash .kd-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:linear-gradient(120deg,#16301f 0%,#0f9145 100%);border-radius:18px;padding:14px 18px;margin-bottom:16px;color:#fff;box-shadow:0 8px 24px rgba(15,145,69,.18)}
+#v-kpidash .kd-top .meta{color:rgba(255,255,255,.8)}
+#v-kpidash .kd-top button,#v-kpidash .kd-top select{font:inherit}
+#v-kpidash .kd-sel{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#v-kpidash .kd-sw{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border-radius:12px;padding:6px 10px}
+#v-kpidash .kd-sw label{font-size:12px;opacity:.9;white-space:nowrap}
+#v-kpidash .kd-sw select{background:#fff;color:var(--ink);border:0;border-radius:8px;padding:5px 8px;width:auto}
+#v-kpidash .kd-swap{background:rgba(255,255,255,.2);color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer}
+#v-kpidash .kd-swap:hover{background:rgba(255,255,255,.32)}
+#v-kpidash .kd-act{display:flex;gap:8px;align-items:center}
+#v-kpidash .kd-act button{background:#fff;color:#0b5d2d;border:0;border-radius:10px;padding:8px 14px;font-weight:600;cursor:pointer}
+#v-kpidash .kd-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.kd-a{background:#94a3b8}.kd-b{background:#0f9145}
+.kd-grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:14px}
+.kd-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 2px 10px rgba(28,35,43,.05);position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.kd-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(28,35,43,.09)}
+.kd-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#cbd5d0}
+.kd-card.is-ok::before{background:#0f9145}.kd-card.is-bad::before{background:#c0392b}
+.kd-ch{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
+.kd-kn{font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.kd-kt{font-weight:600;font-size:13.5px;line-height:1.3}
+.kd-big{font:700 34px/1.1 var(--display);margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.kd-big small{font-size:14px;color:var(--muted);font-weight:500}
+.kd-card.is-ok .kd-big{color:#0b6b35}.kd-card.is-bad .kd-big{color:#b0281f}
+.kd-sub{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.kd-prog{height:7px;background:#e8eeea;border-radius:99px;overflow:hidden;margin-bottom:10px}
+.kd-prog i{display:block;height:100%;border-radius:99px}
+.kd-row{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-bottom:4px}
+.kd-spark{width:100%;height:44px;margin-top:6px}
+.kd-note{font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:8px;padding:4px 8px;margin-top:6px}
+.kd-chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border-radius:99px;padding:3px 9px;white-space:nowrap}
+.kd-chip.ok{background:var(--ok-soft);color:var(--ok)}.kd-chip.bad{background:var(--bad-soft);color:var(--bad)}.kd-chip.neu{background:#eceff1;color:#52606b}
+.kd-hls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.kd-hlt{font-size:12.5px;color:var(--muted);font-weight:600}
+.kd-hl{display:flex;gap:10px;align-items:center;border-radius:12px;padding:7px 12px;font-size:13px;background:#eceff1}
+.kd-hl.ok{background:var(--ok-soft);color:var(--ok)}.kd-hl.bad{background:var(--bad-soft);color:var(--bad)}
+.kd-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-bottom:14px}
+.kd-box{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0;box-shadow:0 2px 10px rgba(28,35,43,.04)}
+.kd-box h3{margin:0 0 10px;font-size:15px}.kd-box h4{margin:14px 0 6px;font-size:13px;color:var(--muted)}
+.kd-chart{width:100%;height:auto;display:block}
+.kd-grid{stroke:#e6ece8;stroke-width:1}
+.kd-ax{font-size:11px;fill:#6b7780}.kd-axh{fill:#1c232b;font-weight:700}.kd-val{font-size:10px;font-weight:700;fill:#1c232b}
+.kd-hla{fill:#eef1f4}.kd-hlb{fill:#e1f3e7}
+.kd-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px}
+.kd-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.kd-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.kd-tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.kd-tbl td{padding:8px;border-bottom:1px solid #eef2ef;vertical-align:middle}
+.kd-tbl .num{text-align:right}
+.kd-tbar{width:110px;min-width:80px}.kd-tbar div{height:6px;background:#eef2ef;border-radius:99px;margin:3px 0;overflow:hidden}.kd-tbar i{display:block;height:100%;border-radius:99px}
+.kd-pairs{display:flex;flex-direction:column;gap:10px}
+.kd-pair{display:grid;grid-template-columns:minmax(80px,120px) 1fr auto;grid-template-rows:auto auto;column-gap:10px;row-gap:3px;align-items:center}
+.kd-pl{grid-row:1/3;font-size:12.5px;font-weight:600;overflow-wrap:anywhere}
+.kd-pb{display:flex;align-items:center;gap:8px;min-width:0}
+.kd-pb .kd-bar{height:9px;border-radius:99px;min-width:2px}
+.kd-pb span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kd-pd{grid-row:1/3;grid-column:3}
+.kd-crit{display:grid;grid-template-columns:1fr 90px 40px;gap:8px;align-items:center;font-size:12.5px;margin:5px 0}
+.kd-crit div{height:7px;background:#e8eeea;border-radius:99px;overflow:hidden}.kd-crit i{display:block;height:100%;background:linear-gradient(90deg,#8cc63f,#0f9145);border-radius:99px}
+.kd-tag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-right:4px}
+.kd-tag.ok{background:var(--ok-soft);color:var(--ok)}.kd-tag.bad{background:var(--bad-soft);color:var(--bad)}
+.kd-empty{background:var(--surface);border:1px dashed var(--line);border-radius:18px;padding:40px;text-align:center;color:var(--muted)}
+.kd-foot{margin-top:6px}
 .kp-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
 .kp-bar .period{margin-left:auto}
 .kp-ok{color:var(--ok);font-weight:600} .kp-bad{color:var(--bad);font-weight:600}
@@ -334,6 +398,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#import" data-v="import">นำเข้าข้อมูล</a>
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
       <a href="#kpirep" data-v="kpirep">KPI REPORT</a>
+      <a href="#kpidash" data-v="kpidash">แดชบอร์ด KPI</a>
       <a href="#activity" data-v="activity">รายงานการทำงาน USER</a>
       <a href="#users" data-v="users">จัดการผู้ใช้</a>
     </nav>
@@ -375,7 +440,7 @@ progress{width:100%;accent-color:var(--accent)}
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','links']],
-        ['rep','📈','รายงาน',['kpi','kpirep','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
+        ['rep','📈','รายงาน',['kpi','kpirep','kpidash','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
       const planned=new Set(GROUPS.flatMap(g=>g[3])),extra=links.filter(a=>!planned.has(a.dataset.v)).map(a=>a.dataset.v);
@@ -989,6 +1054,20 @@ a{transition:color .12s}
     </div>
   </section>
 
+  <!-- KPI DASHBOARD -->
+  <section id="v-kpidash" hidden>
+    <h2>แดชบอร์ด KPI</h2>
+    <p class="sub">เปรียบเทียบตัวชี้วัด Call Center รายเดือน เลือกเดือน A และ B ด้านล่าง · ดูได้เฉพาะผู้ดูแลระบบ · อัปเดตโดยนำเข้าไฟล์ KPI (Excel) ใหม่</p>
+    <div id="kd-gate"></div>
+    <div id="kd-body" hidden>
+      <div class="kd-top">
+        <div class="kd-sel" id="kd-sel"></div>
+        <div class="kd-act"><span class="meta" id="kd-msg"></span><button type="button" id="kd-imp-btn">นำเข้าไฟล์ KPI (Excel)</button><input type="file" id="kd-imp-file" accept=".xlsx,.xls" hidden></div>
+      </div>
+      <div id="kd-main"></div>
+    </div>
+  </section>
+
   <!-- Users -->
   <section id="v-users" hidden>
     <h2>จัดการผู้ใช้</h2>
@@ -1251,7 +1330,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','onsite','repair','export','kb','import','kpi','kpirep','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','onsite','repair','export','kb','import','kpi','kpirep','kpidash','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1295,7 +1374,7 @@ function errText(e){
 /* ---------- team members: nickname, role, menus, edit/delete rights ---------- */
 // Share level stays the hard boundary (db rules); these per-person settings shape menus and buttons on top of it.
 const ROLES={admin:'ผู้ดูแล',callcenter:'Call Center',viewer:'ดูอย่างเดียว'};
-const ADMIN_ONLY=['import','users','activity','kpirep'];
+const ADMIN_ONLY=['import','users','activity','kpirep','kpidash'];
 const MENU_ALL=VIEWS.filter(v=>v!=='users'&&v!=='kpi'); // admin-only pages, never handed out per user
 const RIGHTS={any:'ทุกเคส',own:'เฉพาะเคสที่ตัวเองรับ',none:'ไม่ได้'};
 const PRESET={
@@ -1376,7 +1455,7 @@ function go(v){
   document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   if(['repair','search','intake','import','parts'].includes(v)){ensureDms();ensureNcr()}
   if(['parts','import','product'].includes(v))ensureParts();
-  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}if(v==='kpirep'){ensureKrep();renderKrep()}
+  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}if(v==='kpirep'){ensureKrep();renderKrep()}if(v==='kpidash'){ensureKd();renderKd()}
   renderTabs();
   refresh(true);
 }
@@ -3554,6 +3633,159 @@ $('#kr-y').addEventListener('change',e=>{KR.y=Number(e.target.value)||KR.y;rende
 $('#kr-imp-btn').onclick=()=>$('#kr-imp-file').click();
 $('#kr-imp-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#kr-msg');msg.textContent='กำลังนำเข้า…';
   try{const n=await krImport(f);msg.textContent='นำเข้าแล้ว '+n+' ชีต';toast('นำเข้า KPI Report แล้ว')}catch(err){msg.textContent='นำเข้าไม่สำเร็จ: '+(err&&err.message||err)}};
+const KD_M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const kdNum=v=>typeof v==='number'&&isFinite(v)?v:null;
+const kdMon=s=>{const t=String(s==null?'':s).trim();return KD_M.findIndex(m=>t.startsWith(m))};
+const kdArr=()=>Array(12).fill(null);
+function kdParse(R){
+const find=re=>{const k=Object.keys(R).find(n=>re.test(n));return k?R[k]:null};
+const d={};
+const K=R['KPI']||find(/^KPI/);
+if(K){
+const hi=K.findIndex(r=>String(r[0]).includes('หัวข้อ KPI'));
+d.kpi=[];
+for(let i=hi+1;i<K.length&&d.kpi.length<4;i++){
+const r=K[i];if(!/^\s*[1-4]\./.test(String(r[0])))continue;
+const g=kdNum(r[2]),pct=g!=null&&g<=1;let bad=false;
+const v=Array.from({length:12},(_,m)=>{const x=kdNum(r[3+m]);if(pct&&x!=null&&x>1){bad=true;return null}return x});
+d.kpi.push({t:String(r[0]).trim(),g,pct,v,bad});
+}
+const vi=K.findIndex(r=>String(r[0]).includes('หมวดหมู่ความคิดเห็น'));
+d.voc=[];let gname='';
+if(vi>=0)for(let i=vi+1;i<K.length;i++){
+const r=K[i];if(/^ส่วนที่/.test(String(r[0])))break;
+if(r[0])gname=String(r[0]).trim();
+if(!r[1])continue;
+d.voc.push({g:gname,l:String(r[1]).replace(/^[•\s]+/,''),v:Array.from({length:12},(_,m)=>kdNum(r[3+m]))});
+}
+}
+d.mo={cr:kdArr(),fr:kdArr(),rp:kdArr(),cl:kdArr()};
+const MO=find(/รายเดือน/);
+if(MO)MO.slice(1).forEach(r=>{const m=kdMon(r[0]);if(m<0||/ไม่มีข้อมูล/.test(String(r[0]))||kdNum(r[1])==null)return;
+d.mo.cr[m]=kdNum(r[1]);d.mo.fr[m]=kdNum(r[5]);d.mo.rp[m]=kdNum(r[6]);d.mo.cl[m]=kdNum(r[7])});
+d.ov={cr:kdArr(),cc:kdArr(),sent:kdArr(),recv:kdArr(),noag:kdArr(),one:kdArr()};
+const OV=find(/ภาพรวม/);
+if(OV)OV.slice(1).forEach(r=>{const m=kdMon(r[0]);if(m<0||kdNum(r[1])==null)return;
+d.ov.cr[m]=kdNum(r[1]);d.ov.cc[m]=kdNum(r[2]);d.ov.sent[m]=kdNum(r[3]);d.ov.recv[m]=kdNum(r[4]);d.ov.noag[m]=kdNum(r[8]);d.ov.one[m]=kdNum(r[9])});
+d.hr={labels:[],v:[]};
+const HR=find(/ช่วงเวลา/);
+if(HR){const mp=HR[0].map(kdMon);
+HR.slice(1).forEach(r=>{if(!/^\d\d:\d\d/.test(String(r[0])))return;const a=kdArr();mp.forEach((m,j)=>{if(m>=0&&j>0)a[m]=kdNum(r[j])});d.hr.labels.push(String(r[0]));d.hr.v.push(a)})}
+d.tags=[];d.partial={};
+const TG=find(/แท็ก Zaapi/);
+if(TG){const hi=TG.findIndex(r=>String(r[0]).trim()==='แท็ก');
+if(hi>=0){const h=TG[hi],mp=h.map(kdMon);h.forEach((c,j)=>{if(mp[j]>=0&&/\(/.test(String(c)))d.partial[mp[j]]=String(c).replace(/^[^(]*/,'')});
+for(let i=hi+1;i<TG.length;i++){const r=TG[i];if(!r[0]||String(r[0]).startsWith('จำนวน'))continue;const a=kdArr();mp.forEach((m,j)=>{if(m>=0&&j>0)a[m]=kdNum(r[j])});if(a.some(x=>x!=null))d.tags.push({n:String(r[0]).trim(),v:a})}}}
+d.cs={s:Array(12).fill(0),n:Array(12).fill(0),crit:[]};
+const CS=find(/ข้อมูลดิบ CSAT/);
+if(CS){const h=CS[1]||[];const sums={};
+CS.slice(2).forEach(r=>{const key=String(r[2]||'');const sc=kdNum(r[16]);if(!/^\d{4}-\d\d$/.test(key)||sc==null)return;const m=+key.slice(5)-1;d.cs.s[m]+=sc;d.cs.n[m]++;
+for(let j=4;j<=14;j++){const x=kdNum(r[j]);if(x!=null){(sums[j]=sums[j]||{l:String(h[j]||'').replace(/\s+/g,' ').trim(),s:0,n:0});sums[j].s+=x;sums[j].n++}}});
+d.cs.crit=Object.keys(sums).map(j=>({l:sums[j].l,avg:sums[j].s/sums[j].n,n:sums[j].n}));
+d.cs.s=d.cs.s.map(x=>Math.round(x*1000)/1000)}
+return d;
+}
+const KD={on:false,d:null,a:null,b:null};
+function ensureKd(){if(KD.on||!S.db||!S.isAdmin)return;KD.on=true;
+S.db.collection('kpidash').onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==='main')KD.d=d.data()||null});if(S.view==='kpidash')renderKd()},()=>{KD.on=false})}
+function kdHas(d,m){const g=a=>a&&a[m]!=null;return g(d.ov&&d.ov.cr)||g(d.mo&&d.mo.cr)||(d.kpi||[]).some(k=>g(k.v))||(d.cs&&d.cs.n[m]>0)||(d.tags||[]).some(t=>g(t.v))||(d.voc||[]).some(v=>g(v.v))}
+const kdF=(v,pct,dp)=>{if(v==null)return '-';if(pct)return (v*100).toFixed(1)+'%';const p=Math.pow(10,dp==null?2:dp);return (Math.round(v*p)/p).toLocaleString('th-TH')};
+function kdChip(delta,txt,goodUp){
+if(delta==null||!isFinite(delta))return '<span class="kd-chip neu">-</span>';
+const eq=Math.abs(delta)<1e-9,up=delta>0;
+const cls=eq||goodUp===null?'neu':(up===goodUp?'ok':'bad');
+return '<span class="kd-chip '+cls+'">'+(eq?'■':up?'▲':'▼')+' '+txt+'</span>'}
+function kdPct(a,b){return a==null||b==null||a===0?null:(b-a)/a*100}
+const kdPctTxt=p=>p==null?'-':(p>0?'+':'')+p.toFixed(1)+'%';
+function kdSpark(v,hi,col){
+const pts=v.map((x,i)=>x==null?null:[i,x]).filter(Boolean);if(pts.length<2)return '';
+const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),W=150,H=44,P=5;
+const X=i=>P+(x1===x0?0:(i-x0)/(x1-x0)*(W-2*P)),Y=y=>H-P-(y1===y0?.5:(y-y0)/(y1-y0))*(H-2*P);
+return '<svg viewBox="0 0 '+W+' '+H+'" class="kd-spark" role="img" aria-label="แนวโน้มรายเดือน"><polyline fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="'+pts.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ')+'"/>'
++pts.map(p=>'<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="'+(p[0]===hi?4:2.2)+'" fill="'+(p[0]===hi?col:'#fff')+'" stroke="'+col+'" stroke-width="1.5"/>').join('')+'</svg>'}
+function kdAxis(mx){const nice=Math.pow(10,Math.floor(Math.log10(Math.max(mx,1e-9))));const step=[1,2,2.5,5,10].map(s=>s*nice).find(s=>mx/s<=5)||nice*10;return {top:Math.ceil(mx/step)*step||1,step}}
+function kdChart(sets,a,b,opt){
+opt=opt||{};const line=!!opt.line;
+const idx=[...Array(12).keys()].filter(m=>sets.some(s=>s.v[m]!=null));if(!idx.length)return '<div class="empty">ไม่มีข้อมูล</div>';
+const W=720,H=230,L=46,R=12,T=16,B=30;
+const mx=Math.max(...sets.flatMap(s=>s.v).filter(x=>x!=null),1e-9),ax=kdAxis(mx),top=ax.top;
+const gw=(W-L-R)/idx.length,Y=v=>T+(H-T-B)*(1-v/top);
+let g='';for(let t=0;t<=top+1e-9;t+=ax.step){const y=Y(t);g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" class="kd-grid"/><text x="'+(L-6)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" class="kd-ax">'+(opt.fmt?opt.fmt(t):t.toLocaleString('th-TH'))+'</text>'}
+let s='';idx.forEach((m,i)=>{
+const cx=L+gw*i+gw/2,hl=m===a||m===b;
+if(hl)s+='<rect x="'+(L+gw*i+3)+'" y="'+T+'" width="'+(gw-6)+'" height="'+(H-T-B)+'" rx="8" class="'+(m===b?'kd-hlb':'kd-hla')+'"/>';
+s+='<text x="'+cx.toFixed(1)+'" y="'+(H-10)+'" text-anchor="middle" class="kd-ax'+(hl?' kd-axh':'')+'">'+KD_M[m]+'</text>';
+if(!line){const bw=Math.min(26,(gw-10)/sets.length);sets.forEach((st,k)=>{const v=st.v[m];if(v==null)return;const x=cx-bw*sets.length/2+k*bw,y=Y(v);
+s+='<rect x="'+(x+1).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-2).toFixed(1)+'" height="'+Math.max(0,H-B-y).toFixed(1)+'" rx="4" fill="'+st.c+'"/>';
+if(hl)s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-4).toFixed(1)+'" text-anchor="middle" class="kd-val">'+(opt.fmt?opt.fmt(v):v.toLocaleString('th-TH'))+'</text>'})}
+});
+if(line)sets.forEach(st=>{const pts=idx.map((m,i)=>st.v[m]==null?null:[L+gw*i+gw/2,Y(st.v[m]),m]).filter(Boolean);
+s+='<polyline fill="none" stroke="'+st.c+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/>'
++pts.map(p=>'<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+((p[2]===a||p[2]===b)?5:3)+'" fill="#fff" stroke="'+st.c+'" stroke-width="2"/>'+((p[2]===a||p[2]===b)?'<text x="'+p[0].toFixed(1)+'" y="'+(p[1]-9).toFixed(1)+'" text-anchor="middle" class="kd-val">'+(opt.fmt?opt.fmt(st.v[p[2]]):st.v[p[2]])+'</text>':'')).join('')});
+const lg=sets.length>1?'<div class="kd-legend">'+sets.map(st=>'<span><i style="background:'+st.c+'"></i>'+esc(st.n)+'</span>').join('')+'</div>':'';
+return lg+'<svg viewBox="0 0 '+W+' '+H+'" class="kd-chart" role="img">'+g+s+'</svg>'}
+function kdPair(items,a,b,unit,goodUp){
+const mx=Math.max(1e-9,...items.flatMap(i=>[i.a||0,i.b||0]));
+return '<div class="kd-pairs">'+items.map(i=>{const p=kdPct(i.a,i.b);
+return '<div class="kd-pair"><div class="kd-pl">'+esc(i.l)+'</div><div class="kd-pb"><div class="kd-bar kd-a" style="width:'+((i.a||0)/mx*100).toFixed(1)+'%"></div><span>'+(i.a==null?'-':kdF(i.a,false,unit))+'</span></div><div class="kd-pb"><div class="kd-bar kd-b" style="width:'+((i.b||0)/mx*100).toFixed(1)+'%"></div><span>'+(i.b==null?'-':kdF(i.b,false,unit))+'</span></div><div class="kd-pd">'+kdChip(p,kdPctTxt(p),goodUp)+'</div></div>'}).join('')+'</div>'}
+function renderKd(){
+const gate=$('#kd-gate'),body=$('#kd-body');
+if(!S.isAdmin){gate.innerHTML=S.me?'<div class="banner warn">หน้านี้ดูได้เฉพาะผู้ดูแลระบบ</div>':'<div class="empty">กำลังตรวจสิทธิ์…</div>';body.hidden=true;return}
+gate.innerHTML='';body.hidden=false;ensureKd();
+const d=KD.d,M=$('#kd-main'),sel=$('#kd-sel');
+if(!d){sel.innerHTML='';M.innerHTML='<div class="kd-empty"><b>ยังไม่มีข้อมูล</b><br>กด "นำเข้าไฟล์ KPI (Excel)" แล้วเลือกไฟล์ KPI_CALLCENTER_2026.xlsx</div>';return}
+const ms=[...Array(12).keys()].filter(m=>kdHas(d,m)),core=ms.filter(m=>(d.ov&&d.ov.cr[m]!=null)||(d.mo&&d.mo.cr[m]!=null)),pool=core.length>=2?core:ms;
+if(KD.b==null||!ms.includes(KD.b))KD.b=pool[pool.length-1];
+if(KD.a==null||!ms.includes(KD.a)||KD.a===KD.b)KD.a=pool.length>1?pool[pool.length-2]:KD.b;
+const a=KD.a,b=KD.b,opts=s=>ms.map(m=>'<option value="'+m+'"'+(m===s?' selected':'')+'>'+KD_M[m]+' 2026</option>').join('');
+sel.innerHTML='<div class="kd-sw"><span class="kd-dot kd-a"></span><label for="kd-a">เดือนเทียบ (A)</label><select id="kd-a">'+opts(a)+'</select></div><button type="button" class="kd-swap" id="kd-swap" title="สลับเดือน" aria-label="สลับเดือน">⇄</button><div class="kd-sw"><span class="kd-dot kd-b"></span><label for="kd-b">เดือนหลัก (B)</label><select id="kd-b">'+opts(b)+'</select></div>';
+$('#kd-a').onchange=e=>{KD.a=Number(e.target.value);renderKd()};$('#kd-b').onchange=e=>{KD.b=Number(e.target.value);renderKd()};
+$('#kd-swap').onclick=()=>{[KD.a,KD.b]=[KD.b,KD.a];renderKd()};
+const ov=d.ov||{},mo=d.mo||{};
+const cr=m=>(ov.cr&&ov.cr[m]!=null)?ov.cr[m]:(mo.cr?mo.cr[m]:null);
+const cards=(d.kpi||[]).map((k,i)=>{
+const cur=k.v[b],prev=k.v[a],dv=cur!=null&&prev!=null?(k.pct?(cur-prev)*100:cur-prev):null;
+const ok=cur!=null&&k.g!=null?cur>=k.g:null,prog=cur!=null&&k.g?Math.min(1,cur/k.g):0,col=ok===false?'#c0392b':'#0f9145';
+const gap=cur!=null&&k.g!=null?(k.pct?(cur-k.g)*100:cur-k.g):null;
+return '<div class="kd-card'+(ok==null?'':ok?' is-ok':' is-bad')+'"><div class="kd-ch"><span class="kd-kn">KPI '+(i+1)+'</span><span class="kd-kt">'+esc(k.t.replace(/^\s*\d+\.\s*/,''))+'</span></div>'
++'<div class="kd-big">'+kdF(cur,k.pct)+(k.pct||cur==null?'':'<small> / 5</small>')+'</div>'
++'<div class="kd-sub">เป้าหมาย '+kdF(k.g,k.pct)+(gap==null?'':' · '+(ok?'สูงกว่าเป้า ':'ต่ำกว่าเป้า ')+Math.abs(gap).toFixed(k.pct?1:2)+(k.pct?' จุด':'')) +'</div>'
++'<div class="kd-prog"><i style="width:'+(prog*100).toFixed(0)+'%;background:'+col+'"></i></div>'
++'<div class="kd-row">'+kdChip(dv,dv==null?'-':(dv>0?'+':'')+dv.toFixed(k.pct?1:2)+(k.pct?' จุด':''),true)+'<span class="meta">เทียบ '+KD_M[a]+' ('+kdF(prev,k.pct)+')</span></div>'
++kdSpark(k.v,b,col)+(k.bad?'<div class="kd-note">ตัวเลขในไฟล์ไม่ใช่ % จึงยังไม่แสดง</div>':(cur==null&&prev==null?'<div class="kd-note">ยังไม่มีข้อมูลเดือนที่เลือก</div>':''))+'</div>'}).join('');
+const rows=[['ทิกเก็ตที่สร้าง',m=>cr(m),0,null],['ทิกเก็ตที่ปิดแล้ว',m=>ov.cc&&ov.cc[m],0,null],['ข้อความที่ได้รับ',m=>ov.recv&&ov.recv[m],0,null],['ข้อความที่ส่ง',m=>ov.sent&&ov.sent[m],0,null],['ตอบครั้งแรก (นาที · มัธยฐาน)',m=>mo.fr&&mo.fr[m],1,false],['ตอบกลับ (นาที · มัธยฐาน)',m=>mo.rp&&mo.rp[m],1,false],['ปิดทิกเก็ต (ชั่วโมง · มัธยฐาน)',m=>mo.cl&&mo.cl[m],1,false]];
+const tr=rows.map(r=>{const va=r[1](a),vb=r[1](b),p=kdPct(va,vb),mx=Math.max(va||0,vb||0,1e-9);
+return '<tr><td>'+esc(r[0])+'</td><td class="num">'+kdF(va,false,r[2])+'</td><td class="num"><b>'+kdF(vb,false,r[2])+'</b></td><td class="kd-tbar"><div><i class="kd-a" style="width:'+((va||0)/mx*100).toFixed(0)+'%"></i></div><div><i class="kd-b" style="width:'+((vb||0)/mx*100).toFixed(0)+'%"></i></div></td><td class="num">'+kdChip(p,kdPctTxt(p),r[3])+'</td></tr>'}).join('');
+const hl=rows.map(r=>({l:r[0].replace(/ \(.*/,''),p:kdPct(r[1](a),r[1](b)),g:r[3]})).filter(x=>x.p!=null).sort((x,y)=>Math.abs(y.p)-Math.abs(x.p)).slice(0,3)
+.map(x=>'<div class="kd-hl '+(x.g===null?'neu':(x.p>0)===x.g?'ok':'bad')+'"><span>'+esc(x.l)+'</span><b>'+kdPctTxt(x.p)+'</b></div>').join('');
+let hours='<div class="empty">ไม่มีข้อมูลช่วงเวลาของเดือนที่เลือก</div>';
+if(d.hr&&d.hr.labels.length){const sum=m=>d.hr.v.reduce((s,v)=>s+(v[m]||0),0),sa=sum(a),sb=sum(b);
+if(sa>0&&sb>0)hours=kdPair(d.hr.labels.map((l,i)=>({l,a:d.hr.v[i][a]/sa*100,b:d.hr.v[i][b]/sb*100})),a,b,1,null)+'<p class="meta">สัดส่วน % ของข้อความที่ได้รับ ('+kdF(sa,false,0)+' → '+kdF(sb,false,0)+' ข้อความ)</p>'}
+let tags='<div class="empty">ไม่มีข้อมูลแท็ก</div>';
+const tg=(d.tags||[]).map(t=>({l:t.n,a:t.v[a],b:t.v[b]})).filter(t=>t.a!=null||t.b!=null).sort((x,y)=>Math.max(y.a||0,y.b||0)-Math.max(x.a||0,x.b||0)).slice(0,8);
+if(tg.length)tags=kdPair(tg,a,b,0,null)+(d.partial&&(d.partial[a]||d.partial[b])?'<p class="meta">หมายเหตุ: '+[a,b].filter(m=>d.partial[m]).map(m=>KD_M[m]+' '+esc(d.partial[m])).join(' · ')+' เป็นข้อมูลบางส่วนของเดือน</p>':'');
+const cs=d.cs||{n:[],s:[],crit:[]},avg=cs.n.map((n,m)=>n?cs.s[m]/n:null);
+const csat=kdChart([{n:'CSAT',c:'#0f9145',v:avg}],a,b,{line:true,fmt:v=>(Math.round(v*100)/100).toString()});
+const crit=(cs.crit||[]).slice().sort((x,y)=>x.avg-y.avg).slice(0,5).map(c=>'<div class="kd-crit"><span>'+esc(c.l)+'</span><div><i style="width:'+(c.avg/5*100).toFixed(0)+'%"></i></div><b>'+c.avg.toFixed(2)+'</b></div>').join('');
+const voc=(d.voc||[]).map(v=>{const va=v.v[a],vb=v.v[b],imp=/^5/.test(v.g),dl=va!=null&&vb!=null?vb-va:null;
+return '<tr><td><span class="kd-tag '+(imp?'bad':'ok')+'">'+(imp?'ปรับปรุง':'ชม')+'</span> '+esc(v.l)+'</td><td class="num">'+kdF(va,false,0)+'</td><td class="num"><b>'+kdF(vb,false,0)+'</b></td><td class="num">'+kdChip(dl,dl==null?'-':(dl>0?'+':'')+dl,imp?false:true)+'</td></tr>'}).join('');
+M.innerHTML='<div class="kd-grid4">'+cards+'</div>'
++(hl?'<div class="kd-hls"><span class="kd-hlt">จุดที่เปลี่ยนมากสุด '+KD_M[a]+' → '+KD_M[b]+'</span>'+hl+'</div>':'')
++'<div class="kd-cols"><div class="kd-box"><h3>ภาพรวมเปรียบเทียบ</h3><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>ตัวชี้วัด</th><th>'+KD_M[a]+'</th><th>'+KD_M[b]+'</th><th></th><th>เปลี่ยนแปลง</th></tr></thead><tbody>'+tr+'</tbody></table></div></div>'
++'<div class="kd-box"><h3>ทิกเก็ตที่สร้าง vs ปิดแล้ว</h3>'+kdChart([{n:'สร้าง',c:'#0f9145',v:ov.cr||mo.cr||[]},{n:'ปิดแล้ว',c:'#8cc63f',v:ov.cc||[]}],a,b)+'</div></div>'
++'<div class="kd-cols"><div class="kd-box"><h3>เวลาตอบกลับ (นาที · มัธยฐาน)</h3>'+kdChart([{n:'ตอบครั้งแรก',c:'#e67e22',v:mo.fr||[]},{n:'ตอบกลับ',c:'#2980b9',v:mo.rp||[]}],a,b,{line:true,fmt:v=>(Math.round(v*10)/10).toLocaleString('th-TH')})+'</div>'
++'<div class="kd-box"><h3>เวลาปิดทิกเก็ต (ชั่วโมง · มัธยฐาน)</h3>'+kdChart([{n:'ปิดทิกเก็ต',c:'#8e44ad',v:mo.cl||[]}],a,b,{line:true,fmt:v=>(Math.round(v*10)/10).toLocaleString('th-TH')})+'</div></div>'
++'<div class="kd-cols"><div class="kd-box"><h3>ช่วงเวลาที่ลูกค้าทักเข้ามา</h3><div class="kd-legend"><span><i class="kd-a"></i>'+KD_M[a]+'</span><span><i class="kd-b"></i>'+KD_M[b]+'</span></div>'+hours+'</div>'
++'<div class="kd-box"><h3>แท็กที่ใช้มากสุด</h3><div class="kd-legend"><span><i class="kd-a"></i>'+KD_M[a]+'</span><span><i class="kd-b"></i>'+KD_M[b]+'</span></div>'+tags+'</div></div>'
++'<div class="kd-cols"><div class="kd-box"><h3>คะแนนความพึงพอใจรายเดือน</h3>'+csat+(crit?'<h4>ข้อที่คะแนนต่ำสุด (เต็ม 5)</h4>'+crit:'')+'</div>'
++'<div class="kd-box"><h3>ความคิดเห็นลูกค้า (จำนวนครั้ง)</h3><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>หัวข้อ</th><th>'+KD_M[a]+'</th><th>'+KD_M[b]+'</th><th>ต่าง</th></tr></thead><tbody>'+voc+'</tbody></table></div></div></div>'
++'<p class="meta kd-foot">ข้อมูลจากไฟล์ '+esc(d.file||'')+' · นำเข้าเมื่อ '+fmt(d.importedAt)+' · เวลาและ % มาจาก Zaapi (ค่ามัธยฐาน) · ▲▼ สีเขียว = ดีขึ้น สีแดง = แย่ลง สีเทา = ไม่ตัดสิน</p>'}
+$('#kd-imp-btn').onclick=()=>$('#kd-imp-file').click();
+$('#kd-imp-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#kd-msg');msg.textContent='กำลังนำเข้า…';
+try{const {wb}=readWorkbook(await f.arrayBuffer()),R={};wb.SheetNames.forEach(n=>{if(wb.Sheets[n])R[n.trim()]=sheetRows(wb.Sheets[n])});
+const d=kdParse(R);if(!(d.kpi&&d.kpi.length)&&!d.tags.length&&!d.ov.cr.some(x=>x!=null))throw new Error('ไม่พบตารางตัวชี้วัดในไฟล์นี้');
+d.file=f.name;d.importedAt=new Date().toISOString();await S.db.doc('kpidash/main').set(d);KD.a=KD.b=null;msg.textContent='นำเข้าแล้ว';toast('นำเข้าแดชบอร์ด KPI แล้ว')}
+catch(err){msg.textContent='นำเข้าไม่สำเร็จ: '+(err&&err.message||err)}};
 function kpiForm(r){
   r=r||{date:isoDate(new Date().toISOString())};const old=r.agent&&r.date&&K.rows.find(x=>x.date===r.date&&x.agent===r.agent);
   const num=(k,lab)=>`<div class="f"><label for="kf-${k}">${lab}</label><input id="kf-${k}" type="number" min="0" inputmode="numeric" value="${r[k]??''}"></div>`;
@@ -4266,7 +4498,7 @@ function refresh(viewOnly){
   if(S.view==='intake')renderSaved();
   if(S.view==='parts')renderParts2();
   if(S.view==='links')renderLinks();
-  if(S.view==='teamdata')renderTopics();if(S.view==='onsite')renderOnsite();if(S.view==='kpirep')renderKrep();
+  if(S.view==='teamdata')renderTopics();if(S.view==='onsite')renderOnsite();if(S.view==='kpirep')renderKrep();if(S.view==='kpidash')renderKd();
   if(S.view==='export'){renderExport();renderRemovals()}
   if(S.view==='kb')renderKB();
   if(S.view==='import')renderImport();
