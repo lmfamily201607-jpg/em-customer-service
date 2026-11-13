@@ -407,7 +407,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
       <a href="#import" data-v="import">นำเข้าข้อมูล</a>
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
-      <a href="#kpirep" data-v="kpirep">KPI REPORT</a>
+      
       <a href="#kpidash" data-v="kpidash">แดชบอร์ด KPI</a>
       <a href="#activity" data-v="activity">รายงานการทำงาน USER</a>
       <a href="#users" data-v="users">จัดการผู้ใช้</a>
@@ -450,7 +450,7 @@ progress{width:100%;accent-color:var(--accent)}
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','links']],
-        ['rep','📈','รายงาน',['kpi','kpirep','kpidash','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
+        ['rep','📈','รายงาน',['kpi','kpidash','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
       const planned=new Set(GROUPS.flatMap(g=>g[3])),extra=links.filter(a=>!planned.has(a.dataset.v)).map(a=>a.dataset.v);
