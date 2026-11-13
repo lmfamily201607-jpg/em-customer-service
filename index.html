@@ -3891,7 +3891,7 @@ inp.addEventListener('change',async e=>{
 });
 })();
 (function(){
-const st=document.createElement('style');st.textContent='.kd-tbl td.kd-top{background:none!important;box-shadow:none!important;color:#d97706!important;font-weight:800;font-size:1.12em}.kd-top-note{font-size:.85em;margin:6px 0}.kd-top-note i{display:inline-block;font-style:normal;font-weight:800;color:#d97706;margin-right:6px}';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent='.kd-tbl td.kd-top{background:none!important;box-shadow:none!important;color:#c2410c!important;font-weight:800;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}.kd-top-note{font-size:.85em;margin:6px 0}.kd-top-note i{display:inline-block;font-style:normal;font-weight:800;color:#d97706;margin-right:6px}';document.head.appendChild(st);
 const SKIP=/ต่าง|เปลี่ยนแปลง|%|สัดส่วน|เป้า|เฉลี่ย|รวม/;
 const TIME=/เวลา|นาที|ชม|วินาที|ช้า|รอสาย/;
 const num=s=>{s=String(s).replace(/[,\s]/g,'');if(!/^[-+]?\d+(\.\d+)?%?$/.test(s))return null;return parseFloat(s)};
@@ -3903,7 +3903,7 @@ function mark(t){
  const rows=[...t.rows].filter(r=>r!==hr&&r.cells.length>1);
  if(rows.length<2)return;
  if(/^ตัวชี้วัด/.test(H[0])){
-  rows.forEach(r=>{if(TIME.test(r.cells[0].textContent))return;
+  rows.forEach(r=>{if(TIME.test(r.cells[0].textContent)||/^\s*KPI/.test(r.cells[0].textContent))return;
    const cs=[...r.cells].filter((c,i)=>i>0&&H[i]&&!SKIP.test(H[i])&&num(c.textContent)!==null);
    if(cs.length<2)return;const m=Math.max(...cs.map(c=>num(c.textContent)));if(!(m>0))return;
    cs.forEach(c=>{if(num(c.textContent)===m)c.classList.add('kd-top')})});
@@ -3917,7 +3917,7 @@ function mark(t){
 }
 let tm;function run(){clearTimeout(tm);tm=setTimeout(()=>{const v=document.getElementById('v-kpidash');if(!v)return;
  v.querySelectorAll('table.kd-tbl').forEach(mark);
- if(!v.querySelector('.kd-top-note')&&v.querySelector('.kd-top')){const p=document.createElement('p');p.className='meta kd-top-note';p.innerHTML='<i>ตัวเลขส้ม</i> = ตัวเลขสูงสุด (อันดับ 1) ของแต่ละคอลัมน์/แถว';const j=v.querySelector('.kd-jump');if(j&&j.parentNode)j.parentNode.insertBefore(p,j.nextSibling);else v.insertBefore(p,v.firstChild)}
+ if(!v.querySelector('.kd-top-note')&&v.querySelector('.kd-top')){const p=document.createElement('p');p.className='meta kd-top-note';p.innerHTML='<i>ตัวเลขส้มขีดเส้นใต้</i> = ตัวเลขสูงสุด (อันดับ 1) ของแต่ละคอลัมน์/แถว';const j=v.querySelector('.kd-jump');if(j&&j.parentNode)j.parentNode.insertBefore(p,j.nextSibling);else v.insertBefore(p,v.firstChild)}
 },80)}
 new MutationObserver(run).observe(document.body,{childList:true,subtree:true});run();
 })();
