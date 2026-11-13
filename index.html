@@ -162,6 +162,16 @@ tr.sel td{background:var(--accent-soft)}
 .u-menus input{width:auto}
 #daily tr[data-agent]{cursor:pointer}
 /* KPI dashboard */
+#v-kpidash.kd-pres{position:fixed;inset:0;z-index:9000;background:#f4f7f5;overflow:auto;padding:22px 34px;font-size:17px}
+#v-kpidash.kd-pres .kd-big{font-size:46px}
+#v-kpidash.kd-pres .kd-kt{font-size:16px}
+#v-kpidash.kd-pres .kd-tbl{font-size:15px}
+#v-kpidash.kd-pres #kd-imp-btn,#v-kpidash.kd-pres .kd-det,#v-kpidash.kd-pres .kd-foot,#v-kpidash.kd-pres .sub{display:none}
+.kd-jump{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.kd-jump button{background:#fff;border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-weight:600;color:#0b5d2d;cursor:pointer}
+.kd-jump button:hover{background:#e1f3e7}
+.kd-det{margin:0 0 14px}.kd-det>summary{cursor:pointer;font-weight:600;color:#0b5d2d;padding:8px 2px}
+.kd-bar2{display:inline-block;height:8px;border-radius:99px;background:linear-gradient(90deg,#8cc63f,#0f9145);vertical-align:middle;margin-right:6px}
 #v-kpidash .kd-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:linear-gradient(120deg,#16301f 0%,#0f9145 100%);border-radius:18px;padding:14px 18px;margin-bottom:16px;color:#fff;box-shadow:0 8px 24px rgba(15,145,69,.18)}
 #v-kpidash .kd-top .meta{color:rgba(255,255,255,.8)}
 #v-kpidash .kd-top button,#v-kpidash .kd-top select{font:inherit}
@@ -1062,8 +1072,9 @@ a{transition:color .12s}
     <div id="kd-body" hidden>
       <div class="kd-top">
         <div class="kd-sel" id="kd-sel"></div>
-        <div class="kd-act"><span class="meta" id="kd-msg"></span><button type="button" id="kd-imp-btn">นำเข้าไฟล์ KPI (Excel)</button><input type="file" id="kd-imp-file" accept=".xlsx,.xls" hidden></div>
+        <div class="kd-act"><span class="meta" id="kd-msg"></span><button type="button" id="kd-pres-btn">โหมดนำเสนอ</button><button type="button" id="kd-imp-btn">นำเข้าไฟล์ KPI (Excel)</button><input type="file" id="kd-imp-file" accept=".xlsx,.xls" hidden></div>
       </div>
+      <div class="kd-jump"><button type="button" data-j="kd-main">เทียบเดือน</button><button type="button" data-j="kd-sec-year">สรุปทั้งปี</button><button type="button" data-j="kd-sec-log">LOG รับเคสแต่ละเดือน</button></div>
       <div id="kd-main"></div>
     </div>
   </section>
@@ -3788,6 +3799,27 @@ d.file=f.name;d.importedAt=new Date().toISOString();await S.db.doc('kpidash/main
 catch(err){msg.textContent='นำเข้าไม่สำเร็จ: '+(err&&err.message||err)}};
 function kdLog(){
 const all=(typeof S!=='undefined'&&S.all)||[];if(!all.length)return '';
+const G=c=>{if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'};
+const mat={},tm=Array(12).fill(0);
+all.forEach(t=>{const k=isoDate(t.contactAt);if(!k||k.slice(0,4)!=='2026')return;const m=+k.slice(5,7)-1;const g=G(String(t.category||'').trim());(mat[g]=mat[g]||Array(12).fill(0))[m]++;tm[m]++});
+const ms=[...Array(12).keys()].filter(m=>tm[m]>0);if(!ms.length)return '';
+const grand=tm.reduce((a,b)=>a+b,0),n0=v=>v.toLocaleString('th-TH');
+const gs=Object.keys(mat).map(c=>({c,v:mat[c],s:mat[c].reduce((a,b)=>a+b,0)})).sort((x,y)=>(x.c[0]==='อ'&&x.c[1]==='ื'?1:0)-(y.c[0]==='อ'&&y.c[1]==='ื'?1:0)||y.s-x.s);
+const mx=Math.max(...gs.flatMap(o=>o.v),1);
+const body=gs.map(o=>'<tr><td>'+esc(o.c)+'</td>'+ms.map(m=>{const v=o.v[m];return '<td class="num"'+(v?' style="background:rgba(15,145,69,'+(0.08+0.4*v/mx).toFixed(2)+')"':'')+'>'+(v?n0(v):'-')+'</td>'}).join('')+'<td class="num"><b>'+n0(o.s)+'</b></td><td class="num"><span class="kd-bar2" style="width:'+Math.max(4,o.s/gs[0].s*60).toFixed(0)+'px"></span>'+(o.s/grand*100).toFixed(1)+'%</td></tr>').join('');
+const tot='<tr style="background:var(--sunk)"><td><b>รวมทุกหัวข้อ</b></td>'+ms.map(m=>'<td class="num"><b>'+n0(tm[m])+'</b></td>').join('')+'<td class="num"><b>'+n0(grand)+'</b></td><td class="num">100%</td></tr>';
+const top3=gs.filter(o=>!/^อื่นๆ/.test(o.c)).slice(0,3).map(o=>esc(o.c.replace(/ \(.*/,''))+' '+n0(o.s)).join(' · ');
+const warn=tm[11]>0&&(new Date().getMonth()<11)?'<p class="kd-note">หมายเหตุ: ธ.ค. มี '+n0(tm[11])+' เรื่อง แต่ยังไม่ถึงเดือน ธ.ค. น่าจะเป็นเคสที่วันที่ถูกสลับวัน/เดือนตอนนำเข้า (เช่น 12 พ.ย. เป็น 11 ธ.ค.)</p>':'';
+return '<div class="kd-box" id="kd-sec-log" style="margin-bottom:14px"><h3>LOG รับเคสแต่ละเดือน แยกตามหัวข้อการติดต่อ (ข้อมูลทั้งหมดในแอพ)</h3><p class="meta">ทั้งหมด '+n0(grand)+' เรื่อง · มากสุด: '+top3+'</p><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>หัวข้อการติดต่อ (รวมกลุ่มชื่อที่คล้ายกัน)</th>'+ms.map(m=>'<th class="num">'+KD_M[m]+'</th>').join('')+'<th class="num">รวม</th><th class="num">สัดส่วน</th></tr></thead><tbody>'+tot+body+'</tbody></table></div>'+warn+'</div><details class="kd-det"><summary>ดูแยกทุกหัวข้อตามชื่อเดิมในระบบ</summary>'+kdLogFull()+'</details>'}
+if(!window.__kdPres){window.__kdPres=1;
+const off=()=>{const s=document.getElementById('v-kpidash');s.classList.remove('kd-pres');const b=document.getElementById('kd-pres-btn');if(b)b.textContent='โหมดนำเสนอ';if(document.fullscreenElement)try{document.exitFullscreen()}catch(e){}};
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('#kd-pres-btn,[data-j]');if(!t)return;
+if(t.id==='kd-pres-btn'){const s=document.getElementById('v-kpidash');if(s.classList.contains('kd-pres')){off();return}s.classList.add('kd-pres');t.textContent='ออกจากโหมดนำเสนอ';s.scrollTop=0;if(document.documentElement.requestFullscreen)try{document.documentElement.requestFullscreen().catch(()=>{})}catch(x){}return}
+const el=document.getElementById(t.getAttribute('data-j'));if(el)el.scrollIntoView({behavior:'smooth',block:'start'})});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('v-kpidash').classList.contains('kd-pres'))off()});
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.getElementById('v-kpidash').classList.contains('kd-pres'))off()})}
+function kdLogFull(){
+const all=(typeof S!=='undefined'&&S.all)||[];if(!all.length)return '';
 const mat={},tm=Array(12).fill(0);
 all.forEach(t=>{const k=isoDate(t.contactAt);if(!k||k.slice(0,4)!=='2026')return;const m=+k.slice(5,7)-1;const c=String(t.category||'').trim()||'(ไม่ระบุ)';(mat[c]=mat[c]||Array(12).fill(0))[m]++;tm[m]++});
 const ms=[...Array(12).keys()].filter(m=>tm[m]>0);if(!ms.length)return '';
@@ -3819,7 +3851,7 @@ const trow=(l,arr)=>'<tr><td>'+l+'</td><td class="num">-</td>'+ms.map(m=>'<td cl
 rows+=trow('ทิกเก็ตที่สร้าง',ms.map((x,i)=>0).length?[...Array(12).keys()].map(cr):[])+trow('ทิกเก็ตที่ปิดแล้ว',ov.cc||[])+prow;
 const crow='';
 const chart=kdChart([{n:'สร้าง',c:'#0f9145',v:[...Array(12).keys()].map(cr)},{n:'ปิดแล้ว',c:'#8cc63f',v:ov.cc||[]}],-1,-1);
-return '<h2 style="margin:22px 0 10px">สรุปรวมทั้งปี 2026</h2><div class="kd-grid4">'+cards+'</div><div class="kd-cols"><div class="kd-box"><h3>ตัวชี้วัดรายเดือนทั้งปี</h3><div class="tbl-wrap"><table class="kd-tbl"><thead>'+hd+'</thead><tbody>'+rows+crow+'</tbody></table></div></div><div class="kd-box"><h3>ทิกเก็ตที่สร้าง vs ปิดแล้ว ทั้งปี</h3>'+chart+'</div></div>'+kdLog()}
+return '<h2 id="kd-sec-year" style="margin:22px 0 10px">สรุปรวมทั้งปี 2026</h2><div class="kd-grid4">'+cards+'</div><div class="kd-cols"><div class="kd-box"><h3>ตัวชี้วัดรายเดือนทั้งปี</h3><div class="tbl-wrap"><table class="kd-tbl"><thead>'+hd+'</thead><tbody>'+rows+crow+'</tbody></table></div></div><div class="kd-box"><h3>ทิกเก็ตที่สร้าง vs ปิดแล้ว ทั้งปี</h3>'+chart+'</div></div>'+kdLog()}
 function kpiForm(r){
   r=r||{date:isoDate(new Date().toISOString())};const old=r.agent&&r.date&&K.rows.find(x=>x.date===r.date&&x.agent===r.agent);
   const num=(k,lab)=>`<div class="f"><label for="kf-${k}">${lab}</label><input id="kf-${k}" type="number" min="0" inputmode="numeric" value="${r[k]??''}"></div>`;
