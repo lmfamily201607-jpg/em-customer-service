@@ -3891,7 +3891,7 @@ inp.addEventListener('change',async e=>{
 });
 })();
 (function(){
-const st=document.createElement('style');st.textContent='.kd-ring{display:inline-block;min-width:2.1em;padding:1px 7px;border:2px solid #ea580c;border-radius:999px;font-weight:800;color:#c2410c;text-align:center;line-height:1.35}.kd-top-note{font-size:.85em;margin:6px 0}.kd-top-note i{display:inline-block;font-style:normal;font-weight:800;color:#c2410c;border:2px solid #ea580c;border-radius:999px;padding:0 8px;margin-right:6px}';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent='.kd-ring{display:inline-block;min-width:2.1em;padding:1px 7px;border:2px solid #f59e0b;border-radius:999px;font-weight:800;color:#b45309;text-align:center;line-height:1.35}.kd-top-note{font-size:.85em;margin:6px 0}.kd-top-note i{display:inline-block;font-style:normal;font-weight:800;color:#b45309;border:2px solid #f59e0b;border-radius:999px;padding:0 8px;margin-right:6px}';document.head.appendChild(st);
 const SKIP=/ต่าง|เปลี่ยนแปลง|%|สัดส่วน|เป้า|เฉลี่ย|รวม/;
 const TIME=/เวลา|นาที|ชม|ชั่วโมง|มัธยฐาน|วินาที|ช้า|รอสาย/;
 const num=s=>{s=String(s).replace(/[,\s]/g,'');if(!/^[-+]?\d+(\.\d+)?%?$/.test(s))return null;return parseFloat(s)};
@@ -3938,7 +3938,7 @@ function build(){
  const A={};people.forEach(p=>{A[p]=ms.map(m=>kpiAgg(K.rows.filter(r=>r.agent===p&&String(r.date).slice(0,7)===m)))});
  people=people.filter(p=>A[p].some(a=>a.assigned>0||a.closed>0));
  const defs=[['เคสที่ได้รับ',a=>a.assigned,0,'n',1],['เคสที่ปิดได้',a=>a.closed,0,'n',1],['อัตราปิด (%)',a=>a.closeRate,0,'%',1],['เวลาตอบเฉลี่ย (น้อย = ดี)',a=>a.replySec,1,'s',0]];
- let h='<div class="card" id="kp-cmp3" style="margin-top:16px"><h3 style="margin:0 0 4px">เทียบ 3 เดือน · '+ms.map(lab).join(' → ')+'</h3><p class="meta" style="margin:0 0 10px">ตามเดือนที่เลือกด้านบน และคนที่เลือก (ถ้าไม่เลือก = ทุกคน) · ▲▼ เทียบ '+lab(ms[2])+' กับ '+lab(ms[1])+' · <i style="font-style:normal;font-weight:800;color:#c2410c;border:2px solid #ea580c;border-radius:999px;padding:0 8px">12</i> = สูงสุดของเดือนนั้น</p>';
+ let h='<div class="card" id="kp-cmp3" style="margin-top:16px"><h3 style="margin:0 0 4px">เทียบ 3 เดือน · '+ms.map(lab).join(' → ')+'</h3><p class="meta" style="margin:0 0 10px">ตามเดือนที่เลือกด้านบน และคนที่เลือก (ถ้าไม่เลือก = ทุกคน) · ▲▼ เทียบ '+lab(ms[2])+' กับ '+lab(ms[1])+' · <i style="font-style:normal;font-weight:800;color:#b45309;border:2px solid #f59e0b;border-radius:999px;padding:0 8px">12</i> = สูงสุดของเดือนนั้น</p>';
  if(!people.length){h+='<p class="meta">ไม่มีข้อมูล 3 เดือนนี้</p></div>'}else{
  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px">';
  defs.forEach(([title,f,low,unit,ringOn])=>{
@@ -3959,9 +3959,9 @@ renderKpi=function(){const x=_r.apply(this,arguments);try{build()}catch(e){conso
 (function(){
 const MN=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const lab=m=>MN[+m.slice(5)-1]+' '+String((+m.slice(0,4)+543)%100);
-const PAL=['#ec4899','#8b5cf6','#38bdf8','#f59e0b','#22c55e','#94a3b8'];
-const GR=[['#ec4899','#c2559f'],['#8b5cf6','#5b3fc0'],['#38bdf8','#5b8def'],['#fbbf24','#f97316']];
-const st=document.createElement('style');st.textContent='.vx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:12px 0}.vx-card{border-radius:14px;color:#fff;padding:16px 18px;position:relative;overflow:hidden;min-height:122px}.vx-card .t{font-size:.9em;opacity:.92}.vx-card .n{font-size:2em;font-weight:800;margin-top:6px;line-height:1.1}.vx-card .s{font-size:.8em;opacity:.92;margin-top:5px;max-width:62%}.vx-card svg{position:absolute;right:10px;bottom:12px;opacity:.9}.vx-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin:0 0 14px}.vx-box{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.07)}.vx-box h4{margin:0;font-size:1em}.vx-box .meta{margin:2px 0 8px}.vx-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.82em;margin-top:6px}.vx-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.vx-pct{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px}.vx-pct div{text-align:center;font-size:.8em;color:#64748b}.vx-pct b{display:block;font-size:1.5em;color:#1e293b}@media(max-width:900px){.vx-grid{grid-template-columns:repeat(2,1fr)}.vx-row{grid-template-columns:1fr}}#v-kpidash table.kd-tbl thead th,#v-kpi #kp-cmp3 table.kd-tbl thead th{background:#2f3a4f!important;color:#fff!important}';document.head.appendChild(st);
+const PAL=['#0f9145','#6fa82b','#0d9488','#f59e0b','#3b82f6','#94a3b8'];
+const GR=[['#0f9145','#0a6b33'],['#6fa82b','#4d7a1a'],['#0d9488','#0e7490'],['#f5a524','#d97706']];
+const st=document.createElement('style');st.textContent='.vx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:12px 0}.vx-card{border-radius:14px;color:#fff;padding:16px 18px;position:relative;overflow:hidden;min-height:122px}.vx-card .t{font-size:.9em;opacity:.92}.vx-card .n{font-size:2em;font-weight:800;margin-top:6px;line-height:1.1}.vx-card .s{font-size:.8em;opacity:.92;margin-top:5px;max-width:62%}.vx-card svg{position:absolute;right:10px;bottom:12px;opacity:.9}.vx-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin:0 0 14px}.vx-box{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.07)}.vx-box h4{margin:0;font-size:1em}.vx-box .meta{margin:2px 0 8px}.vx-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.82em;margin-top:6px}.vx-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.vx-pct{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px}.vx-pct div{text-align:center;font-size:.8em;color:#64748b}.vx-pct b{display:block;font-size:1.5em;color:#1e293b}@media(max-width:900px){.vx-grid{grid-template-columns:repeat(2,1fr)}.vx-row{grid-template-columns:1fr}}#v-kpidash table.kd-tbl thead th,#v-kpi #kp-cmp3 table.kd-tbl thead th{background:#17402b!important;color:#fff!important}';document.head.appendChild(st);
 const f0=n=>Math.round(n).toLocaleString('en-US');
 function spark(v,w){w=w||96;const h=36;const mx=Math.max(1,...v),mn=Math.min(...v);const x=i=>2+(w-4)*i/Math.max(1,v.length-1),y=a=>4+(h-8)*(1-(a-mn)/Math.max(1e-9,mx-mn));
  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><polyline fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" points="'+v.map((a,i)=>x(i).toFixed(1)+','+y(a).toFixed(1)).join(' ')+'"/></svg>'}
@@ -3992,8 +3992,8 @@ function visHtml(rows,cur,id,donutHtml,who){
   card(1,'งานที่สำเร็จ · เคสที่ปิดได้',f0(a.closed),(a.closeRate!=null?'อัตราปิด '+a.closeRate.toFixed(1)+'%':'')+(p?'<br>'+(partial?dl(pdv(a,'closed'),pdv(p,'closed'),1):dl(a.closed,p.closed)):''),A.map(x=>x.closed))+
   card(2,'ความเร็ว · ตอบเฉลี่ย',kpiDur(a.replySec),'เดือนก่อน '+(p?kpiDur(p.replySec):'-'),A.map(x=>x.replySec||0))+
   card(3,'อัตราตอบกลับ',a.replyRate!=null?a.replyRate.toFixed(1)+'%':'-',(p&&p.replyRate!=null?'เดือนก่อน '+p.replyRate.toFixed(1)+'%':''),A.map(x=>x.replyRate||0))+'</div>'+
-  '<div class="vx-row"><div class="vx-box"><h4>แนวโน้มรายเดือน '+who+'</h4><p class="meta">'+lab(cur)+part+' · <span style="color:#ec4899">● เคสที่ได้รับ</span> <span style="color:#8b5cf6">● เคสที่ปิดได้</span></p>'+
-  lineSvg(id,ms.map(m=>MN[+m.slice(5)-1]),[{name:'ได้รับ',color:'#ec4899',vals:A.map(x=>x.assigned)},{name:'ปิดได้',color:'#8b5cf6',vals:A.map(x=>x.closed)}])+'</div>'+donutHtml+'</div>';
+  '<div class="vx-row"><div class="vx-box"><h4>แนวโน้มรายเดือน '+who+'</h4><p class="meta">'+lab(cur)+part+' · <span style="color:#0f9145">● เคสที่ได้รับ</span> <span style="color:#6fa82b">● เคสที่ปิดได้</span></p>'+
+  lineSvg(id,ms.map(m=>MN[+m.slice(5)-1]),[{name:'ได้รับ',color:'#0f9145',vals:A.map(x=>x.assigned)},{name:'ปิดได้',color:'#6fa82b',vals:A.map(x=>x.closed)}])+'</div>'+donutHtml+'</div>';
  return H}
 function topicDonut(){const v=document.getElementById('v-kpidash');if(!v)return null;
  const t=[...v.querySelectorAll('table.kd-tbl')].find(t=>/^หัวข้อการติดต่อ/.test(t.rows[0].textContent.trim()));if(!t)return null;
