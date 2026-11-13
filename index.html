@@ -3956,6 +3956,68 @@ function build(){
 const _r=renderKpi;
 renderKpi=function(){const x=_r.apply(this,arguments);try{build()}catch(e){console.error(e)}return x};
 })();
+(function(){
+const MN=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const lab=m=>MN[+m.slice(5)-1]+' '+String((+m.slice(0,4)+543)%100);
+const PAL=['#ec4899','#8b5cf6','#38bdf8','#f59e0b','#22c55e','#94a3b8'];
+const GR=[['#ec4899','#c2559f'],['#8b5cf6','#5b3fc0'],['#38bdf8','#5b8def'],['#fbbf24','#f97316']];
+const st=document.createElement('style');st.textContent='.vx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:12px 0}.vx-card{border-radius:14px;color:#fff;padding:16px 18px;position:relative;overflow:hidden;min-height:122px}.vx-card .t{font-size:.9em;opacity:.92}.vx-card .n{font-size:2em;font-weight:800;margin-top:6px;line-height:1.1}.vx-card .s{font-size:.8em;opacity:.92;margin-top:5px;max-width:62%}.vx-card svg{position:absolute;right:10px;bottom:12px;opacity:.9}.vx-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin:0 0 14px}.vx-box{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.07)}.vx-box h4{margin:0;font-size:1em}.vx-box .meta{margin:2px 0 8px}.vx-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.82em;margin-top:6px}.vx-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.vx-pct{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px}.vx-pct div{text-align:center;font-size:.8em;color:#64748b}.vx-pct b{display:block;font-size:1.5em;color:#1e293b}@media(max-width:900px){.vx-grid{grid-template-columns:repeat(2,1fr)}.vx-row{grid-template-columns:1fr}}#v-kpidash table.kd-tbl thead th,#v-kpi #kp-cmp3 table.kd-tbl thead th{background:#2f3a4f!important;color:#fff!important}';document.head.appendChild(st);
+const f0=n=>Math.round(n).toLocaleString('en-US');
+function spark(v,w){w=w||96;const h=36;const mx=Math.max(1,...v),mn=Math.min(...v);const x=i=>2+(w-4)*i/Math.max(1,v.length-1),y=a=>4+(h-8)*(1-(a-mn)/Math.max(1e-9,mx-mn));
+ return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><polyline fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" points="'+v.map((a,i)=>x(i).toFixed(1)+','+y(a).toFixed(1)).join(' ')+'"/></svg>'}
+function card(i,t,n,s,v){return '<div class="vx-card" style="background:linear-gradient(135deg,'+GR[i][0]+','+GR[i][1]+')"><div class="t">'+t+'</div><div class="n">'+n+'</div><div class="s">'+s+'</div>'+(v&&v.length>1?spark(v):'')+'</div>'}
+function lineSvg(id,labels,series){const W=600,H=220,pl=40,pr=12,pt=12,pb=28;const mx=Math.max(1,...series.flatMap(s=>s.vals.map(v=>v||0)));const top=mx*1.1,n=labels.length;
+ const X=i=>pl+(W-pl-pr)*(n>1?i/(n-1):.5),Y=v=>pt+(H-pt-pb)*(1-(v||0)/top);let o='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto"><defs>';
+ series.forEach((s,k)=>{o+='<linearGradient id="'+id+k+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+s.color+'" stop-opacity=".28"/><stop offset="1" stop-color="'+s.color+'" stop-opacity="0"/></linearGradient>'});o+='</defs>';
+ for(let g=0;g<=4;g++){const v=top*g/4,y=Y(v);o+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'" stroke="#e5e9f0" stroke-width="1"/><text x="'+(pl-6)+'" y="'+(y+4)+'" font-size="11" fill="#94a3b8" text-anchor="end">'+f0(v)+'</text>'}
+ labels.forEach((l,i)=>{o+='<text x="'+X(i)+'" y="'+(H-8)+'" font-size="11" fill="#94a3b8" text-anchor="middle">'+l+'</text>'});
+ series.forEach((s,k)=>{let p='M'+X(0)+' '+Y(s.vals[0]);for(let i=1;i<n;i++){const xm=(X(i-1)+X(i))/2;p+=' C'+xm+' '+Y(s.vals[i-1])+','+xm+' '+Y(s.vals[i])+','+X(i)+' '+Y(s.vals[i])}
+  o+='<path d="'+p+' L'+X(n-1)+' '+Y(0)+' L'+X(0)+' '+Y(0)+' Z" fill="url(#'+id+k+')"/><path d="'+p+'" fill="none" stroke="'+s.color+'" stroke-width="2.6" stroke-linecap="round"/>';
+  s.vals.forEach((v,i)=>{o+='<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="3.6" fill="#fff" stroke="'+s.color+'" stroke-width="2"><title>'+labels[i]+' · '+s.name+' '+f0(v||0)+'</title></circle>'})});
+ return o+'</svg>'}
+function donut(parts){const tot=parts.reduce((a,p)=>a+p.v,0)||1;const R=70,C=2*Math.PI*R;let off=0,o='<svg viewBox="0 0 200 200" style="width:190px;height:190px;display:block;margin:0 auto"><g transform="rotate(-90 100 100)">';
+ parts.forEach(p=>{const len=C*p.v/tot;o+='<circle cx="100" cy="100" r="'+R+'" fill="none" stroke="'+p.color+'" stroke-width="30" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'"><title>'+p.label+' '+f0(p.v)+'</title></circle>';off+=len});
+ return o+'</g></svg>'}
+function donutBox(title,sub,parts){const tot=parts.reduce((a,p)=>a+p.v,0)||1;
+ return '<div class="vx-box"><h4>'+title+'</h4><p class="meta">'+sub+'</p>'+donut(parts)+'<div class="vx-pct">'+parts.slice(0,3).map(p=>'<div><b style="color:'+p.color+'">'+Math.round(p.v/tot*100)+'%</b>'+esc(p.label)+'</div>').join('')+'</div><div class="vx-leg">'+parts.map(p=>'<span><i style="background:'+p.color+'"></i>'+esc(p.label)+' '+f0(p.v)+'</span>').join('')+'</div></div>'}
+function monthsOf(rows){return [...new Set(rows.map(r=>String(r.date).slice(0,7)))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort()}
+function visHtml(rows,cur,id,donutHtml,who){
+ const ms=monthsOf(rows).filter(m=>m<=cur).slice(-6);if(!ms.length)return '';
+ const A=ms.map(m=>kpiAgg(rows.filter(r=>String(r.date).slice(0,7)===m)));const a=A[A.length-1],p=A[A.length-2];
+ const last=rows.filter(r=>String(r.date).slice(0,7)===cur).map(r=>String(r.date).slice(8,10)).sort().pop();
+ const part=last&&+last<27?' · ข้อมูลถึงวันที่ '+(+last):'';
+ const dl=(x,y)=>y?(x>=y?'+':'')+((x-y)/y*100).toFixed(1)+'% เทียบเดือนก่อน':'';
+ const H='<div class="vx-grid">'+
+  card(0,'ปริมาณงาน · เคสที่ได้รับ',f0(a.assigned),(a.perDay!=null?'เฉลี่ย '+a.perDay.toFixed(1)+'/วัน':'')+(p?'<br>'+dl(a.assigned,p.assigned):''),A.map(x=>x.assigned))+
+  card(1,'งานที่สำเร็จ · เคสที่ปิดได้',f0(a.closed),(a.closeRate!=null?'อัตราปิด '+a.closeRate.toFixed(1)+'%':'')+(p?'<br>'+dl(a.closed,p.closed):''),A.map(x=>x.closed))+
+  card(2,'ความเร็ว · ตอบเฉลี่ย',kpiDur(a.replySec),'เดือนก่อน '+(p?kpiDur(p.replySec):'-'),A.map(x=>x.replySec||0))+
+  card(3,'อัตราตอบกลับ',a.replyRate!=null?a.replyRate.toFixed(1)+'%':'-',(p&&p.replyRate!=null?'เดือนก่อน '+p.replyRate.toFixed(1)+'%':''),A.map(x=>x.replyRate||0))+'</div>'+
+  '<div class="vx-row"><div class="vx-box"><h4>แนวโน้มรายเดือน '+who+'</h4><p class="meta">'+lab(cur)+part+' · <span style="color:#ec4899">● เคสที่ได้รับ</span> <span style="color:#8b5cf6">● เคสที่ปิดได้</span></p>'+
+  lineSvg(id,ms.map(m=>MN[+m.slice(5)-1]),[{name:'ได้รับ',color:'#ec4899',vals:A.map(x=>x.assigned)},{name:'ปิดได้',color:'#8b5cf6',vals:A.map(x=>x.closed)}])+'</div>'+donutHtml+'</div>';
+ return H}
+function topicDonut(){const v=document.getElementById('v-kpidash');if(!v)return null;
+ const t=[...v.querySelectorAll('table.kd-tbl')].find(t=>/^หัวข้อการติดต่อ/.test(t.rows[0].textContent.trim()));if(!t)return null;
+ const H=[...t.rows[0].cells].map(c=>c.textContent.trim());const ci=H.indexOf('รวม');if(ci<0)return null;
+ const L=[...t.rows].slice(1).filter(r=>!/^\s*รวม/.test(r.cells[0].textContent)).map(r=>({label:r.cells[0].textContent.trim().replace(/\s*\(.*\)\s*$/,''),v:parseFloat(r.cells[ci].textContent.replace(/,/g,''))||0})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+ if(!L.length)return null;const top=L.slice(0,5),rest=L.slice(5).reduce((a,x)=>a+x.v,0);if(rest)top.push({label:'อื่น ๆ',v:rest});
+ top.forEach((x,i)=>x.color=PAL[i]);return donutBox('สัดส่วนหัวข้อการติดต่อ','ทั้งปี · ข้อมูลทั้งหมดในแอพ',top)}
+function buildDash(){const body=document.getElementById('kd-body');if(!body||!K||!K.loaded||!K.rows||!K.rows.length)return;
+ const dn=topicDonut();if(!dn)return;const ms=monthsOf(K.rows);const cur=ms[ms.length-1];
+ const sig=K.rows.length+'|'+cur+'|'+dn.length;let el=document.getElementById('vx-dash');if(el&&el.dataset.sig===sig&&body.contains(el))return;
+ if(el)el.remove();el=document.createElement('div');el.id='vx-dash';el.dataset.sig=sig;el.innerHTML=visHtml(K.rows,cur,'vxd',dn,'(ทุกคน)');body.prepend(el)}
+function buildKpi(){const host=document.getElementById('v-kpi');if(!host||!K||!K.loaded||!K.rows||!K.rows.length)return;
+ const sel=K.sel&&K.sel.size?K.sel:null;const rows=K.rows.filter(r=>!sel||sel.has(r.agent));const cur=/^\d{4}-\d{2}$/.test(K.month||'')?K.month:null;if(!cur)return;
+ const cm=rows.filter(r=>String(r.date).slice(0,7)===cur);const tot={};cm.forEach(r=>{tot[r.agent]=(tot[r.agent]||0)+(r.assigned||0)});
+ let L=Object.keys(tot).map(k=>({label:k,v:tot[k]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);const top=L.slice(0,5),rest=L.slice(5).reduce((a,x)=>a+x.v,0);if(rest)top.push({label:'คนอื่น ๆ',v:rest});top.forEach((x,i)=>x.color=PAL[i]);
+ const dn=top.length?donutBox('สัดส่วนเคสแต่ละคน',lab(cur),top):'<div class="vx-box"><h4>สัดส่วนเคสแต่ละคน</h4><p class="meta">ไม่มีข้อมูลเดือนนี้</p></div>';
+ const who=sel?'('+[...sel].join(', ')+')':'(ทุกคน)';
+ const html=visHtml(rows,cur,'vxk',dn,who);let el=document.getElementById('vx-kpi');if(el)el.remove();if(!html)return;
+ el=document.createElement('div');el.id='vx-kpi';el.innerHTML=html;const sub=host.querySelector('p.sub');const anchor=document.getElementById('kp-gate');if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(el,anchor);else if(sub)sub.insertAdjacentElement('afterend',el)}
+const _r=renderKpi;renderKpi=function(){const x=_r.apply(this,arguments);try{buildKpi()}catch(e){console.error(e)}return x};
+let tm;const mo=new MutationObserver(()=>run());
+function run(){clearTimeout(tm);tm=setTimeout(()=>{mo.disconnect();try{if(S.view==='kpidash')buildDash()}catch(e){console.error(e)}mo.observe(document.body,{childList:true,subtree:true})},120)}
+mo.observe(document.body,{childList:true,subtree:true});run();
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
