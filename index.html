@@ -1431,7 +1431,7 @@ function renderWho(){
 /* ---------- workspace tabs ---------- */
 // Each menu opened stays as a tab; its page keeps its state (typed text, filters, scroll) while hidden.
 const VIEW_NAME=v=>$(`#tabs a[data-v="${v}"]`)?.textContent||v;
-function loadTabs(){try{const t=JSON.parse(localStorage.getItem('em-tabs')||'[]');return Array.isArray(t)?t.filter(v=>VIEWS.includes(v)):[]}catch(e){return []}}
+function loadTabs(){try{const t=JSON.parse(localStorage.getItem('em-tabs')||'[]');return Array.isArray(t)?t.filter(v=>VIEWS.includes(v)&&v!=='kpirep'):[]}catch(e){return []}}
 function saveTabs(){try{localStorage.setItem('em-tabs',JSON.stringify(S.openTabs))}catch(e){}}
 function renderTabs(){
   const bar=$('#wtabs');
