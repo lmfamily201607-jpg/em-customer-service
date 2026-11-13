@@ -3343,7 +3343,7 @@ function ensureKpi(){
   S.db.collection('kpi').onSnapshot(s=>{
     K.rows=[];K.conf={};const raw=[];s.docs.forEach(d=>{if(d.id==='settings')K.conf=d.data()||{};else raw.push(d.data())});
     const best=new Map();raw.forEach(x=>{const a=kpiName(x.agent,x.date);if(!a||/^(เจ้าหน้าที่|admin)$/i.test(a))return;const y={...x,agent:a},k=y.date+'|'+a,o=best.get(k);if(!o||String(y.updatedAt||'')>=String(o.updatedAt||''))best.set(k,y)});K.rows=[...best.values()];
-    K.loaded=true;K.err=false;if(S.view==='kpi')renderKpi()},
+    K.loaded=true;K.err=false;if(S.view==='kpi')renderKpi();if(S.view==='kpidash')renderKd()},
     ()=>{K.on=false;K.err=true;if(S.view==='kpi')renderKpi()});
 }
 // Working days from the case log: for the staff in logPeople a day counts as worked when they logged at least one case
@@ -3792,7 +3792,7 @@ M.innerHTML='<div class="kd-grid4">'+cards+'</div>'
 +'<div class="kd-box"><h3>แท็กที่ใช้มากสุด</h3><div class="kd-legend"><span><i class="kd-a"></i>'+KD_M[a]+'</span><span><i class="kd-b"></i>'+KD_M[b]+'</span></div>'+tags+'</div></div>'
 +'<div class="kd-cols"><div class="kd-box"><h3>คะแนนความพึงพอใจรายเดือน</h3>'+csat+(crit?'<h4>ข้อที่คะแนนต่ำสุด (เต็ม 5)</h4>'+crit:'')+'</div>'
 +'<div class="kd-box"><h3>ความคิดเห็นลูกค้า (จำนวนครั้ง)</h3><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>หัวข้อ</th><th>'+KD_M[a]+'</th><th>'+KD_M[b]+'</th><th>ต่าง</th></tr></thead><tbody>'+voc+'</tbody></table></div></div></div>'
-+kdYear(d)+'<p class="meta kd-foot">ข้อมูลจากไฟล์ '+esc(d.file||'')+' · นำเข้าเมื่อ '+fmt(d.importedAt)+' · เวลาและ % มาจาก Zaapi (ค่ามัธยฐาน) · ▲▼ สีเขียว = ดีขึ้น สีแดง = แย่ลง สีเทา = ไม่ตัดสิน</p>'}
++kdCmp(a,b)+kdYear(d)+'<p class="meta kd-foot">ข้อมูลจากไฟล์ '+esc(d.file||'')+' · นำเข้าเมื่อ '+fmt(d.importedAt)+' · เวลาและ % มาจาก Zaapi (ค่ามัธยฐาน) · ▲▼ สีเขียว = ดีขึ้น สีแดง = แย่ลง สีเทา = ไม่ตัดสิน</p>'}
 $('#kd-imp-btn').onclick=()=>$('#kd-imp-file').click();
 $('#kd-imp-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#kd-msg');msg.textContent='กำลังนำเข้า…';
 try{const {wb}=readWorkbook(await f.arrayBuffer()),R={};wb.SheetNames.forEach(n=>{if(wb.Sheets[n])R[n.trim()]=sheetRows(wb.Sheets[n])});
@@ -3831,6 +3831,24 @@ const body=cats.map(o=>'<tr><td>'+esc(o.c)+'</td>'+ms.map(m=>{const v=o.v[m];ret
 const tot='<tr style="background:var(--sunk)"><td><b>รวมทุกหัวข้อ</b></td>'+ms.map(m=>'<td class="num"><b>'+n0(tm[m])+'</b></td>').join('')+'<td class="num"><b>'+n0(tm.reduce((a,b)=>a+b,0))+'</b></td></tr>';
 const warn=tm[11]>0&&(new Date().getMonth()<11)?'<p class="kd-note">หมายเหตุ: ธ.ค. มี '+n0(tm[11])+' เรื่อง แต่ยังไม่ถึงเดือน ธ.ค. น่าจะเป็นเคสที่วันที่ถูกสลับวัน/เดือนตอนนำเข้า (เช่น 12 พ.ย. เป็น 11 ธ.ค.)</p>':'';
 return '<div class="kd-box" style="margin-bottom:14px"><h3>LOG รับเคสแต่ละเดือน แยกตามหัวข้อการติดต่อ (ข้อมูลทั้งหมดในแอพ)</h3><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>หัวข้อการติดต่อ</th>'+ms.map(m=>'<th class="num">'+KD_M[m]+'</th>').join('')+'<th class="num">รวม</th></tr></thead><tbody>'+tot+body+'</tbody></table></div>'+warn+'</div>'}
+function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
+function kdCmp(a,b){
+ensureKpi();
+const all=(typeof S!=='undefined'&&S.all)||[];
+const cnt=m=>{const o={};all.forEach(t=>{const k=isoDate(t.contactAt);if(!k||k.slice(0,4)!=='2026'||(+k.slice(5,7)-1)!==m)return;const g=kdGroup(String(t.category||'').trim());o[g]=(o[g]||0)+1});return o};
+const ca=cnt(a),cb=cnt(b),names=[...new Set([...Object.keys(ca),...Object.keys(cb)])].sort((x,y)=>((cb[y]||0)+(ca[y]||0))-((cb[x]||0)+(ca[x]||0)));
+const ta=Object.values(ca).reduce((s,x)=>s+x,0),tb=Object.values(cb).reduce((s,x)=>s+x,0);
+const n0=v=>(v||0).toLocaleString('th-TH'),dtxt=(x,y)=>{const d=(y||0)-(x||0);return (d>0?'+':'')+d.toLocaleString('th-TH')};
+const trow=(l,x,y,bold)=>{const p=kdPct(x,y);return '<tr'+(bold?' style="background:var(--sunk)"':'')+'><td>'+(bold?'<b>'+l+'</b>':esc(l))+'</td><td class="num">'+n0(x)+'</td><td class="num"><b>'+n0(y)+'</b></td><td class="num">'+dtxt(x,y)+'</td><td class="num">'+kdChip(p,kdPctTxt(p),null)+'</td></tr>'};
+const topic=(ta||tb)?'<div class="kd-box"><h3>เคสที่รับ แยกตามหัวข้อการติดต่อ</h3><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>หัวข้อ</th><th class="num">'+KD_M[a]+'</th><th class="num">'+KD_M[b]+'</th><th class="num">ต่าง</th><th class="num">%</th></tr></thead><tbody>'+trow('รวมทุกหัวข้อ',ta,tb,true)+names.map(n=>trow(n,ca[n],cb[n])).join('')+'</tbody></table></div></div>':'';
+let ppl='';
+if(typeof K!=='undefined'&&K.rows&&K.rows.length){const pr=m=>K.rows.filter(r=>r.date.startsWith('2026-'+String(m+1).padStart(2,'0')));const ra=pr(a),rb=pr(b),both=ra.concat(rb);const people=kpiPeople(both).filter(p=>both.some(r=>r.agent===p&&r.assigned>0));
+const rows=people.map(p=>{const x=kpiAgg(ra.filter(r=>r.agent===p)),y=kpiAgg(rb.filter(r=>r.agent===p));const pa=kdPct(x.assigned,y.assigned),dr=(x.closeRate!=null&&y.closeRate!=null)?y.closeRate-x.closeRate:null,hs=x.replySec&&y.replySec;
+return '<tr><td><b>'+esc(p)+'</b></td><td class="num">'+n0(x.assigned)+'</td><td class="num"><b>'+n0(y.assigned)+'</b></td><td class="num">'+kdChip(pa,kdPctTxt(pa),null)+'</td><td class="num">'+(x.closeRate==null?'-':x.closeRate.toFixed(1)+'%')+'</td><td class="num"><b>'+(y.closeRate==null?'-':y.closeRate.toFixed(1)+'%')+'</b></td><td class="num">'+kdChip(dr,dr==null?'-':(dr>0?'+':'')+dr.toFixed(1)+' จุด',true)+'</td><td class="num">'+kpiDur(x.replySec)+'</td><td class="num"><b>'+kpiDur(y.replySec)+'</b></td><td class="num">'+kdChip(hs?y.replySec-x.replySec:null,hs?(y.replySec<x.replySec?'เร็วขึ้น ':'ช้าลง ')+kpiDur(Math.abs(y.replySec-x.replySec)):'-',false)+'</td></tr>'}).join('');
+if(rows)ppl='<div class="kd-box"><h3>KPI รายบุคคล เทียบเดือน</h3><div class="tbl-wrap"><table class="kd-tbl"><thead><tr><th>เจ้าหน้าที่</th><th class="num">ได้รับ '+KD_M[a]+'</th><th class="num">ได้รับ '+KD_M[b]+'</th><th class="num">ต่าง</th><th class="num">อัตราปิด '+KD_M[a]+'</th><th class="num">อัตราปิด '+KD_M[b]+'</th><th class="num">ต่าง</th><th class="num">เวลาตอบ '+KD_M[a]+'</th><th class="num">เวลาตอบ '+KD_M[b]+'</th><th class="num">ต่าง</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'}
+const d=(typeof KD!=='undefined'&&KD.d)||{},cs=d.cs||{n:[],s:[]};const av=m=>cs.n&&cs.n[m]?cs.s[m]/cs.n[m]:null;const xa=av(a),xb=av(b),na=cs.n[a]||0,nb=cs.n[b]||0,pn=kdPct(na,nb);
+const csat=(xa!=null||xb!=null)?'<div class="kd-box"><h3>ความพึงพอใจ (CSAT) เทียบเดือน</h3><table class="kd-tbl"><thead><tr><th></th><th class="num">'+KD_M[a]+'</th><th class="num">'+KD_M[b]+'</th><th class="num">ต่าง</th></tr></thead><tbody><tr><td>คะแนนเฉลี่ย (เต็ม 5)</td><td class="num">'+(xa==null?'-':xa.toFixed(2))+'</td><td class="num"><b>'+(xb==null?'-':xb.toFixed(2))+'</b></td><td class="num">'+kdChip(xa!=null&&xb!=null?xb-xa:null,xa!=null&&xb!=null?((xb-xa>0?'+':'')+(xb-xa).toFixed(2)):'-',true)+'</td></tr><tr><td>จำนวนฟอร์ม</td><td class="num">'+na+'</td><td class="num"><b>'+nb+'</b></td><td class="num">'+kdChip(pn,kdPctTxt(pn),null)+'</td></tr></tbody></table></div>':'';
+return (topic||ppl||csat)?'<h2 style="margin:22px 0 10px">เปรียบเทียบเพิ่มเติม '+KD_M[a]+' → '+KD_M[b]+'</h2><div class="kd-cols">'+topic+ppl+csat+'</div>':''}
 function kdYear(d){
 ensureKrep();
 const ov=d.ov||{},mo=d.mo||{},cs=d.cs||{n:[],s:[]};
