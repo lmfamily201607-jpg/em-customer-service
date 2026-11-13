@@ -3891,35 +3891,36 @@ inp.addEventListener('change',async e=>{
 });
 })();
 (function(){
-const st=document.createElement('style');st.textContent='.kd-tbl td.kd-top{background:none!important;box-shadow:none!important;color:#c2410c!important;font-weight:800;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}.kd-top-note{font-size:.85em;margin:6px 0}.kd-top-note i{display:inline-block;font-style:normal;font-weight:800;color:#d97706;margin-right:6px}';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent='.kd-ring{display:inline-block;min-width:2.1em;padding:1px 7px;border:2px solid #ea580c;border-radius:999px;font-weight:800;color:#c2410c;text-align:center;line-height:1.35}.kd-top-note{font-size:.85em;margin:6px 0}.kd-top-note i{display:inline-block;font-style:normal;font-weight:800;color:#c2410c;border:2px solid #ea580c;border-radius:999px;padding:0 8px;margin-right:6px}';document.head.appendChild(st);
 const SKIP=/ต่าง|เปลี่ยนแปลง|%|สัดส่วน|เป้า|เฉลี่ย|รวม/;
 const TIME=/เวลา|นาที|ชม|ชั่วโมง|มัธยฐาน|วินาที|ช้า|รอสาย/;
 const num=s=>{s=String(s).replace(/[,\s]/g,'');if(!/^[-+]?\d+(\.\d+)?%?$/.test(s))return null;return parseFloat(s)};
+function ring(c){const s=document.createElement('span');s.className='kd-ring';s.textContent=c.textContent.trim();c.textContent='';c.appendChild(s)}
 function mark(t){
- t.querySelectorAll('td.kd-top').forEach(c=>c.classList.remove('kd-top'));
+ t.querySelectorAll('span.kd-ring').forEach(s=>{const c=s.parentNode;c.textContent=s.textContent});
  const hr=t.tHead&&t.tHead.rows[0]?t.tHead.rows[0]:t.rows[0];if(!hr)return;
  const H=[...hr.cells].map(c=>c.textContent.trim());
- const body=[...t.rows].filter(r=>r!==hr&&r.cells.length>1&&r.cells[0].tagName!=='TH'||(r!==hr&&r.cells.length>1&&t.tBodies.length));
  const rows=[...t.rows].filter(r=>r!==hr&&r.cells.length>1);
  if(rows.length<2)return;
+ const pick=cs=>{if(cs.length<2)return;const m=Math.max(...cs.map(c=>num(c.textContent)));if(!(m>0))return;cs.forEach(c=>{if(num(c.textContent)===m)ring(c)})};
  if(/^ตัวชี้วัด/.test(H[0])){
   rows.forEach(r=>{if(TIME.test(r.cells[0].textContent)||/^\s*KPI/.test(r.cells[0].textContent))return;
    const cs=[...r.cells].filter((c,i)=>i>0&&H[i]&&!SKIP.test(H[i])&&num(c.textContent)!==null);
-   if(cs.length<3)return;const m=Math.max(...cs.map(c=>num(c.textContent)));if(!(m>0))return;
-   cs.forEach(c=>{if(num(c.textContent)===m)c.classList.add('kd-top')})});
+   if(cs.length>=3)pick(cs)});
  }else if(/^หัวข้อ/.test(H[0])){
   const dr=rows.filter(r=>!/^\s*รวม/.test(r.cells[0].textContent));
   H.forEach((h,i)=>{if(i===0||!h||SKIP.test(h))return;
-   const cs=dr.map(r=>r.cells[i]).filter(c=>c&&num(c.textContent)!==null);
-   if(cs.length<2)return;const m=Math.max(...cs.map(c=>num(c.textContent)));if(!(m>0))return;
-   cs.forEach(c=>{if(num(c.textContent)===m)c.classList.add('kd-top')})});
+   pick(dr.map(r=>r.cells[i]).filter(c=>c&&num(c.textContent)!==null))});
  }
 }
-let tm;function run(){clearTimeout(tm);tm=setTimeout(()=>{const v=document.getElementById('v-kpidash');if(!v)return;
- v.querySelectorAll('table.kd-tbl').forEach(mark);
- if(!v.querySelector('.kd-top-note')&&v.querySelector('.kd-top')){const p=document.createElement('p');p.className='meta kd-top-note';p.innerHTML='<i>ตัวเลขส้มขีดเส้นใต้</i> = ตัวเลขสูงสุด (อันดับ 1) ของแต่ละคอลัมน์/แถว';const j=v.querySelector('.kd-jump');if(j&&j.parentNode)j.parentNode.insertBefore(p,j.nextSibling);else v.insertBefore(p,v.firstChild)}
+let tm;const mo=new MutationObserver(()=>run());
+function run(){clearTimeout(tm);tm=setTimeout(()=>{const v=document.getElementById('v-kpidash');if(!v)return;
+ mo.disconnect();
+ try{v.querySelectorAll('table.kd-tbl').forEach(mark);
+ if(!v.querySelector('.kd-top-note')&&v.querySelector('.kd-ring')){const p=document.createElement('p');p.className='meta kd-top-note';p.innerHTML='<i>12</i>วงกลมส้ม = ตัวเลขสูงสุด (อันดับ 1) ของแต่ละเดือน';const j=v.querySelector('.kd-jump');if(j&&j.parentNode)j.parentNode.insertBefore(p,j.nextSibling);else v.insertBefore(p,v.firstChild)}}catch(e){}
+ mo.observe(document.body,{childList:true,subtree:true});
 },80)}
-new MutationObserver(run).observe(document.body,{childList:true,subtree:true});run();
+mo.observe(document.body,{childList:true,subtree:true});run();
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
