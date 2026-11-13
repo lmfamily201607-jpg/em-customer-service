@@ -3984,12 +3984,12 @@ function monthsOf(rows){return [...new Set(rows.map(r=>String(r.date).slice(0,7)
 function visHtml(rows,cur,id,donutHtml,who){
  const ms=monthsOf(rows).filter(m=>m<=cur).slice(-6);if(!ms.length)return '';
  const A=ms.map(m=>kpiAgg(rows.filter(r=>String(r.date).slice(0,7)===m)));const a=A[A.length-1],p=A[A.length-2];
- const last=rows.filter(r=>String(r.date).slice(0,7)===cur).map(r=>String(r.date).slice(8,10)).sort().pop();
+ const last=rows.filter(r=>String(r.date).slice(0,7)===cur&&r.assigned>0).map(r=>String(r.date).slice(8,10)).sort().pop();
  const part=last&&+last<27?' · ข้อมูลถึงวันที่ '+(+last):'';
- const dl=(x,y)=>y?(x>=y?'+':'')+((x-y)/y*100).toFixed(1)+'% เทียบเดือนก่อน':'';
+ const partial=!!(last&&+last<27);const dl=(x,y,pd)=>y?(x>=y?'+':'')+((x-y)/y*100).toFixed(1)+'% เทียบเดือนก่อน'+(pd?' (ต่อวัน)':''):'';const pdv=(o,k)=>o.active?o[k]/o.active:0;
  const H='<div class="vx-grid">'+
-  card(0,'ปริมาณงาน · เคสที่ได้รับ',f0(a.assigned),(a.perDay!=null?'เฉลี่ย '+a.perDay.toFixed(1)+'/วัน':'')+(p?'<br>'+dl(a.assigned,p.assigned):''),A.map(x=>x.assigned))+
-  card(1,'งานที่สำเร็จ · เคสที่ปิดได้',f0(a.closed),(a.closeRate!=null?'อัตราปิด '+a.closeRate.toFixed(1)+'%':'')+(p?'<br>'+dl(a.closed,p.closed):''),A.map(x=>x.closed))+
+  card(0,'ปริมาณงาน · เคสที่ได้รับ',f0(a.assigned),(a.perDay!=null?'เฉลี่ย '+a.perDay.toFixed(1)+'/วัน':'')+(p?'<br>'+(partial?dl(pdv(a,'assigned'),pdv(p,'assigned'),1):dl(a.assigned,p.assigned)):''),A.map(x=>x.assigned))+
+  card(1,'งานที่สำเร็จ · เคสที่ปิดได้',f0(a.closed),(a.closeRate!=null?'อัตราปิด '+a.closeRate.toFixed(1)+'%':'')+(p?'<br>'+(partial?dl(pdv(a,'closed'),pdv(p,'closed'),1):dl(a.closed,p.closed)):''),A.map(x=>x.closed))+
   card(2,'ความเร็ว · ตอบเฉลี่ย',kpiDur(a.replySec),'เดือนก่อน '+(p?kpiDur(p.replySec):'-'),A.map(x=>x.replySec||0))+
   card(3,'อัตราตอบกลับ',a.replyRate!=null?a.replyRate.toFixed(1)+'%':'-',(p&&p.replyRate!=null?'เดือนก่อน '+p.replyRate.toFixed(1)+'%':''),A.map(x=>x.replyRate||0))+'</div>'+
   '<div class="vx-row"><div class="vx-box"><h4>แนวโน้มรายเดือน '+who+'</h4><p class="meta">'+lab(cur)+part+' · <span style="color:#ec4899">● เคสที่ได้รับ</span> <span style="color:#8b5cf6">● เคสที่ปิดได้</span></p>'+
