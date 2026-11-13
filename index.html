@@ -3846,6 +3846,50 @@ const fb=()=>{const x=document.createElement('textarea');x.value=v;x.style.posit
 if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(v).then(done,fb);else fb()},true);
 const start=()=>{new MutationObserver(sched).observe(document.body,{childList:true,subtree:true});sched()};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start()})();
+/* นำเข้าข้อมูลจาก Excel: เลือกเมนูที่จะนำเข้าได้หลายเมนูพร้อมกัน (รวม KPI รายบุคคล) */
+(function(){
+const inp=document.getElementById('imp-file');if(!inp)return;
+let FILE=null;
+async function importKpiFile(file){
+  ensureKpi();for(let i=0;i<20&&!K.loaded;i++)await sleep(300);
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellFormula:false,cellHTML:false,cellText:false,cellStyles:false});
+  const p=kpiParse(wb);if(!p.rows.length)throw new Error('ไม่พบข้อมูล KPI รายบุคคลในไฟล์นี้');
+  const now=new Date().toISOString();let done=0,bad=0;const total=p.rows.length;
+  const queue=p.rows.map(r=>{const prev=K.rows.find(x=>x.date===r.date&&x.agent===r.agent)||{};return {...prev,...r,updatedAt:now,updatedBy:S.uid}});
+  const worker=async()=>{while(queue.length){const r=queue.shift();try{await S.db.doc('kpi/'+kpiId(r.date,r.agent)).set(r);done++}catch(err){bad++;if(err.code==='resource_exhausted'){queue.push(r);await sleep(1500)}}
+    if(done%20===0)prog(done,total,'KPI รายบุคคล: '+done+'/'+total)}};
+  await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+  prog(1,1,'KPI รายบุคคล: นำเข้า '+done.toLocaleString()+' รายการแล้ว'+(bad?' · ไม่สำเร็จ '+bad:''));
+  return done}
+inp.addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0];FILE=f||null;const old=document.getElementById('imp-master');if(old)old.remove();if(!f||!window.XLSX)return;
+  let kpiSheets=[];try{const wbn=XLSX.read(await f.arrayBuffer(),{type:'array',bookSheets:true});kpiSheets=wbn.SheetNames.filter(n=>/ZAPPI|ตารางการทำงาน|KPI\s*รายบุคคล/i.test(n))}catch(_){}
+  const box=document.getElementById('imp-found');
+  for(let i=0;i<300;i++){await sleep(500);if(box.querySelector('.imp-sec,.banner.warn,.banner.bad'))break}
+  if(FILE!==f||document.getElementById('imp-master'))return;
+  const LAB={'imp-log-go':'Log Case (ประวัติรับเรื่อง)','imp-qa-go':'คำถาม-คำตอบ Q&A','imp-gen-go':'ข้อมูลทีม (ชีตอื่น ๆ)','imp-parts-go':'ราคาอะไหล่','imp-links-go':'Link การทำงาน','imp-dealer-go':'Dealer network','imp-dms-go':'เคส DMS','imp-ncr-go':'NCR อาการเสีย (วิเคราะห์อาการเสีย)','imp-rep-go':'ข้อมูลซ่อมเคสที่จบ (เลือกอย่างใดอย่างหนึ่งกับ NCR)'};
+  const items=Object.keys(LAB).filter(id=>document.getElementById(id)).map(id=>[id,LAB[id]]);
+  if(kpiSheets.length)items.push(['__kpi','KPI รายบุคคล (ชีต '+kpiSheets.join(', ')+')']);
+  if(!items.length)return;
+  const html='<div class="imp-sec" id="imp-master" style="border:2px solid var(--brand,#0f9145)"><h3>เลือกเมนูที่จะนำเข้า</h3><p class="meta" style="margin:0 0 8px">ติ๊กเมนูที่ต้องการ แล้วกด "นำเข้าเมนูที่เลือก" ระบบจะนำเข้าทีละเมนูตามลำดับ (ชีตที่ติ๊กในแต่ละส่วนด้านล่างยังใช้ตามเดิม) ถ้าไม่ติ๊กเมนูไหน เมนูนั้นจะไม่ถูกนำเข้า</p>'
+   +items.map(([id,l])=>'<div class="f chk"><input type="checkbox" id="im-'+id+'" data-im="'+id+'"><label for="im-'+id+'">'+esc(l)+'</label></div>').join('')
+   +'<div class="actions"><button class="primary" type="button" id="im-run">นำเข้าเมนูที่เลือก</button><button type="button" id="im-all">เลือกทั้งหมด</button><button type="button" id="im-none">ไม่เลือก</button></div></div>';
+  box.insertAdjacentHTML('afterbegin',html);
+  const cbs=()=>[...document.querySelectorAll('#imp-master [data-im]')];
+  document.getElementById('im-all').onclick=()=>cbs().forEach(c=>c.checked=c.dataset.im!=='imp-rep-go');
+  document.getElementById('im-none').onclick=()=>cbs().forEach(c=>c.checked=false);
+  document.getElementById('im-run').onclick=async()=>{
+    const sel=cbs().filter(c=>c.checked).map(c=>c.dataset.im);
+    if(!sel.length){toast('ติ๊กเมนูที่จะนำเข้าก่อน');return}
+    if(!S.isAdmin||!S.db){toast('เฉพาะผู้ดูแลระบบนำเข้าข้อมูลได้');return}
+    if(sel.includes('imp-ncr-go')&&sel.includes('imp-rep-go')){toast('NCR กับข้อมูลซ่อมเคสที่จบ ใช้ชีตเดียวกัน เลือกอย่างใดอย่างหนึ่ง');return}
+    const run=document.getElementById('im-run');run.disabled=true;let ok=0;
+    try{for(const id of sel){const lab=(items.find(x=>x[0]===id)||[])[1]||id;prog(0,1,'กำลังนำเข้า: '+lab);
+      try{if(id==='__kpi'){await importKpiFile(FILE)}else{const b=document.getElementById(id);b.disabled=false;b.click();await sleep(400);for(let i=0;i<2400&&b.disabled;i++)await sleep(500)}ok++}catch(err){toast('นำเข้า '+lab+' ไม่สำเร็จ: '+errText(err))}}
+      prog(1,1,'นำเข้าเมนูที่เลือกครบแล้ว '+ok+'/'+sel.length+' เมนู');toast('นำเข้าเมนูที่เลือกแล้ว '+ok+'/'+sel.length+' เมนู')}
+    finally{run.disabled=false}}
+});
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
