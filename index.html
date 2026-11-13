@@ -1042,8 +1042,9 @@ a{transition:color .12s}
     <div id="kp-body" hidden>
       <div class="kp-bar">
         <button type="button" class="primary" id="kp-add">บันทึกข้อมูลรายวัน</button><button type="button" id="kp-import">นำเข้าจาก Excel</button><button type="button" id="kp-settings">ตั้งเป้าหมาย</button><button type="button" id="kp-xlsx">ส่งออก Excel</button>
-        <div class="period"><button type="button" id="kp-prev" aria-label="เดือนก่อน">‹</button><input type="month" id="kp-month" aria-label="เลือกเดือน"><button type="button" id="kp-next" aria-label="เดือนถัดไป">›</button><select id="kp-person" aria-label="เจ้าหน้าที่" style="width:auto"></select></div>
+        <div class="period"><button type="button" id="kp-prev" aria-label="เดือนก่อน">‹</button><input type="month" id="kp-month" aria-label="เลือกเดือน"><button type="button" id="kp-next" aria-label="เดือนถัดไป">›</button><select id="kp-person" aria-label="เจ้าหน้าที่" style="width:auto;display:none"></select></div>
       </div>
+      <div class="chips" id="kp-chips" role="group" aria-label="เลือกเจ้าหน้าที่" style="margin-bottom:8px"></div>
       <div class="chips" id="kp-tabs" role="group" aria-label="หัวข้อ KPI">
         <button type="button" data-kt="ov" aria-pressed="true">ภาพรวม 4 ตัวชี้วัด</button><button type="button" data-kt="sum" aria-pressed="false">1. สรุปข้อมูล</button><button type="button" data-kt="rate" aria-pressed="false">2. อัตราเคส</button><button type="button" data-kt="sched" aria-pressed="false">3. ตารางการทำงาน</button><button type="button" data-kt="fast" aria-pressed="false">4. ตอบกลับภายใน <span id="kp-min">3</span> นาที</button><button type="button" data-kt="f4" aria-pressed="false">5. KPI 4 ตามสูตร</button>
       </div>
@@ -3397,6 +3398,7 @@ function renderKpi(){
   if(K.person&&!people.includes(K.person)&&!K.rows.some(r=>r.agent===K.person))K.person='';
   $('#kp-month').value=K.month;$('#kp-min').textContent=c.replyMin;
   $('#kp-person').innerHTML=`<option value="">ทุกคน</option>`+[...new Set([...people,...kpiPeople(K.rows)])].map(p=>`<option${p===K.person?' selected':''}>${esc(p)}</option>`).join('');
+  {const ps=[...new Set([...people,...kpiPeople(K.rows)])];$('#kp-chips').innerHTML=['',...ps].map(p=>'<button type="button" data-p="'+esc(p)+'" aria-pressed="'+(p===(K.person||''))+'">'+(p?esc(p):'ทุกคน')+'</button>').join('');$('#kp-chips').querySelectorAll('button').forEach(b=>b.onclick=()=>{K.person=b.dataset.p;renderKpi()})}
   $('#kp-goal').textContent=`เป้าหมาย: อัตราตอบ ≥ ${c.reply}% · อัตราปิด ≥ ${c.close}% · ตอบกลับภายใน ${c.replyMin} นาที`;
   document.querySelectorAll('#kp-tabs button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kt===K.tab)));
   const view=$('#kp-view');
