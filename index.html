@@ -4134,6 +4134,7 @@ function render(){const box=document.getElementById('mn-body');if(!box)return;
  box.innerHTML=h}
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='mn-search'){const q=e.target.value.trim().toLowerCase();document.querySelectorAll('#mn-body .mn-card').forEach(c=>{c.style.display=!q||c.dataset.text.includes(q)?'':'none'})}});
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='mn-print')window.print()});
+setInterval(()=>{if(S.view==='manual'&&S.db&&!MND.__l)window.__mnOpen()},800);
 window.__mnOpen=function(){render();if(S.db&&!MND.__l){MND.__l=1;S.db.collection('manual').get().then(s=>{const a=s.docs.find(d=>d.id==='auto');if(a&&a.data()&&a.data().m){MND=Object.assign({__l:1},a.data().m);if(S.view==='manual')render()}},()=>{MND.__l=0})}};
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
