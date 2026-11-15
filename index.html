@@ -4667,7 +4667,7 @@ function renderProduct(){
   if(!S.pdInit){S.pdInit=1;$('#pd-cat').value=PD_CATS[0]}
   const q=($('#pd-q').value||'').trim().toUpperCase(),cat=$('#pd-cat').value;
   const pm0=S.pimg||{};const cust=Object.entries(pm0).filter(([,v])=>v&&v.custom&&v.base).map(([id,v])=>({full:[v.base,v.color?'สี'+v.color:'',v.w?v.w+'W':'',v.bat||''].filter(Boolean).join(' '),base:String(v.base).trim(),cat:normCat(v.cat),w:String(v.w||''),color:v.color||'',bat:v.bat||'',custom:id}));
- const rows=[...MODEL_LIST.map(prodParse).filter(r=>r.base),...cust].filter(r=>!pm0[pdKey(r.base)+'-del']).map(r=>{const e=pm0[pdKey(r.base)+'-edit'];return e&&e.cat?{...r,cat:e.cat}:r}); const by=new Map();rows.forEach(r=>{const g=by.get(r.base)||{base:r.base,cat:r.cat,v:[]};g.v.push(r);by.set(r.base,g)});
+ const rows=[...MODEL_LIST.map(prodParse).filter(r=>r.base),...cust].filter(r=>!pm0[pdKey(r.base)+'-del']).map(r=>{const e=pm0[pdKey(r.base)+'-edit'];return e&&e.cat?{...r,cat:normCat(e.cat)}:r}); const by=new Map();rows.forEach(r=>{const g=by.get(r.base)||{base:r.base,cat:r.cat,v:[]};g.v.push(r);by.set(r.base,g)});
   const cnt=new Map();(S.bom||[]).forEach(r=>{const k=bomKey(r.m);cnt.set(k,(cnt.get(k)||0)+1)});
   const list=[...by.values()].filter(g=>(!cat||g.cat===cat)&&(!q||g.base.includes(q)||g.v.some(v=>v.full.toUpperCase().includes(q)))).sort((a,b)=>PD_CATS.indexOf(a.cat)-PD_CATS.indexOf(b.cat)||a.base.localeCompare(b.base));
   const catN=Object.fromEntries(PD_CATS.map(c=>[c,[...by.values()].filter(g=>g.cat===c).length]));
