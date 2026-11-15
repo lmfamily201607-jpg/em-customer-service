@@ -809,7 +809,7 @@ a{transition:color .12s}
     <h2>PRODUCT สินค้า</h2>
     <p class="sub" id="pd-sub"></p>
     <p class="sub"><a href="https://drive.google.com/drive/folders/130L2lJ0Uzz5fa7iRoKnee2FSfGWOojF7" target="_blank" rel="noopener">📷 เปิดคลังรูปสินค้ามอเตอร์ไซค์ทั้งหมด (Google Drive)</a></p>
-    <div class="rsearch"><div class="f"><label for="pd-q">ค้นหารุ่น / สี / แบตเตอรี่</label><input id="pd-q" type="search" placeholder="เช่น ARENA, 3000W, สีเขียว"></div><div class="f"><label for="pd-cat">ประเภท</label><select id="pd-cat"><option value="">ทั้งหมด</option><option>จักรยานไฟฟ้า</option><option>มอเตอร์ไซค์ไฟฟ้า</option><option>สกู๊ตเตอร์ไฟฟ้า</option><option>จักรยานเด็ก</option></select></div></div>
+    <div class="rsearch"><div class="f"><label for="pd-q">ค้นหารุ่น / สี / แบตเตอรี่</label><input id="pd-q" type="search" placeholder="เช่น ARENA, 3000W, สีเขียว"></div><div class="f"><label for="pd-cat">ประเภท</label><select id="pd-cat"><option value="">ทั้งหมด</option><option>จักรยานไฟฟ้า 2 ล้อ</option><option>จักรยานไฟฟ้า 3 ล้อ</option><option>มอเตอร์ไซค์ไฟฟ้า</option><option>สกู๊ตเตอร์ไฟฟ้า</option><option>จักรยานเด็ก</option></select></div></div>
     <div class="chips" id="pd-cats" role="group" aria-label="หมวดสินค้า" style="margin:8px 0"></div>
     <div id="pd-list"></div>
   </section>
@@ -4635,11 +4635,14 @@ function pdSpec(b){const s=PD_SPEC[b];if(!s)return '';const ul=a=>'<ul style="ma
 const PD_IMG={'EM ARENA':'1YeEqnn4w6T9DgbG5XyXIlesrVIOVAIUk','EM LEGEND':'1uFNMcPdAPTuKGmdffJ7dGuZVW1KaIL46','EM LEGEND PRO':'1drOCAY_R3meuJtMqLzA-LdUQFa99abMV','EM MILANO':'1k6Utv5WUPAIV2pdnTjDOT9_j2QThIeKh'};
 const pdImg=b=>PD_IMG[b]?`<a href="https://drive.google.com/file/d/${PD_IMG[b]}/view" target="_blank" rel="noopener"><img src="https://drive.google.com/thumbnail?id=${PD_IMG[b]}&sz=w600" alt="${esc(b)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.style.display='none'" style="float:right;max-width:260px;width:40%;max-height:180px;object-fit:contain;border-radius:8px;margin:0 0 6px 10px"></a>`:'';
 // PRODUCT categories, in the order the team uses them. Add model names to PD_KIDS to list them under จักรยานเด็ก
-const PD_CATS=['จักรยานไฟฟ้า','มอเตอร์ไซค์ไฟฟ้า','สกู๊ตเตอร์ไฟฟ้า','จักรยานเด็ก'];
+const PD_CATS=['จักรยานไฟฟ้า 2 ล้อ','จักรยานไฟฟ้า 3 ล้อ','มอเตอร์ไซค์ไฟฟ้า','สกู๊ตเตอร์ไฟฟ้า','จักรยานเด็ก'];
 const PD_KIDS=[];
+// Add model names to PD_TRIKES to list them under จักรยานไฟฟ้า 3 ล้อ (names containing 3 ล้อ / สามล้อ are detected automatically)
+const PD_TRIKES=[];
+function normCat(c){return (!c||c==='จักรยานไฟฟ้า')?PD_CATS[0]:c}
 function prodParse(line){
   const s=String(line||'').trim();
-  const cat=/จักรยานยนต์|มอเตอร์ไซค์/.test(s)?'มอเตอร์ไซค์ไฟฟ้า':/สกู๊ตเตอร์/.test(s)?'สกู๊ตเตอร์ไฟฟ้า':'จักรยานไฟฟ้า';
+  const cat=/จักรยานยนต์|มอเตอร์ไซค์/.test(s)?'มอเตอร์ไซค์ไฟฟ้า':(/3\s*ล้อ|สามล้อ|TRIKE/i.test(s)||PD_TRIKES.includes(canonModel(s)))?'จักรยานไฟฟ้า 3 ล้อ':/สกู๊ตเตอร์/.test(s)?'สกู๊ตเตอร์ไฟฟ้า':(/3\s*ล้อ|สามล้อ|TRIKE/i.test(s)||PD_TRIKES.includes(canonModel(s))?'จักรยานไฟฟ้า 3 ล้อ':'จักรยานไฟฟ้า 2 ล้อ');
   const w=(s.match(/(\d{3,5})\s?W\b/i)||[])[1]||'';
   const color=(s.match(/สี\s?([^\s]+(?:\s?\/\s?[^\s]+)?)/)||[])[1]||(s.match(/\b\d+IN\s+(?:DOUBLE SEAT\s+)?([ก-๙\/\-]+)/)||[])[1]||'';
   const bat=(s.match(/((?:Lithium|Lead Acid|STL Lithium|STL Lead Acid|ตะกั่ว|ลิเธี่ยม)[^\n]*)$/i)||[])[1]||'';
@@ -4663,7 +4666,7 @@ function pdEff(g,pimg,pw,bats){const e=pimg[pdKey(g.base)+'-edit']||{};return {w
 function renderProduct(){
   if(!S.pdInit){S.pdInit=1;$('#pd-cat').value=PD_CATS[0]}
   const q=($('#pd-q').value||'').trim().toUpperCase(),cat=$('#pd-cat').value;
-  const pm0=S.pimg||{};const cust=Object.entries(pm0).filter(([,v])=>v&&v.custom&&v.base).map(([id,v])=>({full:[v.base,v.color?'สี'+v.color:'',v.w?v.w+'W':'',v.bat||''].filter(Boolean).join(' '),base:String(v.base).trim(),cat:v.cat||PD_CATS[0],w:String(v.w||''),color:v.color||'',bat:v.bat||'',custom:id}));
+  const pm0=S.pimg||{};const cust=Object.entries(pm0).filter(([,v])=>v&&v.custom&&v.base).map(([id,v])=>({full:[v.base,v.color?'สี'+v.color:'',v.w?v.w+'W':'',v.bat||''].filter(Boolean).join(' '),base:String(v.base).trim(),cat:normCat(v.cat),w:String(v.w||''),color:v.color||'',bat:v.bat||'',custom:id}));
  const rows=[...MODEL_LIST.map(prodParse).filter(r=>r.base),...cust].filter(r=>!pm0[pdKey(r.base)+'-del']).map(r=>{const e=pm0[pdKey(r.base)+'-edit'];return e&&e.cat?{...r,cat:e.cat}:r}); const by=new Map();rows.forEach(r=>{const g=by.get(r.base)||{base:r.base,cat:r.cat,v:[]};g.v.push(r);by.set(r.base,g)});
   const cnt=new Map();(S.bom||[]).forEach(r=>{const k=bomKey(r.m);cnt.set(k,(cnt.get(k)||0)+1)});
   const list=[...by.values()].filter(g=>(!cat||g.cat===cat)&&(!q||g.base.includes(q)||g.v.some(v=>v.full.toUpperCase().includes(q)))).sort((a,b)=>PD_CATS.indexOf(a.cat)-PD_CATS.indexOf(b.cat)||a.base.localeCompare(b.base));
