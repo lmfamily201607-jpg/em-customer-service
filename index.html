@@ -408,6 +408,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
       <a href="#replyguide" data-v="replyguide">วิธีตอบคำถามลูกค้า</a>
       <a href="#problems" data-v="problems">ปัญหา</a>
+      <a href="#manual" data-v="manual">คู่มือการใช้งาน</a>
       <a href="#import" data-v="import">นำเข้าข้อมูล</a>
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
       
@@ -452,7 +453,7 @@ progress{width:100%;accent-color:var(--accent)}
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer']],
-        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','problems','links']],
+        ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','problems','manual','links']],
         ['rep','📈','รายงาน',['kpi','kpidash','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
@@ -1071,6 +1072,13 @@ a{transition:color .12s}
     <div id="pb-body"></div>
   </section>
 
+  <!-- Manual -->
+  <section id="v-manual" hidden>
+    <h2>คู่มือการใช้งาน</h2>
+    <p class="sub">วิธีใช้แอพ EM MOTOR Customer Service แบบสั้น ๆ ค้นหาหัวข้อที่ต้องการได้</p>
+    <div id="mn-body"></div>
+  </section>
+
   <!-- KPI REPORT -->
   <section id="v-kpirep" hidden>
     <h2>KPI REPORT</h2>
@@ -1359,7 +1367,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','onsite','repair','export','kb','replyguide','problems','import','kpi','kpirep','kpidash','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','links','assistant','teamdata','onsite','repair','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1484,7 +1492,7 @@ function go(v){
   document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   if(['repair','search','intake','import','parts'].includes(v)){ensureDms();ensureNcr()}
   if(['parts','import','product'].includes(v))ensureParts();
-  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}if(v==='kpirep'){ensureKrep();renderKrep()}if(v==='replyguide'&&window.__rgOpen)window.__rgOpen();if(v==='problems'&&window.__pbOpen)window.__pbOpen();if(v==='kpidash'){ensureKd();renderKd()}
+  if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}if(v==='kpirep'){ensureKrep();renderKrep()}if(v==='replyguide'&&window.__rgOpen)window.__rgOpen();if(v==='problems'&&window.__pbOpen)window.__pbOpen();if(v==='manual'&&window.__mnOpen)window.__mnOpen();if(v==='kpidash'){ensureKd();renderKd()}
   renderTabs();
   refresh(true);
 }
@@ -4035,7 +4043,7 @@ let tm;const mo=new MutationObserver(()=>run());
 function run(){clearTimeout(tm);tm=setTimeout(()=>{mo.disconnect();try{if(S.view==='kpidash')buildDash()}catch(e){console.error(e)}mo.observe(document.body,{childList:true,subtree:true})},120)}
 mo.observe(document.body,{childList:true,subtree:true});run();
 })();
-(function(){const st=document.createElement('style');st.id='tone-css';st.textContent="\nsection[id^=\"v-\"]{--tone:#0f9145;--tone-soft:#e1f3e7}\n#v-intake,#v-forms,#v-search,#v-notes,#v-dto,#v-dealer{--tone:#2563eb;--tone-soft:#e3ecfd}\n#v-product,#v-warranty,#v-parts,#v-onsite,#v-repair{--tone:#0d9488;--tone-soft:#dcf3f0}\n#v-assistant,#v-teamdata,#v-kb,#v-links,#v-replyguide,#v-problems{--tone:#d97706;--tone-soft:#fdeccf}\n#v-kpi,#v-kpirep,#v-kpidash,#v-activity,#v-export{--tone:#5f9a1c;--tone-soft:#eaf3dc}\n#v-import,#v-users{--tone:#475569;--tone-soft:#e8ecf1}\nsection[id^=\"v-\"] h2{border-left:5px solid var(--tone);padding-left:10px}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+2){--tone:#0d9488;--tone-soft:#dcf3f0}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+3){--tone:#2563eb;--tone-soft:#e3ecfd}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+4){--tone:#d97706;--tone-soft:#fdeccf}\nsection[id^=\"v-\"] .kpi{background:linear-gradient(180deg,var(--tone-soft),#fff 78%)!important;box-shadow:inset 0 4px 0 var(--tone),0 14px 30px -22px rgba(16,24,20,.28)!important}\nsection[id^=\"v-\"] .kpi:not(.warn):not(.bad) b{color:var(--tone)}\nsection[id^=\"v-\"] .card{box-shadow:inset 0 3px 0 var(--tone),0 2px 12px rgba(16,24,20,.05)}\nsection[id^=\"v-\"] thead th{background:var(--tone-soft);color:var(--ink);border-bottom:2px solid var(--tone)}\nsection[id^=\"v-\"] tbody tr:nth-child(even) td{background-color:rgba(16,24,20,.018)}\nsection[id^=\"v-\"] .chips button[aria-pressed=\"true\"],section[id^=\"v-\"] .seg button[aria-pressed=\"true\"]{background:var(--tone)!important;border-color:var(--tone)!important}\nsection[id^=\"v-\"] button.primary,section[id^=\"v-\"] .primary{background:linear-gradient(var(--tone),color-mix(in srgb,var(--tone) 78%,#000))!important;border-color:var(--tone)!important}\n#tabs .emg .emg-btn{border-bottom:3px solid transparent}\n";document.head.appendChild(st);const C=['#0f9145','#2563eb','#0d9488','#d97706','#5f9a1c','#475569'];function g(){document.querySelectorAll('#tabs .emg').forEach((e,i)=>{const b=e.querySelector('.emg-btn');if(b)b.style.borderBottomColor=C[i%C.length]})}g();new MutationObserver(g).observe(document.getElementById('tabs')||document.body,{childList:true})})();
+(function(){const st=document.createElement('style');st.id='tone-css';st.textContent="\nsection[id^=\"v-\"]{--tone:#0f9145;--tone-soft:#e1f3e7}\n#v-intake,#v-forms,#v-search,#v-notes,#v-dto,#v-dealer{--tone:#2563eb;--tone-soft:#e3ecfd}\n#v-product,#v-warranty,#v-parts,#v-onsite,#v-repair{--tone:#0d9488;--tone-soft:#dcf3f0}\n#v-assistant,#v-teamdata,#v-kb,#v-links,#v-replyguide,#v-problems,#v-manual{--tone:#d97706;--tone-soft:#fdeccf}\n#v-kpi,#v-kpirep,#v-kpidash,#v-activity,#v-export{--tone:#5f9a1c;--tone-soft:#eaf3dc}\n#v-import,#v-users{--tone:#475569;--tone-soft:#e8ecf1}\nsection[id^=\"v-\"] h2{border-left:5px solid var(--tone);padding-left:10px}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+2){--tone:#0d9488;--tone-soft:#dcf3f0}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+3){--tone:#2563eb;--tone-soft:#e3ecfd}\nsection[id^=\"v-\"] .kpis .kpi:nth-child(4n+4){--tone:#d97706;--tone-soft:#fdeccf}\nsection[id^=\"v-\"] .kpi{background:linear-gradient(180deg,var(--tone-soft),#fff 78%)!important;box-shadow:inset 0 4px 0 var(--tone),0 14px 30px -22px rgba(16,24,20,.28)!important}\nsection[id^=\"v-\"] .kpi:not(.warn):not(.bad) b{color:var(--tone)}\nsection[id^=\"v-\"] .card{box-shadow:inset 0 3px 0 var(--tone),0 2px 12px rgba(16,24,20,.05)}\nsection[id^=\"v-\"] thead th{background:var(--tone-soft);color:var(--ink);border-bottom:2px solid var(--tone)}\nsection[id^=\"v-\"] tbody tr:nth-child(even) td{background-color:rgba(16,24,20,.018)}\nsection[id^=\"v-\"] .chips button[aria-pressed=\"true\"],section[id^=\"v-\"] .seg button[aria-pressed=\"true\"]{background:var(--tone)!important;border-color:var(--tone)!important}\nsection[id^=\"v-\"] button.primary,section[id^=\"v-\"] .primary{background:linear-gradient(var(--tone),color-mix(in srgb,var(--tone) 78%,#000))!important;border-color:var(--tone)!important}\n#tabs .emg .emg-btn{border-bottom:3px solid transparent}\n";document.head.appendChild(st);const C=['#0f9145','#2563eb','#0d9488','#d97706','#5f9a1c','#475569'];function g(){document.querySelectorAll('#tabs .emg').forEach((e,i)=>{const b=e.querySelector('.emg-btn');if(b)b.style.borderBottomColor=C[i%C.length]})}g();new MutationObserver(g).observe(document.getElementById('tabs')||document.body,{childList:true})})();
 (function(){
 function apply(){const box=document.getElementById('kp-chips');if(!box)return;
  const btns=[...box.querySelectorAll('button:not(.vx-tg)')];
@@ -4106,6 +4114,25 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
 });
 let lastAdm=null;setInterval(()=>{if(S.view!=='problems')return;if(S.db&&!P.loaded){P.loaded=true;reload()}if(S.isAdmin!==lastAdm){lastAdm=S.isAdmin;render()}},700);
 window.__pbOpen=function(){if(S.db)reload();else render()};
+})();
+(function(){
+const TIPS=[
+['เริ่มต้นใช้งาน',['กดปุ่ม ☰ เมนู หรือกลุ่มเมนูด้านบนเพื่อเลือกหน้า แต่ละกลุ่มมีสีของตัวเอง','หน้าที่เปิดไว้จะเป็นแท็บอยู่แถวใต้เมนู กด × เพื่อปิดแท็บ','หลังแอพมีการอัปเดต รอ 1–2 นาทีแล้วกด Ctrl+Shift+R เพื่อโหลดหน้าใหม่']],
+['KPI รายบุคคล',['กด "＋ เลือกชื่อ" แล้วจิ้มชื่อที่ต้องการ เลือกได้หลายคนพร้อมกัน แล้วกด "▲ ซ่อนรายชื่อ" จะเหลือเฉพาะคนที่เลือก','ปุ่ม "ทุกคน" ใช้ล้างการเลือกและดูทั้งทีม','เลื่อนลงท้ายหน้าจะมีตาราง "เทียบ 3 เดือน" ของคนที่เลือก ▲▼ เทียบเดือนล่าสุดกับเดือนก่อนหน้า','เดือนที่ข้อมูลยังไม่ครบ การ์ดด้านบนจะเทียบเป็นค่าเฉลี่ยต่อวันและบอกวันที่ข้อมูลล่าสุด']],
+['แดชบอร์ด KPI',['การ์ดและกราฟด้านบนสรุปเดือนล่าสุด กราฟเส้นแสดง 6 เดือนล่าสุด วงกลมแสดงสัดส่วนหัวข้อการติดต่อ','ตัวเลขที่มีวงกลมสีส้มล้อมคือตัวเลขสูงสุด (อันดับ 1) ของเดือนนั้น','ปุ่ม "โหมดนำเสนอ" ใช้ขึ้นจอประชุม กด Esc เพื่อออก','ปุ่มด้านบน (เทียบเดือน, สรุปทั้งปี, LOG รับเคสแต่ละเดือน) ใช้กระโดดไปหัวข้อนั้นได้ทันที']],
+['นำเข้าข้อมูลจาก Excel',['เลือกไฟล์ Excel ที่หน้า "นำเข้าข้อมูล" จะมีกล่อง "เลือกเมนูที่จะนำเข้า" ให้ติ๊กเฉพาะเมนูที่ต้องการ แล้วกด "นำเข้าเมนูที่เลือก"','มีปุ่ม "เลือกทั้งหมด" และ "ไม่เลือก" ช่วยติ๊กเร็วขึ้น','NCR กับ "ซ่อมเคสที่จบ" เลือกพร้อมกันไม่ได้ ให้เลือกทีละอัน','นำเข้าแล้วข้อมูลเดิมในเมนูนั้นอาจถูกแทนที่ ตรวจไฟล์ให้ถูกต้องก่อนกดนำเข้า']],
+['คัดลอกรหัสอะไหล่ (SKU)',['ทุกตารางที่มีคอลัมน์ SKU หรือรหัสอะไหล่จะมีปุ่ม "คัดลอก" ข้างรหัส กดแล้วนำไปวางได้เลย']],
+['วิธีตอบคำถามลูกค้า และ ปัญหา',['สองเมนูนี้อยู่ในกลุ่ม ฐานความรู้ ใช้เก็บคำตอบและวิธีแก้ปัญหาที่ทีมใช้ร่วมกัน','ทุกคนค้นหา กรองตามหมวด และกด "คัดลอก" ไปตอบลูกค้าได้ แอดมินเพิ่ม แก้ และลบได้','การลบต้องกดยืนยันอีกครั้ง กันลบพลาด']]
+];
+const st=document.createElement('style');st.textContent='.mn-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:12px;box-shadow:inset 4px 0 0 var(--tone)}.mn-card h3{margin:0 0 8px}.mn-card ul{margin:0;padding-left:20px;line-height:1.7}.mn-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 18px}.mn-menu a{display:block;padding:8px 10px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:#fff}.mn-menu a b{display:block}.mn-menu a span{font-size:12px;color:var(--muted)}';document.head.appendChild(st);
+function menus(){const out=[];document.querySelectorAll('#tabs .emg').forEach(g=>{const bt=g.querySelector('.emg-btn');const name=bt?bt.textContent.replace(/[▾▼]/g,'').trim():'';const items=[...g.querySelectorAll('.emg-panel a')].filter(a=>!a.hidden).map(a=>{const sec=document.getElementById('v-'+a.dataset.v);const sub=sec&&sec.querySelector('.sub');return {v:a.dataset.v,t:a.textContent.trim(),s:sub?sub.textContent.trim().slice(0,110):''}});if(items.length)out.push({name,items})});return out}
+function render(){const box=document.getElementById('mn-body');if(!box)return;
+ let h='<div class="rg-bar" style="margin-bottom:12px"><input id="mn-search" type="search" placeholder="ค้นหาในคู่มือ" style="flex:1;min-width:200px;padding:8px 10px"></div>';
+ TIPS.forEach(([t,l])=>{h+='<div class="mn-card" data-text="'+esc((t+' '+l.join(' ')).toLowerCase())+'"><h3>'+esc(t)+'</h3><ul>'+l.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'});
+ const M=menus();if(M.length){h+='<div class="mn-card" data-text="เมนูทั้งหมด '+esc(M.map(g=>g.name+' '+g.items.map(i=>i.t+' '+i.s).join(' ')).join(' ').toLowerCase())+'"><h3>เมนูทั้งหมดในแอพ</h3>'+M.map(g=>'<p class="meta" style="margin:10px 0 6px"><b>'+esc(g.name)+'</b></p><div class="mn-menu">'+g.items.map(i=>'<a href="#'+esc(i.v)+'"><b>'+esc(i.t)+'</b>'+(i.s?'<span>'+esc(i.s)+'</span>':'')+'</a>').join('')+'</div>').join('')+'</div>'}
+ box.innerHTML=h}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='mn-search'){const q=e.target.value.trim().toLowerCase();document.querySelectorAll('#mn-body .mn-card').forEach(c=>{c.style.display=!q||c.dataset.text.includes(q)?'':'none'})}});
+window.__mnOpen=function(){render()};
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
