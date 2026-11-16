@@ -4294,6 +4294,12 @@ setInterval(()=>{if(S.view!=='warranty')return;const km=document.getElementById(
  if(bike){if(km.value!==''){km.value='';km.dispatchEvent(new Event('input',{bubbles:true}));km.dispatchEvent(new Event('change',{bubbles:true}))}if(f.style.display!=='none')f.style.display='none'}
  else if(f.style.display==='none')f.style.display=''},500);
 })();
+(function(){
+const st=document.createElement('style');st.textContent='.u-card:not(.u-open)>.meta,.u-card:not(.u-open) .u-menus,.u-card:not(.u-open) .f:has([data-k="edit"]),.u-card:not(.u-open) .f:has([data-k="del"]){display:none!important}';document.head.appendChild(st);
+document.addEventListener('change',e=>{const w=e.target.closest&&e.target.closest('.rp-sel');if(!w||!e.target.value)return;const card=w.closest('.u-card');setTimeout(()=>{const b=card&&card.querySelector('[data-u-save]');if(b)b.click()},80)});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-u-more]');if(!b)return;const c=b.closest('.u-card');c.classList.toggle('u-open');b.textContent=c.classList.contains('u-open')?'ซ่อนรายละเอียด':'ตั้งเมนูเอง ›'});
+setInterval(()=>{document.querySelectorAll('#u-list .u-card .u-head').forEach(h=>{if(!h.querySelector('[data-u-more]')){const b=document.createElement('button');b.type='button';b.className='link';b.setAttribute('data-u-more','');b.textContent=h.closest('.u-card').classList.contains('u-open')?'ซ่อนรายละเอียด':'ตั้งเมนูเอง ›';h.appendChild(b)}})},1000);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
