@@ -4317,6 +4317,21 @@ let b=s.querySelector('.sum-plain');if(!b){b=document.createElement('div');b.cla
 if(b.innerHTML!==h)b.innerHTML=h}
 setInterval(()=>{try{build()}catch(e){}},1200);
 })();
+(function(){
+function findImg(model){const P=S.pimg||{};const m=String(model||'').trim();if(!m)return null;
+ const up=m.toUpperCase().replace(/\s+/g,' ');let best=null,bl=0;
+ const tries=[m];try{tries.push(canonModel(m))}catch(e){}
+ for(const t of tries){const k=pdKey(t);if(P[k]&&P[k].img)return {m:P[k].m||t,img:P[k].img}}
+ Object.keys(P).forEach(k=>{const o=P[k];if(!o||!o.img||!o.m)return;const n=String(o.m).toUpperCase().replace(/\s+/g,' ');if((up===n||up.includes(n)||n.includes(up))&&n.length>bl){best=o;bl=n.length}});
+ return best?{m:best.m,img:best.img}:null}
+function show(){if(S.view!=='parts')return;if(S.db&&typeof ensurePimg==='function')ensurePimg();
+ const anchor=document.getElementById('pp-vin-res');if(!anchor||!anchor.parentNode)return;
+ let box=document.getElementById('pp-car');const mv=(document.getElementById('pp-model')||{}).value||'';const r=findImg(mv);
+ if(!r){if(box)box.remove();return}
+ if(!box){box=document.createElement('div');box.id='pp-car';box.className='panel';box.style.cssText='text-align:center;padding:10px;margin:12px 0';anchor.parentNode.insertBefore(box,anchor)}
+ if(box.dataset.k!==r.m){box.dataset.k=r.m;box.innerHTML='<a href="'+esc(r.img)+'" data-zoom title="กดเพื่อดูรูปใหญ่"><img src="'+esc(r.img)+'" alt="'+esc(r.m)+'" style="max-width:100%;max-height:220px;object-fit:contain;border-radius:8px"></a><div class="meta" style="margin-top:4px">'+esc(r.m)+'</div>'}}
+setInterval(show,500);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
