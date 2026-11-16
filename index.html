@@ -4287,6 +4287,13 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
   toast('ใช้ชุด "'+it.name+'" กับ '+ok+' คนแล้ว');R.apply=null;b.disabled=false;paint();try{renderUsers()}catch(e){}}
 });
 })();
+(function(){
+/* wcNoKm: electric bicycles have no odometer, so hide the mileage field and leave it empty */
+function isBike(m){m=String(m||'').trim();if(!m)return false;try{const c=canonModel(m);const l=MODEL_LIST.find(x=>canonModel(x)===c);if(l)return /^จักรยาน/.test(prodParse(l).cat)}catch(e){}try{return wcClassOf(m)==='eco'}catch(e){return false}}
+setInterval(()=>{if(S.view!=='warranty')return;const km=document.getElementById('wc-km'),mo=document.getElementById('wc-model');if(!km||!mo)return;const f=km.closest('.f')||km.parentElement;const bike=isBike(mo.value);
+ if(bike){if(km.value!==''){km.value='';km.dispatchEvent(new Event('input',{bubbles:true}));km.dispatchEvent(new Event('change',{bubbles:true}))}if(f.style.display!=='none')f.style.display='none'}
+ else if(f.style.display==='none')f.style.display=''},500);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
