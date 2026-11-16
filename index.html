@@ -4190,10 +4190,10 @@ function parse(t){t=String(t||'').trim();let m;
 function hav(a,b){const R=6371,r=x=>x*Math.PI/180,dl=r(b[0]-a[0]),dn=r(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
 function inject(){const d=document.getElementById('wc-dist');if(!d||document.getElementById('wc-map'))return;
  const box=document.createElement('div');box.style.cssText='grid-column:1/-1;margin:6px 0';
- box.innerHTML='<label for="wc-map">วางลิงก์ Google Maps ของลูกค้า (วัดจาก EM Motor รามอินทรา 2)</label><div style="display:flex;gap:6px;flex-wrap:wrap"><input id="wc-map" placeholder="วางลิงก์แมพยาว หรือพิกัด เช่น 13.75,100.50" style="flex:1;min-width:220px"><button type="button" id="wc-mapgo">คำนวณระยะ</button></div><p class="meta" id="wc-mapmsg" style="margin:4px 0 0">ลิงก์สั้น maps.app.goo.gl ใช้ไม่ได้ ให้เปิดลิงก์ก่อนแล้วคัดลอกลิงก์ยาวจากแถบที่อยู่</p>';
+ box.innerHTML='<label for="wc-map">วางลิงก์ Google Maps ของลูกค้า (วัดจาก EM Motor รามอินทรา 2)</label><div style="display:flex;gap:6px;flex-wrap:wrap"><input id="wc-map" placeholder="วางลิงก์แมพยาว หรือพิกัด เช่น 13.75,100.50" style="flex:1;min-width:220px"><button type="button" id="wc-mapgo">คำนวณระยะ</button></div><p class="meta" id="wc-mapmsg" style="margin:4px 0 0">ลิงก์สั้น (maps.app.goo.gl, share.google) ใช้ไม่ได้ ให้เปิดลิงก์ก่อน แล้วคัดลอกลิงก์ยาวจากแถบที่อยู่ หรือคลิกขวาที่หมุดบนแมพแล้วกดตัวเลขพิกัดเพื่อคัดลอก</p>';
  const p=d.closest('div');(p&&p.parentNode?p.parentNode:d.parentNode).insertBefore(box,p&&p.parentNode?p.nextSibling:d.nextSibling)}
 document.addEventListener('click',async e=>{if(!e.target||e.target.id!=='wc-mapgo')return;const msg=document.getElementById('wc-mapmsg'),v=document.getElementById('wc-map').value;
- if(/goo\.gl|maps\.app/i.test(v)&&!parse(v)){msg.textContent='นี่เป็นลิงก์สั้น แอพอ่านพิกัดไม่ได้ เปิดลิงก์ในเบราว์เซอร์ แล้วคัดลอกลิงก์ยาวจากแถบที่อยู่มาวาง';return}
+ if(/goo\.gl|maps\.app|share\.google/i.test(v)&&!parse(v)){msg.textContent='นี่เป็นลิงก์สั้น แอพอ่านพิกัดไม่ได้ เปิดลิงก์ในเบราว์เซอร์ แล้วคัดลอกลิงก์ยาวจากแถบที่อยู่มาวาง';return}
  const c=parse(v);if(!c){msg.textContent='ไม่พบพิกัดในลิงก์ ลองวางลิงก์ที่มี @ตัวเลข,ตัวเลข หรือพิมพ์พิกัดตรง ๆ';return}
  msg.textContent='กำลังคำนวณ...';let km=null,how='';
  try{const r=await fetch('https://router.project-osrm.org/route/v1/driving/'+OR[1]+','+OR[0]+';'+c[1]+','+c[0]+'?overview=false');const j=await r.json();if(j.routes&&j.routes[0]){km=j.routes[0].distance/1000;how='ระยะทางถนนจริง'}}catch(err){}
