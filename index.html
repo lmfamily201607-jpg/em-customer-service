@@ -4300,6 +4300,23 @@ document.addEventListener('change',e=>{const w=e.target.closest&&e.target.closes
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-u-more]');if(!b)return;const c=b.closest('.u-card');c.classList.toggle('u-open');b.textContent=c.classList.contains('u-open')?'ซ่อนรายละเอียด':'ตั้งเมนูเอง ›'});
 setInterval(()=>{document.querySelectorAll('#u-list .u-card .u-head').forEach(h=>{if(!h.querySelector('[data-u-more]')){const b=document.createElement('button');b.type='button';b.className='link';b.setAttribute('data-u-more','');b.textContent=h.closest('.u-card').classList.contains('u-open')?'ซ่อนรายละเอียด':'ตั้งเมนูเอง ›';h.appendChild(b)}})},1000);
 })();
+(function(){
+const st=document.createElement('style');st.textContent='.sum-plain{background:#ecf7ee;border-left:5px solid #10893e;border-radius:10px;padding:12px 16px;margin:10px 0;font-size:16px;line-height:1.7}.sum-plain b{color:#0b6b30}.sum-plain .sp-t{font-weight:700;margin-bottom:2px}';document.head.appendChild(st);
+const num=s=>Number(String(s).replace(/[^0-9.]/g,''))||0;
+function build(){const s=document.getElementById('d-shot');if(!s)return;const kb=s.querySelector('.kband');if(!kb)return;
+const vals=kb.innerText.split('\n').map(x=>x.trim()).filter(Boolean);
+if(vals.length<8)return;const total=vals[1],done=vals[3],open=vals[5],pct=vals[7];
+const head=(s.querySelector('.dash-head')||{}).innerText||'';const title=head.split('\n')[0].replace(/^สรุปงาน/,'');
+const rows=t=>t?[...t.querySelectorAll('tr')].slice(1).map(r=>[...r.children].map(c=>c.innerText.trim())):[];
+const tabs=[...s.querySelectorAll('table')];
+const topic=rows(tabs[0])[0],who=rows(tabs.find(x=>/ผู้ดูแล/.test(x.innerText.split('\n')[0]))||tabs[1])[0];
+let h='<div class="sp-t">สรุปสั้น ๆ '+title+'</div>ได้รับ <b>'+total+'</b> เคส · ปิดแล้ว <b>'+done+'</b> ('+pct+') · ยังติดตาม <b>'+open+'</b> เคส';
+if(topic&&topic[0])h+='<br>เรื่องที่มากสุด: <b>'+topic[0]+'</b> ('+topic[1]+' เคส)';
+if(who&&who[0])h+='<br>รับเรื่องมากสุด: <b>'+who[0]+'</b> ('+who[1]+' เคส)';
+let b=s.querySelector('.sum-plain');if(!b){b=document.createElement('div');b.className='sum-plain';kb.parentNode.insertBefore(b,kb)}
+if(b.innerHTML!==h)b.innerHTML=h}
+setInterval(()=>{try{build()}catch(e){}},1200);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
