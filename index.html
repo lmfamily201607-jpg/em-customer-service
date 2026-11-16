@@ -2028,15 +2028,10 @@ function renderWarranty(){wcDateHints();
   if($('#wc-msg')){
     const longDate=d=>d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
     const charge=lines.filter(l=>l[1]);
-    const msg=['เรียน คุณลูกค้า','',`ขอบคุณที่ติดต่อ EM MOTOR ค่ะ จากข้อมูลรถของคุณลูกค้า`,
-      `รุ่นรถ: ${model}`,`วันที่ซื้อ: ${longDate(new Date(buy+'T12:00:00'))}${km!=null?` · เลขไมล์ ${km.toLocaleString()} กม.`:''}`,'',
-      sel.state==='ok'?`รายการ "${sel.item}" ยังอยู่ในระยะรับประกัน (${sel.months} เดือน หรือ ${sel.km.toLocaleString()} กม. แล้วแต่ระยะใดถึงก่อน) ซึ่งครบกำหนดวันที่ ${longDate(sel.exp)}`
-        :`รายการ "${sel.item}" ${!sel.dateOk?`ครบระยะรับประกันแล้วเมื่อวันที่ ${longDate(sel.exp)}`:`เกินระยะทางรับประกัน ${sel.km.toLocaleString()} กม. แล้ว`} จึงเป็นการซ่อมแบบมีค่าใช้จ่าย`,'',
-      'ค่าใช้จ่ายเบื้องต้น',
+    const msg=['ค่าใช้จ่ายเบื้องต้น',
       ...(charge.length?charge.map(l=>`- ${l[0]}: ${baht(l[1])}`):[sel.state==='ok'?'- ค่าอะไหล่และค่าแรง: ไม่มีค่าใช้จ่ายตามเงื่อนไขรับประกัน':'- ค่าอะไหล่: ตามใบเสนอราคา']),
       ...(charge.length?[`รวมประมาณ ${baht(total)}`]:[]),'',
-      'ทั้งนี้เป็นการประเมินเบื้องต้น ช่างจะตรวจสภาพรถจริงอีกครั้งค่ะ',
-      '','ขอบคุณค่ะ','EM MOTOR Customer Service'];
+      'ทั้งนี้เป็นการประเมินเบื้องต้น ช่างจะตรวจสภาพรถจริงอีกครั้งค่ะ'];
     $('#wc-msg').value=msg.join('\n');
     $('#wc-msg-copy').onclick=async()=>{const t=$('#wc-msg');try{await navigator.clipboard.writeText(t.value);toast('คัดลอกข้อความแจ้งลูกค้าแล้ว')}catch(e){t.select();toast('เลือกข้อความแล้ว กด Ctrl+C เพื่อคัดลอก')}};
   }
