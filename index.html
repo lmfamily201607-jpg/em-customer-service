@@ -4225,6 +4225,39 @@ function show(){if(S.view!=='warranty')return;if(S.db&&typeof ensurePimg==='func
  else if(box.nextSibling!==ver&&ver.parentNode===box.parentNode)ver.parentNode.insertBefore(box,ver)}
 setInterval(show,600);
 })();
+(function(){
+const X={names:{},man:[],loaded:false,loading:false,ren:null};
+const MAXB=6*1024*1024;
+const kb=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+async function load(){if(!S.db||X.loading)return;X.loading=true;try{const a=await S.db.collection('pname').get();X.names={};a.docs.forEach(x=>{const v=x.data();if(v&&v.name)X.names[x.id]=v.name});const b=await S.db.collection('pmanual').get();X.man=b.docs.map(x=>({id:x.id,...x.data()}));X.loaded=true}catch(e){X.err=errText(e)}X.loading=false;reset()}
+function reset(){document.querySelectorAll('#v-product .pd-card').forEach(c=>{delete c.dataset.px;const m=c.querySelector('.pdx-man');if(m)m.remove();const r=c.querySelector('.pdx-ren');if(r)r.remove()})}
+function enhance(){if(S.view!=='product')return;if(!X.loaded){if(!X.loading)load();return}
+ document.querySelectorAll('#v-product .pd-card').forEach(c=>{if(c.dataset.px)return;const pb=c.querySelector('[data-pd]');if(!pb)return;const base=pb.dataset.pd,key=pdKey(base);c.dataset.px='1';
+  const nm=c.querySelector('.pd-name');if(nm){nm.textContent=X.names[key]||base;nm.title=X.names[key]?'ชื่อเดิม: '+base:''}
+  const adm=c.querySelector('.pd-adm');
+  if(adm&&S.isAdmin&&!adm.querySelector('[data-pxren]')){const b=document.createElement('button');b.type='button';b.dataset.pxren=base;b.textContent='แก้ชื่อ';adm.appendChild(b)}
+  const mans=X.man.filter(m=>m.base===base);
+  const box=document.createElement('div');box.className='pdx-man';box.style.cssText='margin:8px 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center';
+  box.innerHTML=mans.map(m=>'<span style="display:inline-flex;gap:2px"><button type="button" data-pxopen="'+esc(m.id)+'" title="'+esc(m.name)+' · '+kb(m.size||0)+'">📄 '+esc(String(m.name).replace(/\.pdf$/i,'').slice(0,26))+'</button>'+(S.isAdmin?'<button type="button" data-pxdel="'+esc(m.id)+'" title="ลบคู่มือนี้">✕</button>':'')+'</span>').join('')+(S.isAdmin?'<label class="pd-up">＋ เพิ่มคู่มือ (PDF)<input type="file" accept="application/pdf" data-pxup="'+esc(base)+'" hidden></label>':'')+(!mans.length&&!S.isAdmin?'<span class="meta">ยังไม่มีคู่มือ</span>':'');
+  if(box.innerHTML){const sp=c.querySelector('.pd-spec');if(sp&&sp.parentNode)sp.parentNode.insertBefore(box,sp.nextSibling)}})}
+setInterval(enhance,700);
+document.addEventListener('click',async e=>{const t=e.target.closest&&e.target.closest('[data-pxren],[data-pxopen],[data-pxdel],[data-pxsave],[data-pxcancel]');if(!t)return;
+ if(t.dataset.pxopen){const w=window.open('','_blank');try{const s=await S.db.doc('pmandata/'+t.dataset.pxopen).get();const u=s.data&&s.data()&&s.data().data;if(!u)throw new Error('ไม่พบไฟล์');const bl=await (await fetch(u)).blob();const url=URL.createObjectURL(bl);if(w)w.location=url;else window.open(url,'_blank')}catch(err){if(w)w.close();toast('เปิดคู่มือไม่สำเร็จ: '+errText(err))}return}
+ if(t.dataset.pxdel){if(t.dataset.sure!=='1'){t.dataset.sure='1';t.textContent='ลบ?';return}try{await S.db.doc('pmanual/'+t.dataset.pxdel).delete();await S.db.doc('pmandata/'+t.dataset.pxdel).delete();X.man=X.man.filter(m=>m.id!==t.dataset.pxdel);toast('ลบคู่มือแล้ว');reset()}catch(err){toast('ลบไม่สำเร็จ: '+errText(err))}return}
+ if(t.dataset.pxren){const card=t.closest('.pd-card'),base=t.dataset.pxren,key=pdKey(base),nm=card.querySelector('.pd-name');if(card.querySelector('.pdx-ren'))return;const f=document.createElement('div');f.className='pdx-ren';f.style.cssText='display:flex;gap:6px;margin:6px 0';f.innerHTML='<input value="'+esc(X.names[key]||base)+'" style="flex:1;min-width:0" data-pxin><button type="button" class="primary" data-pxsave="'+esc(base)+'">บันทึก</button><button type="button" data-pxcancel>ยกเลิก</button>';nm.parentNode.insertBefore(f,nm.nextSibling);f.querySelector('input').focus();return}
+ if(t.dataset.pxcancel!==undefined&&t.hasAttribute('data-pxcancel')){const r=t.closest('.pdx-ren');if(r)r.remove();return}
+ if(t.dataset.pxsave){const base=t.dataset.pxsave,key=pdKey(base),r=t.closest('.pdx-ren'),v=r.querySelector('input').value.trim();try{if(!v||v===base){await S.db.doc('pname/'+key).delete();delete X.names[key]}else{await S.db.doc('pname/'+key).set({base,name:v,updatedAt:new Date().toISOString(),updatedBy:S.uid||''});X.names[key]=v}toast('บันทึกชื่อแล้ว');reset()}catch(err){toast('บันทึกไม่สำเร็จ: '+errText(err))}}
+});
+document.addEventListener('change',async e=>{const f=e.target;if(!f||!f.matches||!f.matches('input[data-pxup]'))return;const file=f.files&&f.files[0];f.value='';if(!file)return;const base=f.dataset.pxup;
+ if(!/pdf$/i.test(file.type)&&!/\.pdf$/i.test(file.name)){toast('เลือกได้เฉพาะไฟล์ PDF');return}
+ if(file.size>MAXB){toast('ไฟล์ใหญ่เกิน 6 MB ('+kb(file.size)+') ลดขนาดไฟล์ก่อนอัพ');return}
+ toast('กำลังอัพโหลด '+file.name+' ...');
+ try{const data=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('อ่านไฟล์ไม่ได้'));r.readAsDataURL(file)});
+  const id=pdKey(base)+'-'+Date.now().toString(36),now=new Date().toISOString();
+  await S.db.doc('pmandata/'+id).set({data,updatedAt:now});
+  await S.db.doc('pmanual/'+id).set({base,name:file.name,size:file.size,updatedAt:now,updatedBy:S.uid||''});
+  X.man.push({id,base,name:file.name,size:file.size});toast('เพิ่มคู่มือแล้ว');reset()}catch(err){toast('อัพโหลดไม่สำเร็จ: '+errText(err))}});
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
