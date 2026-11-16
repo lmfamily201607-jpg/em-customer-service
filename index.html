@@ -787,7 +787,7 @@ a{transition:color .12s}
   <!-- USER ACTIVITY REPORT -->
   <section id="v-activity" hidden>
     <h2>รายงานการทำงาน USER</h2>
-    <p class="sub">สรุปว่าแต่ละคนดำเนินการอะไรไปบ้างในช่วงเวลาที่เลือก จากเรื่องที่บันทึกในแอป (รับเรื่อง ปิดเคส แก้ไข/เพิ่มข้อมูล สั่งซื้ออะไหล่) · กดที่ชื่อเพื่อดูรายการเคสของคนนั้น · ดูได้เฉพาะผู้ดูแลระบบ</p>
+    <p class="sub">สรุปว่าแต่ละคนดำเนินการอะไรไปบ้างในช่วงเวลาที่เลือก จากเรื่องที่บันทึกในแอป (รับเรื่อง ปิดเคส แก้ไข/เพิ่มข้อมูล สั่งซื้ออะไหล่) · กดที่ชื่อเพื่อดูรายการเคสของคนนั้น · ผู้ที่ได้รับสิทธิ์เมนูนี้ดูได้ทุกคน</p>
     <div class="rsearch" style="align-items:end">
       <div class="f"><label>ช่วงเวลา</label><div class="chips" id="ac-r"><button type="button" data-r="today">วันนี้</button><button type="button" data-r="7">7 วัน</button><button type="button" data-r="month">เดือนนี้</button></div></div>
       <div class="f"><label for="ac-from">ตั้งแต่</label><input type="date" id="ac-from"></div>
@@ -1419,7 +1419,7 @@ function errText(e){
 /* ---------- team members: nickname, role, menus, edit/delete rights ---------- */
 // Share level stays the hard boundary (db rules); these per-person settings shape menus and buttons on top of it.
 const ROLES={admin:'ผู้ดูแล',callcenter:'Call Center',viewer:'ดูอย่างเดียว'};
-const ADMIN_ONLY=['import','users','activity','kpirep','kpidash'];
+const ADMIN_ONLY=['import','users','kpirep','kpidash'];
 const MENU_ALL=VIEWS.filter(v=>v!=='users'&&v!=='kpi'); // admin-only pages, never handed out per user
 const RIGHTS={any:'ทุกเคส',own:'เฉพาะเคสที่ตัวเองรับ',none:'ไม่ได้'};
 const PRESET={
@@ -4335,6 +4335,28 @@ setInterval(show,500);
 (function(){
 const st=document.createElement('style');st.textContent='#intake-form{overflow:hidden;border-radius:14px}#intake-form .fields label{background:#e3ecfd!important;color:#1c232b!important;font-size:12.5px!important;font-weight:600!important;padding:10px 12px!important;border-bottom:2px solid #2f6fe4!important;border-radius:0!important}#intake-form .fields input,#intake-form .fields select,#intake-form .fields textarea{background:#fff!important;border:0!important;border-bottom:1px solid #e2e8f0!important;border-radius:0!important;padding:8px 12px!important;font-size:13.5px!important;height:48px!important;box-shadow:none!important}#intake-form .fields textarea{height:48px!important}#intake-form .fields input:focus,#intake-form .fields select:focus,#intake-form .fields textarea:focus{outline:0;box-shadow:inset 0 0 0 2px #2f6fe4!important;background:#f5f9ff!important}#intake-form .fields .whov{padding:12px!important;font-weight:700;background:#fff}';document.head.appendChild(st);
 })();
+(function(){
+const st=document.createElement('style');st.textContent='#ac-log{margin-top:22px}#ac-log .al-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}#ac-log .al-bar input,#ac-log .al-bar select{padding:9px 12px;border:1px solid #dbe7e0;border-radius:10px;background:#f8fbf9;font:inherit}#ac-log .al-bar input{flex:1;min-width:200px}#ac-log table{width:100%;border-collapse:collapse;font-size:13px}#ac-log th{background:#e3ecfd;text-align:left;padding:10px 12px;border-bottom:2px solid #2f6fe4;position:sticky;top:0}#ac-log td{padding:9px 12px;border-bottom:1px solid #edf2ef;vertical-align:top}#ac-log .al-wrap{max-height:520px;overflow:auto;border:1px solid #e6eee9;border-radius:12px;background:#fff}#ac-log .al-ok{color:#0b6b30;font-weight:700}';document.head.appendChild(st);
+let sig='',q='',who='';
+function fmt(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())}
+function events(){const out=[];(S.tickets||[]).forEach(tk=>{const nm=id=>id?personName(id):'-';const info=[tk.ticketNo,tk.category,tk.name,tk.status].filter(Boolean).join(' · ');
+ const c=tk.createdAt?new Date(tk.createdAt):null,u=tk.updatedAt?new Date(tk.updatedAt):null,cl=tk.closedAt?new Date(tk.closedAt):null;
+ if(c&&!isNaN(c))out.push({t:c,uid:tk.receiverId,act:'รับเรื่อง',d:info});
+ if(u&&!isNaN(u)&&c&&Math.abs(u-c)>60000){const ed=(tk.editorIds||[]);out.push({t:u,uid:ed.length?ed[ed.length-1]:tk.receiverId,act:'แก้ไขเคส',d:info})}
+ if(cl&&!isNaN(cl))out.push({t:cl,uid:(tk.editorIds&&tk.editorIds.length?tk.editorIds[tk.editorIds.length-1]:tk.receiverId),act:'ปิดเคส',d:info})});
+ out.sort((a,b)=>b.t-a.t);return out}
+function render(){if(S.view!=='activity')return;const v=document.getElementById('v-activity');if(!v)return;
+ let box=document.getElementById('ac-log');if(!box){box=document.createElement('div');box.id='ac-log';box.className='panel';box.innerHTML='<h3 style="margin:0 0 4px">ใครทำอะไร (บันทึกการทำงาน)</h3><div class="meta">รับเรื่อง · แก้ไข · ปิดเคส เรียงจากล่าสุด ค้นหาได้ทุกอย่าง</div><div class="al-bar"><input id="al-q" placeholder="ค้นหา เช่น ชื่อคน เลขรับเรื่อง ลูกค้า หัวข้อ"><select id="al-who"><option value="">ทุกคน</option></select><span class="meta" id="al-n"></span></div><div class="al-wrap"><table><thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>รายละเอียด</th><th>ผล</th></tr></thead><tbody id="al-b"></tbody></table></div>';v.appendChild(box);
+  box.querySelector('#al-q').oninput=e=>{q=e.target.value;sig=''};box.querySelector('#al-who').onchange=e=>{who=e.target.value;sig=''}}
+ const ev=events();const s=ev.length+'|'+(ev[0]?ev[0].t.getTime():0)+'|'+q+'|'+who;if(s===sig)return;sig=s;
+ const sel=box.querySelector('#al-who');const names=[...new Set(ev.map(x=>x.uid).filter(Boolean))];
+ if(sel.options.length!==names.length+1){sel.innerHTML='<option value="">ทุกคน</option>'+names.map(id=>'<option value="'+esc(id)+'">'+esc(personName(id))+'</option>').join('');sel.value=who}
+ const ql=q.trim().toLowerCase();
+ const rows=ev.filter(x=>(!who||x.uid===who)&&(!ql||(personName(x.uid)+' '+x.act+' '+x.d).toLowerCase().includes(ql))).slice(0,300);
+ box.querySelector('#al-n').textContent='แสดง '+rows.length+' รายการ';
+ box.querySelector('#al-b').innerHTML=rows.length?rows.map(x=>'<tr><td style="white-space:nowrap">'+esc(fmt(x.t))+'</td><td><b>'+esc(personName(x.uid))+'</b></td><td>'+esc(x.act)+'</td><td>'+esc(x.d)+'</td><td class="al-ok">สำเร็จ</td></tr>').join(''):'<tr><td colspan="5" class="meta">ไม่พบรายการ</td></tr>'}
+setInterval(()=>{try{render()}catch(e){}},1200);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
@@ -4667,7 +4689,7 @@ function acData(){const [f,t]=acRange(),inR=d=>{const x=d?isoDate(d):'';return !
   try{knownIds().forEach(id=>u(id))}catch(_){}
   return {f,t,rows:Object.values(U).sort((a,b)=>b.n-a.n||b.edit-a.edit)}}
 function renderActivity(){
-  if(!S.isAdmin){$('#ac-table').innerHTML='<tbody><tr><td class="empty">เฉพาะผู้ดูแลระบบ</td></tr></tbody>';return}
+  if(false){$('#ac-table').innerHTML='<tbody><tr><td class="empty">เฉพาะผู้ดูแลระบบ</td></tr></tbody>';return}
   const k=S.acR||'today';document.querySelectorAll('#ac-r button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.r===k)));
   const D=acData();if(k!=='custom'){$('#ac-from').value=D.f;$('#ac-to').value=D.t}
   const T=D.rows.reduce((a,r)=>{['n','done','follow','inc','closed','edit','order'].forEach(x=>a[x]+=r[x]);return a},{n:0,done:0,follow:0,inc:0,closed:0,edit:0,order:0});
