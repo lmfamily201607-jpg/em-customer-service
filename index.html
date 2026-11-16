@@ -4212,6 +4212,7 @@ document.addEventListener('change',e=>{if(!e.target||e.target.id!=='wc-job')retu
  const hrs=String(v[1]);
  if(hr.value===''||hr.value===auto){hr.value=hrs;auto=hrs;hr.dispatchEvent(new Event('input',{bubbles:true}));hr.dispatchEvent(new Event('change',{bubbles:true}))}
  hint('เวลาทำงานหน้างานโดยทั่วไป '+v[1]+' นาที (จากเคส Onsite จริง '+v[0]+' เคส'+(v[0]<3?' · ข้อมูลน้อยมาก ใช้ประกอบ':v[0]<10?' · ข้อมูลยังน้อย':'')+') ไม่รวมเดินทาง')});
+let lastJ=null;setInterval(()=>{const j=document.getElementById('wc-job');if(!j)return;if(lastJ===null){lastJ=j.value;if(!j.value)return}if(j.value!==lastJ){lastJ=j.value;j.dispatchEvent(new Event('change',{bubbles:true}))}else if(j.value){const hr=document.getElementById('wc-hours');if(hr&&hr.value===''&&!hr.dataset.tch&&WCDUR[j.value]){j.dispatchEvent(new Event('change',{bubbles:true}))}}},400);
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
