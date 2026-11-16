@@ -4295,8 +4295,8 @@ setInterval(()=>{if(S.view!=='warranty')return;const km=document.getElementById(
  else if(f.style.display==='none')f.style.display=''},500);
 })();
 (function(){
-const st=document.createElement('style');st.textContent='.u-card:not(.u-open)>.meta,.u-card:not(.u-open) .u-menus,.u-card:not(.u-open) .f:has([data-k="edit"]),.u-card:not(.u-open) .f:has([data-k="del"]){display:none!important}';document.head.appendChild(st);
-document.addEventListener('change',e=>{const w=e.target.closest&&e.target.closest('.rp-sel');if(!w||!e.target.value)return;const card=w.closest('.u-card');setTimeout(()=>{const b=card&&card.querySelector('[data-u-save]');if(b)b.click()},80)});
+const st=document.createElement('style');st.textContent='.u-card:not(.u-open)>.meta,.u-card:not(.u-open) .u-menus,.u-card:not(.u-open) .f:has([data-k="edit"]),.u-card:not(.u-open) .f:has([data-k="del"]),.u-card:not(.u-open) .f:has([data-k="nick"]),.u-card:not(.u-open) .f:has([data-k="role"]),.u-card:not(.u-open) [data-u-save]{display:none!important}';document.head.appendChild(st);
+document.addEventListener('change',e=>{const w=e.target.closest&&e.target.closest('.rp-sel');if(!w||!e.target.value)return;const card=w.closest('.u-card');const sel=e.target.selectedOptions[0];const rs=card.querySelector('[data-k="role"]');if(rs&&sel)rs.value=/ผู้ดูแล/.test(sel.textContent)?'admin':'callcenter';setTimeout(()=>{const b=card&&card.querySelector('[data-u-save]');if(b)b.click()},80)});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-u-more]');if(!b)return;const c=b.closest('.u-card');c.classList.toggle('u-open');b.textContent=c.classList.contains('u-open')?'ซ่อนรายละเอียด':'ตั้งเมนูเอง ›'});
 setInterval(()=>{document.querySelectorAll('#u-list .u-card .u-head').forEach(h=>{if(!h.querySelector('[data-u-more]')){const b=document.createElement('button');b.type='button';b.className='link';b.setAttribute('data-u-more','');b.textContent=h.closest('.u-card').classList.contains('u-open')?'ซ่อนรายละเอียด':'ตั้งเมนูเอง ›';h.appendChild(b)}})},1000);
 })();
