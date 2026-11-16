@@ -2028,10 +2028,10 @@ function renderWarranty(){wcDateHints();
   if($('#wc-msg')){
     const longDate=d=>d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
     const charge=lines.filter(l=>l[1]);
-    const msg=['ค่าใช้จ่ายเบื้องต้น',
-      ...(charge.length?charge.map(l=>`- ${l[0]}: ${baht(l[1])}`):[sel.state==='ok'?'- ค่าอะไหล่และค่าแรง: ไม่มีค่าใช้จ่ายตามเงื่อนไขรับประกัน':'- ค่าอะไหล่: ตามใบเสนอราคา']),
-      ...(charge.length?[`รวมประมาณ ${baht(total)}`]:[]),'',
-      'ทั้งนี้เป็นการประเมินเบื้องต้น ช่างจะตรวจสภาพรถจริงอีกครั้งค่ะ'];
+    const msg=['ประมาณการค่าใช้จ่ายเบื้องต้น','',
+      ...(charge.length?charge.map(l=>`${l[0]}: ${baht(l[1])}`):[sel.state==='ok'?'ค่าอะไหล่และค่าแรง: ไม่มีค่าใช้จ่าย (อยู่ในเงื่อนไขการรับประกัน)':'ค่าอะไหล่: ตามใบเสนอราคา']),
+      ...(charge.length?['',`รวมทั้งสิ้น (โดยประมาณ): ${baht(total)}`]:[]),'',
+      'หมายเหตุ: เป็นการประเมินราคาเบื้องต้น ทางช่างจะตรวจสอบสภาพรถจริงอีกครั้ง ราคาอาจเปลี่ยนแปลงตามผลการตรวจสอบ ขอบคุณค่ะ'];
     $('#wc-msg').value=msg.join('\n');
     $('#wc-msg-copy').onclick=async()=>{const t=$('#wc-msg');try{await navigator.clipboard.writeText(t.value);toast('คัดลอกข้อความแจ้งลูกค้าแล้ว')}catch(e){t.select();toast('เลือกข้อความแล้ว กด Ctrl+C เพื่อคัดลอก')}};
   }
