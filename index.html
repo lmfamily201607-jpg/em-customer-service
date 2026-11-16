@@ -720,7 +720,7 @@ a{transition:color .12s}
             <option value="sc_branch">Siam Chai: ซ่อมที่สาขา</option>
             <option value="sc_home">Siam Chai: ไปบ้านลูกค้า (จากสาขา)</option></select></div>
                     <div class="f"><label for="wc-dist">ระยะทาง (กม.)</label><input id="wc-dist" inputmode="decimal" placeholder="เช่น 32"><span class="meta" id="wc-dist-hint"></span></div>
-          <div class="f"><label for="wc-hours">เวลาซ่อม (ชั่วโมง)</label><input id="wc-hours" inputmode="decimal" placeholder="เช่น 1.5"></div>
+          <div class="f"><label for="wc-hours">เวลาซ่อม (นาที)</label><input id="wc-hours" inputmode="decimal" placeholder="เช่น 30"></div>
           <div class="f"><label for="wc-part">ค่าอะไหล่ (บาท)</label><input id="wc-part" inputmode="decimal" placeholder="0"><span class="meta" id="wc-part-hint"></span><button type="button" class="link" id="wc-pp" style="align-self:flex-start;font-size:13px">ดูราคาอะไหล่ของรุ่นนี้ ›</button></div>
           <div class="f"><label for="wc-labor">ค่าบริการอื่น (บาท)</label><input id="wc-labor" inputmode="decimal" placeholder="0"></div>
         </div>
@@ -2003,7 +2003,7 @@ function renderWarranty(){wcDateHints();
   const bat=sel&&/แบตเตอรี่/.test(sel.item)?wcBatteryPrice(model,chem):null;
   $('#wc-part-hint').textContent=bat?`ราคาแบตตามรุ่น (${bat.name}): ${baht(bat.price)} · SKU ${bat.sku}`:'';
   if(bat&&!$('#wc-part').dataset.touched)$('#wc-part').value=bat.price||'';
-  const chan=$('#wc-chan').value,dist=$('#wc-dist').value.trim()===''?null:num($('#wc-dist').value),hours=$('#wc-hours').value.trim()===''?null:num($('#wc-hours').value);
+  const chan=$('#wc-chan').value,dist=$('#wc-dist').value.trim()===''?null:num($('#wc-dist').value),hours=$('#wc-hours').value.trim()===''?null:num($('#wc-hours').value)/60;
   const days=buy?Math.floor((new Date(on+'T12:00:00')-new Date(buy+'T12:00:00'))/864e5):null;
   // Onsite by district: technician, zone and the team's zone travel rate (MASTER ZONE) take precedence over the distance formula
   let tr=wcTravel(chan,dist,covered,days);
@@ -4209,7 +4209,7 @@ function hint(t){let h=document.getElementById('wc-hrs-h');if(!h){const hr=docum
 document.addEventListener('change',e=>{if(!e.target||e.target.id!=='wc-job')return;const hr=document.getElementById('wc-hours');if(!hr)return;const j=e.target.value,v=WCDUR[j];
  if(!j){if(hr.value===auto){hr.value='';hr.dispatchEvent(new Event('input',{bubbles:true}))}auto='';hint('');return}
  if(!v){hint('ยังไม่มีข้อมูลเวลาของงานนี้ กรอกเอง');return}
- const hrs=String(Math.round(v[1]/60*100)/100);
+ const hrs=String(v[1]);
  if(hr.value===''||hr.value===auto){hr.value=hrs;auto=hrs;hr.dispatchEvent(new Event('input',{bubbles:true}));hr.dispatchEvent(new Event('change',{bubbles:true}))}
  hint('เวลาทำงานหน้างานโดยทั่วไป '+v[1]+' นาที (จากเคส Onsite จริง '+v[0]+' เคส'+(v[0]<10?' · ข้อมูลน้อย ใช้ประกอบ':'')+') ไม่รวมเดินทาง')});
 })();
