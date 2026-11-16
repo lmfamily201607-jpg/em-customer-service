@@ -2017,7 +2017,7 @@ function renderWarranty(){wcDateHints();
   const part=num($('#wc-part').value),other=num($('#wc-labor').value);
   const maint=WC_MAINT.filter((_,i)=>$('#wcm-'+i)?.checked);
   const repairFee=(covered?0:part)+lb.fee+other+maint.reduce((s,m)=>s+(m[1]||0),0);
-  const lines=[['ค่าเดินทาง',tr.fee],['ค่าซ่อม',repairFee]].filter(l=>l[1]);
+  const partFee=covered?0:part;const lines=[['ค่าเดินทาง',tr.fee],['ค่าอะไหล่',partFee],['ค่าซ่อม',repairFee-partFee]].filter(l=>l[1]);
   const total=lines.reduce((s,l)=>s+l[1],0);
   $('#wc-cost').innerHTML=`<h3>ค่าใช้จ่ายเบื้องต้น</h3>${lines.length?`<div class="wc-lines">${lines.map(l=>`<span>${esc(l[0])}${l[2]?` <span class="meta">${esc(l[2])}</span>`:''}</span><span class="n">${baht(l[1])}</span>`).join('')}<span class="tot">รวมประมาณ</span><span class="n tot">${baht(total)}</span></div>`:'<p class="meta" style="margin:0">ยังไม่มีรายการค่าใช้จ่าย เลือกช่องทางบริการ กรอกระยะทาง เวลาซ่อม หรือค่าอะไหล่</p>'}
     <p class="meta" style="margin:10px 0 0">ประเมินเบื้องต้น ราคาอาจเปลี่ยนตามที่บริษัทกำหนด</p>
