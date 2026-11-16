@@ -1990,14 +1990,14 @@ function renderWarranty(){wcDateHints();
   // verdict
   let v;
   if(!model)v='<div class="wc-big"><span class="wc-badge na">เลือกรุ่นรถ</span></div><p class="meta" style="margin:8px 0 0">พิมพ์ชื่อรุ่นแล้วเลือกจากรายการ ระบบจะใช้เงื่อนไขตามประเภทรถให้เอง</p>';
-  else if(!buy)v='<div class="wc-big"><span class="wc-badge na">กรอกวันที่ซื้อ</span></div><p class="meta" style="margin:8px 0 0">เลือกรุ่นรถ วันที่ซื้อ และเลขไมล์ เพื่อดูสิทธิ์ประกันเบื้องต้น</p>';
-  else if(!sel){const okN=res.filter(r=>r.state==='ok').length;v=`<div class="wc-big"><span class="wc-badge ${okN?'ok':'no'}">${okN?`ยังอยู่ในประกัน ${okN} จาก ${res.length} รายการ`:'หมดประกันทุกรายการ'}</span></div><p class="meta" style="margin:8px 0 0">ใช้เงื่อนไข: ${esc(wcSet(cls,buy))} · เลือกชิ้นส่วนที่มีปัญหาเพื่อดูผลเฉพาะรายการ</p>`}
-  else{const why=sel.state==='ok'?'':!sel.dateOk&&!sel.kmOk?'เกินทั้งระยะเวลาและระยะทาง':!sel.dateOk?'เกินระยะเวลารับประกัน':'เกินระยะทางรับประกัน';
-    v=`<div class="wc-big"><span class="wc-badge ${sel.state}">${sel.state==='ok'?'อยู่ในประกัน (เบื้องต้น)':'หมดประกัน'}</span><b>${esc(sel.item)}</b></div>${why?`<p style="margin:8px 0 0;color:var(--bad)">${why}</p>`:''}
+  else if(!buy)v='<div class="wc-big"><span class="wc-badge na">กรอกวันที่ซื้อ</span></div><p class="meta" style="margin:8px 0 0">กรอกรุ่น วันที่ซื้อ และเลขไมล์</p>';
+  else if(!sel){const okN=res.filter(r=>r.state==='ok').length;v=`<div class="wc-big"><span class="wc-badge ${okN?'ok':'no'}">${okN?`ในประกัน ${okN}/${res.length} รายการ`:'นอกประกันทุกรายการ'}</span></div><p class="meta" style="margin:8px 0 0">เงื่อนไข: ${esc(wcSet(cls,buy))} · เลือกชิ้นส่วนเพื่อดูผล</p>`}
+  else{const why=sel.state==='ok'?'':!sel.dateOk&&!sel.kmOk?'เกินทั้งเวลาและกม.':!sel.dateOk?'เกินเวลา':'เกินกม.';
+    v=`<div class="wc-big"><span class="wc-badge ${sel.state}">${sel.state==='ok'?'ในประกัน':'นอกประกัน'}</span><b>${esc(sel.item)}</b></div>${why?`<p style="margin:8px 0 0;color:var(--bad)">${why}</p>`:''}
     <div class="wc-facts"><div><b>${sel.months} เดือน / ${sel.km?sel.km.toLocaleString()+' กม.':'-'}</b><span>ระยะประกัน (${esc(wcSet(cls,buy))})</span></div>
     <div><b>${sel.exp.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'})}</b><span>${sel.daysLeft>=0?`เหลืออีก ${sel.daysLeft.toLocaleString()} วัน`:`เลยมา ${(-sel.daysLeft).toLocaleString()} วัน`}</span></div>
     <div><b>${sel.kmLeft==null?'ไม่ได้กรอกเลขไมล์':sel.kmLeft>=0?`เหลือ ${sel.kmLeft.toLocaleString()} กม.`:`เกิน ${(-sel.kmLeft).toLocaleString()} กม.`}</b><span>ระยะทาง</span></div></div>`}
-  $('#wc-verdict').innerHTML=v+'<p class="meta" style="margin:10px 0 0">ผลนี้เป็นการคำนวณจากวันที่และเลขไมล์เท่านั้น ยังไม่รวมเงื่อนไขยกเว้น เช่น อุบัติเหตุ น้ำท่วม ดัดแปลง ต้องให้ผู้รับผิดชอบตรวจสภาพและยืนยันก่อนแจ้งลูกค้า</p>';
+  $('#wc-verdict').innerHTML=v+'<p class="meta" style="margin:10px 0 0">คำนวณจากวันที่/ไมล์เท่านั้น ไม่รวมอุบัติเหตุ น้ำท่วม ดัดแปลง · ต้องตรวจสภาพและยืนยันก่อนแจ้งลูกค้า</p>';
   // cost
   const covered=sel&&sel.state==='ok';
   const bat=sel&&/แบตเตอรี่/.test(sel.item)?wcBatteryPrice(model,chem):null;
@@ -2029,7 +2029,7 @@ function renderWarranty(){wcDateHints();
     const longDate=d=>d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
     const charge=lines.filter(l=>l[1]);
     const msg=['ประมาณการค่าใช้จ่ายเบื้องต้น','',
-      ...(charge.length?charge.map(l=>`${l[0]}: ${baht(l[1])}`):[sel.state==='ok'?'ค่าอะไหล่และค่าแรง: ไม่มีค่าใช้จ่าย (อยู่ในเงื่อนไขการรับประกัน)':'ค่าอะไหล่: ตามใบเสนอราคา']),
+      ...(charge.length?charge.map(l=>`${l[0]}: ${baht(l[1])}`):[sel.state==='ok'?'ค่าอะไหล่และค่าแรง: ไม่มีค่าใช้จ่าย (อยู่ในประกัน)':'ค่าอะไหล่: ตามใบเสนอราคา']),
       ...(charge.length?['',`รวมทั้งสิ้น (โดยประมาณ): ${baht(total)}`]:[]),'',
       'หมายเหตุ: เป็นการประเมินราคาเบื้องต้น ทางช่างจะตรวจสอบสภาพรถจริงอีกครั้ง ราคาอาจเปลี่ยนแปลงตามผลการตรวจสอบ ขอบคุณค่ะ'];
     $('#wc-msg').value=msg.join('\n');
