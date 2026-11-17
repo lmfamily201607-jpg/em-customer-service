@@ -4426,6 +4426,29 @@ function show(){if(S.view!=='repair')return;const kp=document.querySelector('#v-
  box.innerHTML=h}
 setInterval(()=>{try{show()}catch(e){}},700);
 })();
+(function(){
+const rx=[/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,/@(-?\d+\.\d+),(-?\d+\.\d+)/,/[?&](?:q|ll|query|destination|center)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i,/^(-?\d+\.\d+)\s*[, ]\s*(-?\d+\.\d+)$/];
+const ok=t=>rx.some(r=>r.test(t));
+const isUrl=t=>/^https?:\/\//i.test(t)||/^(share\.google|maps\.app\.goo\.gl)/i.test(t);
+function add(){const g=document.getElementById('wc-mapgo');if(!g||document.getElementById('wc-mapopen'))return;const b=document.createElement('button');b.type='button';b.id='wc-mapopen';b.textContent='เปิดใน Google Maps';g.after(b);const m=document.getElementById('wc-mapmsg');if(m)m.textContent='วางลิงก์ หรือพิมพ์ชื่อสถานที่/ที่อยู่ แล้วกด คำนวณระยะ ได้เลย · ลิงก์สั้น (share.google, maps.app.goo.gl) ให้กด เปิดใน Google Maps ก่อน แล้วคัดลอกลิงก์ยาวจากแถบที่อยู่มาวาง'}
+setInterval(add,800);
+document.addEventListener('click',async e=>{
+ const inp=document.getElementById('wc-map'),msg=document.getElementById('wc-mapmsg');
+ if(!inp)return;
+ if(e.target.closest('#wc-mapopen')){const v=inp.value.trim();let u;if(!v)u='https://www.google.com/maps';else if(/^https?:/i.test(v))u=v;else if(isUrl(v))u='https://'+v;else if(ok(v))u='https://www.google.com/maps?q='+encodeURIComponent(v);else u='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(v);window.open(u,'_blank','noopener');return}
+ if(e.target.closest('#wc-mapgo')){const v=inp.value.trim();if(!v||ok(v)||isUrl(v))return;
+  e.stopImmediatePropagation();e.preventDefault();
+  if(msg)msg.textContent='กำลังค้นหาตำแหน่ง...';
+  try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=th&accept-language=th&q='+encodeURIComponent(v));const j=await r.json();
+   if(!j.length){if(msg)msg.textContent='ไม่พบสถานที่นี้ ลองใส่ชื่อให้ละเอียดขึ้น (ตำบล อำเภอ จังหวัด) หรือวางลิงก์แมพ';return}
+   inp.value=(+j[0].lat).toFixed(6)+','+(+j[0].lon).toFixed(6);
+   const nm=j[0].display_name;
+   document.getElementById('wc-mapgo').click();
+   setTimeout(()=>{const m=document.getElementById('wc-mapmsg');if(m){const s=document.createElement('div');s.textContent='ตำแหน่งที่พบ: '+nm;m.appendChild(s)}},2500)
+  }catch(err){if(msg)msg.textContent='ค้นหาไม่ได้ ลองวางลิงก์แมพแทน'}
+ }
+},true);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
