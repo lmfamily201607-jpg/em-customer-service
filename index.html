@@ -406,6 +406,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#onsite" data-v="onsite">อะไหล่ SET ช่าง onsite</a>
       <a href="#repair" data-v="repair">วิเคราะห์อาการเสีย</a>
       <a href="#advice" data-v="advice">แนะนำอาการเสียเบื้องต้น</a>
+      <a href="#chat" data-v="chat">สนทนา</a>
       <a href="#export" data-v="export">ส่งออกข้อมูล</a>
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
       <a href="#replyguide" data-v="replyguide">วิธีตอบคำถามลูกค้า</a>
@@ -454,7 +455,7 @@ progress{width:100%;accent-color:var(--accent)}
     // Grouped top menu. Links keep their data-v/href; only their place on screen changes.
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
-      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','extfollow']],
+      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','extfollow','chat']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair','advice']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','problems','manual','links']],
         ['rep','📈','รายงาน',['kpi','kpidash','activity','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
@@ -984,6 +985,12 @@ a{transition:color .12s}
     <div id="r-advice" class="panel"></div>
   </section>
 
+  <section id="v-chat" hidden>
+    <h2>สนทนาทีม</h2>
+    <p class="sub">ห้องคุยรวมของทีมงาน ทุกคนที่เข้าแอพเห็นข้อความเดียวกัน (Enter = ส่ง · Shift+Enter = ขึ้นบรรทัดใหม่)</p>
+    <div class="panel" style="padding:0"><div id="ch-list"></div><div id="ch-bar"><textarea id="ch-in" rows="2" maxlength="2000" placeholder="พิมพ์ข้อความ..."></textarea><button type="button" id="ch-send" class="primary">ส่ง</button></div></div>
+  </section>
+
   <!-- Knowledge base -->
   <section id="v-kb" hidden>
     <h2>คลังข้อมูลอ้างอิง</h2>
@@ -1376,7 +1383,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','extfollow','links','assistant','teamdata','onsite','repair','advice','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1436,7 +1443,7 @@ function memberPerm(id){
 function myPerm(){
   if(S.isAdmin)return {role:'admin',menus:[...MENU_ALL,'kpi','users'],edit:'any',del:'any',exp:true};
   const p=memberPerm(S.uid);
-  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');if(!p.menus.includes('notes'))p.menus.push('notes');if(p.menus.includes('assistant')&&!p.menus.includes('teamdata'))p.menus.push('teamdata');if(p.menus.includes('parts')&&!p.menus.includes('onsite'))p.menus.push('onsite');if(p.menus.includes('repair')&&!p.menus.includes('advice'))p.menus.push('advice');
+  p.menus=p.menus.filter(v=>!ADMIN_ONLY.includes(v));if(!p.menus.length)p.menus=['dashboard'];if(!p.menus.includes('notices'))p.menus.push('notices');if(!p.menus.includes('product'))p.menus.push('product');if(!p.menus.includes('dto'))p.menus.push('dto');if(!p.menus.includes('notes'))p.menus.push('notes');if(p.menus.includes('assistant')&&!p.menus.includes('teamdata'))p.menus.push('teamdata');if(p.menus.includes('parts')&&!p.menus.includes('onsite'))p.menus.push('onsite');if(p.menus.includes('repair')&&!p.menus.includes('advice'))p.menus.push('advice');if(!p.menus.includes('chat'))p.menus.push('chat');
   if(p.exp&&!p.menus.includes('export'))p.menus.push('export');
   if(!S.canWrite){p.edit='none';p.del='none'}
   return p;
@@ -4454,6 +4461,34 @@ document.addEventListener('click',async e=>{
 })();
 setInterval(()=>{const s=document.getElementById('wc-chan');if(s&&s.value!=='onsite'){s.value='onsite';s.dispatchEvent(new Event('change',{bubbles:true}))}},600);
 (function(){let last=0,busy=false;setInterval(async()=>{if(busy||!S.user||Date.now()-last<60000)return;busy=true;last=Date.now();try{const n=await loadNames();if(n>0){try{renderSaved()}catch(e){}try{if(S.view==='dashboard')renderDashboard()}catch(e){}}}catch(e){}busy=false},3000)})();
+(function(){
+const PFX='audit/_chat/msg/';
+let sb=null,msgs=[],sig='',busy=false,last=0,pv='',myName=null;
+const st=document.createElement('style');st.textContent='#ch-list{height:58vh;min-height:300px;overflow-y:auto;padding:14px;background:#f4f8f6;border-radius:12px 12px 0 0}.ch-d{text-align:center;font-size:12px;color:#5b6b63;margin:10px 0}.ch-m{max-width:78%;margin:6px 0;padding:8px 12px;border-radius:14px;background:#fff;border:1px solid #dbe7e0;line-height:1.55;word-break:break-word}.ch-m.own{margin-left:auto;background:#d9f3e3;border-color:#bfe5cd}.ch-n{font-size:12px;font-weight:700;color:#0b6b30}.ch-t{font-size:11px;color:#6b7b73;margin-top:2px}.ch-t button{border:0;background:none;color:#b3261e;cursor:pointer;font-size:11px;padding:0 0 0 6px}#ch-bar{display:flex;gap:8px;padding:10px;border-top:1px solid #dbe7e0;align-items:flex-end}#ch-in{flex:1;resize:none;padding:8px 10px}#ch-bar button{min-width:70px;height:44px}#tabs a[data-v="chat"][data-badge]::after{content:attr(data-badge);background:#d92d20;color:#fff;border-radius:10px;font-size:11px;padding:0 6px;margin-left:6px}';document.head.appendChild(st);
+function cli(){if(!sb&&window.supabase&&window.EM_CONFIG)sb=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey);return sb}
+const rd=()=>{try{return localStorage.getItem('em-chat-read')||''}catch(e){return ''}};
+const wr=v=>{try{localStorage.setItem('em-chat-read',v)}catch(e){}};
+async function load(){const c=cli();if(!c||busy)return;busy=true;try{const r=await c.from('em_docs').select('path,data').like('path',PFX+'%').order('path',{ascending:false}).range(0,199);if(!r.error&&r.data){msgs=r.data.map(x=>Object.assign({id:x.path.slice(PFX.length)},x.data)).sort((a,b)=>String(a.id).localeCompare(String(b.id)))}}catch(e){}busy=false}
+function badge(){const a=document.querySelector('#tabs a[data-v="chat"]');if(!a)return;const r=rd();const n=S.view==='chat'?0:msgs.filter(m=>m.uid!==S.uid&&String(m.at)>r).length;if(n>0)a.dataset.badge=n>99?'99+':String(n);else delete a.dataset.badge}
+const hm=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})};
+const dd=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};
+function render(force){if(S.view!=='chat')return;const box=document.getElementById('ch-list');if(!box)return;const s=msgs.length+':'+(msgs.length?msgs[msgs.length-1].id:'');if(!force&&s===sig)return;const first=!sig;sig=s;
+ const near=first||box.scrollHeight-box.scrollTop-box.clientHeight<120;let h='',day='';
+ if(!msgs.length)h='<div class="ch-d">ยังไม่มีข้อความ เริ่มคุยได้เลย</div>';
+ msgs.forEach(m=>{const d=dd(m.at);if(d!==day){day=d;h+='<div class="ch-d">'+esc(d)+'</div>'}const own=m.uid===S.uid;
+  h+='<div class="ch-m'+(own?' own':'')+'"><div class="ch-n">'+esc(own?'คุณ':(m.name||personName(m.uid)))+'</div>'+esc(m.text||'').replace(/\n/g,'<br>')+'<div class="ch-t">'+esc(hm(m.at))+((own||S.isAdmin)?'<button type="button" data-ch-del="'+esc(m.id)+'">ลบ</button>':'')+'</div></div>'});
+ box.innerHTML=h;if(near)box.scrollTop=box.scrollHeight;
+ wr(new Date().toISOString())}
+async function send(){const inp=document.getElementById('ch-in');if(!inp)return;const text=inp.value.trim();if(!text)return;if(!S.canWrite||!S.db){toast('บัญชีนี้ยังส่งข้อความไม่ได้');return}
+ if(!myName){try{myName=(await S.user.me()).name}catch(e){}}
+ const id=String(Date.now())+'-'+Math.random().toString(36).slice(2,6);const rec={uid:S.uid,name:myName||personName(S.uid),at:new Date().toISOString(),text:text.slice(0,2000)};
+ inp.value='';msgs.push(Object.assign({id:id},rec));render(true);
+ try{await S.db.doc(PFX+id).set(rec)}catch(e){msgs=msgs.filter(m=>m.id!==id);render(true);inp.value=text;toast('ส่งไม่สำเร็จ: '+errText(e))}}
+document.addEventListener('click',async e=>{if(e.target.closest('#ch-send')){send();return}
+ const b=e.target.closest('[data-ch-del]');if(b){const id=b.getAttribute('data-ch-del');if(!confirm('ลบข้อความนี้?'))return;try{await S.db.doc(PFX+id).delete();msgs=msgs.filter(m=>m.id!==id);render(true)}catch(err){toast('ลบไม่สำเร็จ: '+errText(err))}}});
+document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='ch-in'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send()}});
+setInterval(async()=>{try{if(!S.uid||!S.db)return;const on=S.view==='chat';const gap=on?4000:30000;if(on&&pv!=='chat'){last=0;sig=''}pv=S.view;if(Date.now()-last<gap){render();badge();return}last=Date.now();await load();render();badge()}catch(e){}},1000);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
