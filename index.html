@@ -4320,7 +4320,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 setInterval(()=>{document.querySelectorAll('#u-list .u-card .u-head').forEach(h=>{if(!h.querySelector('[data-u-more]')){const b=document.createElement('button');b.type='button';b.className='link';b.setAttribute('data-u-more','');b.textContent=h.closest('.u-card').classList.contains('u-open')?'ซ่อนรายละเอียด':'ตั้งเมนูเอง ›';h.appendChild(b)}})},1000);
 })();
 (function(){
-const st=document.createElement('style');st.textContent='.sum-plain{background:#ecf7ee;border-left:5px solid #10893e;border-radius:10px;padding:12px 16px;margin:10px 0;font-size:16px;line-height:1.7}.sum-plain b{color:#0b6b30}.sum-plain .sp-t{font-weight:700;margin-bottom:2px}';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent='.sum-plain{display:none!important;background:#ecf7ee;border-left:5px solid #10893e;border-radius:10px;padding:12px 16px;margin:10px 0;font-size:16px;line-height:1.7}.sum-plain b{color:#0b6b30}.sum-plain .sp-t{font-weight:700;margin-bottom:2px}';document.head.appendChild(st);
 const num=s=>Number(String(s).replace(/[^0-9.]/g,''))||0;
 function build(){const s=document.getElementById('d-shot');if(!s)return;const kb=s.querySelector('.kband');if(!kb)return;
 const vals=kb.innerText.split('\n').map(x=>x.trim()).filter(Boolean);
