@@ -4435,7 +4435,9 @@ setInterval(add,800);
 document.addEventListener('click',async e=>{
  const inp=document.getElementById('wc-map'),msg=document.getElementById('wc-mapmsg');
  if(!inp)return;
- if(e.target.closest('#wc-mapopen')){const v=inp.value.trim();let u;if(!v)u='https://www.google.com/maps';else if(/^https?:/i.test(v))u=v;else if(isUrl(v))u='https://'+v;else if(ok(v))u='https://www.google.com/maps?q='+encodeURIComponent(v);else u='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(v);window.open(u,'_blank','noopener');return}
+ if(e.target.closest('#wc-mapopen')){const v=inp.value.trim();const OR0='13.8458399,100.6497908';let c=null;for(const r of rx){const m=v.match(r);if(m){c=m[1]+','+m[2];break}}
+  let u;if(/^https?:/i.test(v)&&!c)u=v;else if(isUrl(v)&&!c)u='https://'+v;else u='https://www.google.com/maps/dir/?api=1&origin='+OR0+'&travelmode=driving'+(c?'&destination='+c:(v?'&destination='+encodeURIComponent(v):''));
+  window.open(u,'_blank','noopener');return}
  if(e.target.closest('#wc-mapgo')){const v=inp.value.trim();if(!v||ok(v)||isUrl(v))return;
   e.stopImmediatePropagation();e.preventDefault();
   if(msg)msg.textContent='กำลังค้นหาตำแหน่ง...';
