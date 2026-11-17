@@ -711,14 +711,7 @@ a{transition:color .12s}
         <h3 style="margin-top:18px">ค่าใช้จ่าย</h3>
         <div class="wc-fields">
           <div class="f full"><label for="wc-job">งานที่ต้องทำ <span class="meta">(เลือกให้ตามชิ้นส่วนที่มีปัญหา)</span></label><select id="wc-job"></select><div id="wc-where" class="meta"></div></div>
-          <div class="f"><label for="wc-chan">สถานที่รับบริการ</label><select id="wc-chan">
-            <option value="none">SHOWROOM (ลูกค้านำรถเข้าโชว์รูม)</option>
-            <option value="onsite">ช่าง Onsite บ้านลูกค้า (จากรามอินทรา กม.6)</option>
-            <option value="dealer">ร้านตัวแทน / โชว์รูม EM (จากสาขา)</option>
-            <option value="hp_branch">HomePro: ช่าง EM ซ่อมที่สาขา</option>
-            <option value="hp_home">HomePro: ไปบ้านลูกค้า (จากสาขา)</option>
-            <option value="sc_branch">Siam Chai: ซ่อมที่สาขา</option>
-            <option value="sc_home">Siam Chai: ไปบ้านลูกค้า (จากสาขา)</option></select></div>
+          <div class="f"><label for="wc-chan">สถานที่รับบริการ</label><select id="wc-chan"><option value="onsite">ช่าง Onsite บ้านลูกค้า (จากรามอินทรา กม.6)</option></select></div>
                     <div class="f"><label for="wc-dist">ระยะทาง (กม.)</label><input id="wc-dist" inputmode="decimal" placeholder="เช่น 32"><span class="meta" id="wc-dist-hint"></span></div>
           <div class="f"><label for="wc-hours">เวลาซ่อม (นาที)</label><input id="wc-hours" inputmode="decimal" placeholder="เช่น 30"></div>
           <div class="f"><label for="wc-part">ค่าอะไหล่ (บาท)</label><input id="wc-part" inputmode="decimal" placeholder="0"><span class="meta" id="wc-part-hint"></span><button type="button" class="link" id="wc-pp" style="align-self:flex-start;font-size:13px">ดูราคาอะไหล่ของรุ่นนี้ ›</button></div>
@@ -4451,6 +4444,7 @@ document.addEventListener('click',async e=>{
  }
 },true);
 })();
+setInterval(()=>{const s=document.getElementById('wc-chan');if(s&&s.value!=='onsite'){s.value='onsite';s.dispatchEvent(new Event('change',{bubbles:true}))}},600);
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
