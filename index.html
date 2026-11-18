@@ -4510,9 +4510,13 @@ const thDay=iso=>{const d=new Date(iso);return isNaN(d)?'':new Date(d.getTime()+
 const dif=(a,b)=>Math.round((new Date(b+'T00:00:00Z')-new Date(a+'T00:00:00Z'))/864e5);
 const fmt=s=>{if(!s)return '-';const p=s.split('-');return p[2]+'/'+p[1]+'/'+(+p[0]+543)};
 function chanOf(b){b=String(b||'');if(/onsite/i.test(b))return 'Onsite';if(/showroom|โชว์รูม/i.test(b))return 'Showroom';return b?('ร้านค้า/สาขา: '+b):''}
-function rows(day){
+const addD=(s,n)=>new Date(Date.parse(s+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+const gkey=t=>((t.name||'').trim())||t.ticketNo||'';
+function isDone(t){const m=(window.__fuDone||{})[gkey(t)];return !!(m&&String(m.at)>=String(t.contactAt))}
+function accSel(all,day){const cand=all.filter(t=>{const dd=thDay(t.contactAt);return dd&&dd<=day&&dif(dd,day)<=90&&/^ตาม(งานซ่อม|อะไหล่)/.test(t.category||'')}).sort((a,b)=>String(a.contactAt).localeCompare(String(b.contactAt)));const g=new Map();cand.forEach(t=>{g.set(gkey(t),t)});return [...g.values()].filter(t=>t.status!=='จบ'&&!isDone(t))}
+function rows(day,acc){
  const all=[].concat(S.tickets||[],S.legacy||[]);
- const sel=all.filter(t=>thDay(t.contactAt)===day&&/^ตาม(งานซ่อม|อะไหล่)/.test(t.category||''));
+ let sel=all.filter(t=>thDay(t.contactAt)===day&&/^ตาม(งานซ่อม|อะไหล่)/.test(t.category||''));if(acc)sel=accSel(all,day);
  const seen=new Set();const uniq=sel.filter(t=>{const k=(t.name||'')+'|'+t.category+'|'+(t.detail||'');if(seen.has(k))return false;seen.add(k);return true});
  const out=uniq.map(t=>{
   const nm=(t.name||'').trim();
@@ -4526,7 +4530,7 @@ function rows(day){
   if(!ch&&/อะไหล่/.test(t.category||''))ch='ส่งอะไหล่';
   const times=nm?new Set(all.filter(x=>(x.name||'').trim()===nm&&/^ตาม/.test(x.category||'')&&thDay(x.contactAt)<=day&&dif(thDay(x.contactAt),day)<=60).map(x=>thDay(x.contactAt))).size:1;
   const done=t.status==='จบ';
-  return {t:t,prior:prior,dm:dm,tk:tk,name:nm||'-',cat:t.category,ch:ch||'ไม่ระบุ',why:(t.detail||'').replace(/\s+/g,' ').slice(0,90),from:from,n:from?dif(from,day):null,times:times,st:t.status||'-',dmsSt:dm?String(dm.st||'').replace(/^\d+\.\s*/,''):'',closed:done?(thDay(t.closedAt)||day):''}});
+  return {key:gkey(t),last:thDay(t.contactAt),t:t,prior:prior,dm:dm,tk:tk,name:nm||'-',cat:t.category,ch:ch||'ไม่ระบุ',why:(t.detail||'').replace(/\s+/g,' ').slice(0,90),from:from,n:from?dif(from,day):null,times:times,st:t.status||'-',dmsSt:dm?String(dm.st||'').replace(/^\d+\.\s*/,''):'',closed:done?(thDay(t.closedAt)||day):''}});
  out.sort((a,b)=>(a.closed?1:0)-(b.closed?1:0)||((b.n||0)-(a.n||0)));return out}
 const stFd=document.createElement('style');stFd.textContent='.fu-click{cursor:pointer}.fu-click:hover{background:#eef7f2}.fd h4{margin:14px 0 4px;font-size:15px;color:#0b6b30}.fd-r{display:flex;gap:8px;font-size:14px;margin:2px 0}.fd-r i{font-style:normal;color:#5b6b63;min-width:140px;flex:none}.fd table{width:100%;border-collapse:collapse;font-size:13px}.fd th{background:#e1f1ea;text-align:left;padding:5px 7px}.fd td{border-top:1px solid #dbe7e0;padding:5px 7px;vertical-align:top}';document.head.appendChild(stFd);
 window.__fuDetail=function(r){
@@ -4546,30 +4550,45 @@ window.__fuDetail=function(r){
  h+='<div>'+esc(how)+'</div>';
  const hist=nm&&nm!=='-'?all.filter(x=>(x.name||'').trim()===nm).sort((a,b)=>String(a.contactAt).localeCompare(String(b.contactAt))).slice(-25):[];
  h+='<h4>4) ประวัติของลูกค้ารายนี้ ('+hist.length+' รายการล่าสุด แถวสีเหลืองคือเคสที่กำลังตรวจ)</h4><div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th>เรื่อง</th><th>สถานะ</th><th>รายละเอียด / คำตอบ</th></tr></thead><tbody>'+hist.map(x=>'<tr'+(x===t?' style="background:#fff7d6"':'')+'><td>'+esc(fmt(thDay(x.contactAt)))+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.status||'')+'</td><td>'+esc(String(x.detail||'').slice(0,90))+(x.answer?'<div class="meta">→ '+esc(String(x.answer).slice(0,70))+'</div>':'')+'</td></tr>').join('')+'</tbody></table></div></div>';
- modal(h)};
-document.addEventListener('click',e=>{const tr=e.target.closest&&e.target.closest('#fu-box tr[data-fuix]');if(tr&&window.__fuCur)window.__fuDetail(window.__fuCur[+tr.dataset.fuix])});
+ if(window.__fuCur&&window.__fuCur.indexOf(r)>=0&&r.key)h=h.replace(/<\/div>$/,'')+'<div style="margin-top:12px"><button type="button" class="primary" id="fd-close">ตรวจแล้ว ปิดงานนี้</button></div></div>';
+ modal(h);setTimeout(()=>{const b=document.getElementById('fd-close');if(b)b.onclick=()=>{const x=document.querySelector('[data-close]');if(x)x.click();window.__fuClose(r)}},50)};
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))return;const tr=e.target.closest&&e.target.closest('#fu-box tr[data-fuix]');if(tr&&window.__fuCur)window.__fuDetail(window.__fuCur[+tr.dataset.fuix])});
+let sbf=null,lastLoad=0;window.__fuDone=window.__fuDone||{};
+async function loadDone(){lastLoad=Date.now();try{if(!sbf&&window.supabase&&window.EM_CONFIG)sbf=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey);if(!sbf)return;const q=await sbf.from('em_docs').select('path,data').like('path','audit/_followup/%').range(0,999);if(q.error||!q.data)return;const D={};q.data.forEach(x=>{const o=x.data||{};if(o.key)D[o.key]=Object.assign({},o,{id:x.path.slice('audit/_followup/'.length)})});if(JSON.stringify(Object.keys(D).sort())!==JSON.stringify(Object.keys(window.__fuDone||{}).sort())){window.__fuDone=D;rebuild()}else window.__fuDone=D}catch(e){}}
+function rebuild(){const b=document.getElementById('fu-box');if(b)b.dataset.sig='';try{build()}catch(e){}}
+function doneHtml(){const D=window.__fuDone||{};const ks=Object.keys(D);if(!ks.length)return '';let h='<div style="margin-top:8px" data-html2canvas-ignore><a href="#" id="fu-showdone">'+(window.__fuShow?'ซ่อน':'ดู')+'เคสที่ปิดจากรายงานแล้ว ('+ks.length+')</a></div>';
+ if(window.__fuShow){h+='<div class="tbl-wrap" data-html2canvas-ignore><table><thead><tr><th>ลูกค้า</th><th>ปิดเมื่อ</th><th>ปิดโดย</th><th></th></tr></thead><tbody>'+ks.map(k=>{const x=D[k];return '<tr><td>'+esc(x.name||k)+'</td><td>'+esc(fmt(thDay(x.at)))+'</td><td>'+esc(x.byName||'')+'</td><td><button type="button" data-fureopen="'+esc(k)+'">เปิดกลับ</button></td></tr>'}).join('')+'</tbody></table></div>'}return h}
+window.__fuClose=async function(r){if(!r)return;if(!S.canWrite||!S.db){toast('บัญชีนี้ปิดงานไม่ได้');return}
+ if(!confirm('ตรวจสอบแล้วว่า "'+r.name+'" จบแล้ว ปิดงานนี้ออกจากตารางงานค้าง?'))return;
+ const id=encodeURIComponent(r.key);const rec={key:r.key,name:r.name,cat:r.cat,at:new Date().toISOString(),by:S.uid,byName:(S.names&&S.names[S.uid])||personName(S.uid)};
+ try{await S.db.doc('audit/_followup/'+id).set(rec);window.__fuDone[r.key]=Object.assign({},rec,{id:id});try{actLog('ปิดงานค้างจากรายงาน',r.name,'dashboard')}catch(e){}rebuild();toast('ปิดงานแล้ว ไม่ขึ้นในตารางงานค้าง')}catch(e){toast('ปิดงานไม่สำเร็จ: '+errText(e))}};
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-fuclose]');if(b&&window.__fuCur){window.__fuClose(window.__fuCur[+b.dataset.fuclose]);return}
+ if(e.target.closest&&e.target.closest('#fu-showdone')){e.preventDefault();window.__fuShow=!window.__fuShow;rebuild();return}
+ const o=e.target.closest&&e.target.closest('[data-fureopen]');if(o){const k=o.dataset.fureopen;const x=(window.__fuDone||{})[k];if(!x)return;try{await S.db.doc('audit/_followup/'+x.id).delete();delete window.__fuDone[k];rebuild();toast('เปิดงานกลับมาแล้ว')}catch(err){toast('ไม่สำเร็จ: '+errText(err))}}});
+setInterval(()=>{if(S.view==='dashboard'&&S.uid&&Date.now()-lastLoad>30000)loadDone()},2000);
 let fuCat='';
 document.addEventListener('click',e=>{if(e.target.closest('#fu-all')){fuCat='';build();return}const tr=e.target.closest('#t-topic tr');if(!tr)return;const c=((tr.children[0]&&tr.children[0].innerText)||'').trim();if(/^ตาม(งานซ่อม-เคลม|อะไหล่)$/.test(c)){fuCat=c;build();const b=document.getElementById('fu-box');if(b){b.scrollIntoView({behavior:'smooth',block:'start'});b.style.outline='3px solid #f5c518';setTimeout(()=>{b.style.outline=''},2500)}}});
 function chSum(R){const c={};R.forEach(x=>{c[x.ch]=(c[x.ch]||0)+1});return Object.keys(c).map(k=>k+' '+c[k]).join(' · ')}
 function build(){if(S.view!=='dashboard')return;const s=document.getElementById('d-shot'),di=document.getElementById('d-day');if(!s||!di)return;let box=document.getElementById('fu-box');
  if(!di.offsetParent||!di.value){if(box)box.remove();return}
  if(!S.dmsLoaded&&typeof ensureDms==='function'){try{ensureDms()}catch(e){}}
- const R=rows(di.value).filter(x=>!fuCat||x.cat===fuCat);const sig=fuCat+'|'+di.value+'|'+JSON.stringify(R).length+'|'+(S.dms||[]).length;if(box&&box.dataset.sig===sig&&box.parentNode===s)return;
+ const R=rows(di.value,true).filter(x=>!fuCat||x.cat===fuCat);const sig=fuCat+'|'+di.value+'|'+JSON.stringify(R.map(x=>x.key+x.n+x.st)).length+'|'+Object.keys(window.__fuDone||{}).length+'|'+(window.__fuShow?1:0)+'|'+(S.dms||[]).length;if(box&&box.dataset.sig===sig&&box.parentNode===s)return;
  if(!box){box=document.createElement('div');box.id='fu-box';box.className='panel'}const g4=s.querySelector('.grid4');if(box.parentNode!==s||(g4&&box.nextElementSibling!==g4))s.insertBefore(box,g4||null);box.dataset.sig=sig;window.__fuCur=R;
- let h='<div class="fu-top"><h3>เคสที่ต้องติดตาม (ตามงานซ่อม-เคลม / ตามอะไหล่) · '+R.length+' เคส'+(fuCat?' (เฉพาะ '+esc(fuCat)+')':'')+'</h3><div data-html2canvas-ignore>'+(fuCat?'<button type="button" id="fu-all">ดูทั้งหมด</button> ':'')+'<button type="button" id="fu-copy">คัดลอกรายงานประจำวัน</button></div></div>';
- if(!R.length)h+='<div class="meta">วันนี้ไม่มีเคสติดตาม</div>';
- else{h+='<div class="fu-sum">ช่องทางซ่อมที่ถูกติดตาม: <b>'+esc(chSum(R))+'</b> · ยังไม่จบ <b>'+R.filter(x=>!x.closed).length+'</b> เคส</div><div class="tbl-wrap"><table><thead><tr><th>ลูกค้า</th><th>เรื่องที่ตาม</th><th>ช่องทางซ่อม</th><th>สาเหตุที่ตาม</th><th>แจ้งเมื่อ → ผ่านมา</th><th>ตามกี่ครั้ง</th><th>สถานะ</th><th>จบเมื่อ</th></tr></thead><tbody>'+
-  R.map((x,i)=>'<tr class="fu-click" data-fuix="'+i+'"><td>'+esc(x.name)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.ch)+'</td><td>'+esc(x.why)+'</td><td>'+(x.from?esc(fmt(x.from))+' → <b>'+x.n+' วัน</b>':'-')+'</td><td>'+x.times+'</td><td class="'+(x.closed?'fu-ok':'fu-open')+'">'+esc(x.st)+(x.dmsSt?'<div class="meta">DMS: '+esc(x.dmsSt)+'</div>':'')+'</td><td>'+(x.closed?esc(fmt(x.closed)):'ยังไม่จบ')+'</td></tr>').join('')+'</tbody></table></div>';
-  h+='<div class="meta" style="margin-top:6px">"ผ่านมา" นับจากวันแจ้งซ่อม/สั่งอะไหล่ครั้งล่าสุดของลูกค้ารายนี้ (หรือวันเปิดเคสใน DMS ถ้าระบุเลขเคส) ช่องทางซ่อมมาจาก DMS หรือบันทึกคำตอบเดิม</div>'}
+ let h='<div class="fu-top"><h3>งานค้างสะสม (ตามงานซ่อม-เคลม / ตามอะไหล่) · '+R.length+' เคส'+(fuCat?' (เฉพาะ '+esc(fuCat)+')':'')+'</h3><div data-html2canvas-ignore>'+(fuCat?'<button type="button" id="fu-all">ดูทั้งหมด</button> ':'')+'<button type="button" id="fu-copy">คัดลอกรายงานประจำวัน</button></div></div>';
+ if(!R.length)h+='<div class="meta">ไม่มีงานค้างสะสม</div>';
+ else{h+='<div class="fu-sum">ค้างสะสม <b>'+R.length+'</b> เคส (ตามวันนี้ '+R.filter(x=>x.last===di.value).length+' · ค้างมาจากวันก่อน '+R.filter(x=>x.last!==di.value).length+') · ช่องทางซ่อม: <b>'+esc(chSum(R))+'</b></div><div class="tbl-wrap"><table><thead><tr><th>ลูกค้า</th><th>เรื่องที่ตาม</th><th>ช่องทางซ่อม</th><th>สาเหตุที่ตาม</th><th>แจ้งเมื่อ → ผ่านมา</th><th>ตามกี่ครั้ง</th><th>สถานะ</th><th>ปิดงาน</th></tr></thead><tbody>'+
+  R.map((x,i)=>'<tr class="fu-click" data-fuix="'+i+'"><td>'+esc(x.name)+'<div class="meta">ตามล่าสุด '+esc(fmt(x.last))+'</div></td><td>'+esc(x.cat)+'</td><td>'+esc(x.ch)+'</td><td>'+esc(x.why)+'</td><td>'+(x.from?esc(fmt(x.from))+' → <b>'+x.n+' วัน</b>':'-')+'</td><td>'+x.times+'</td><td class="'+(x.closed?'fu-ok':'fu-open')+'">'+esc(x.st)+(x.dmsSt?'<div class="meta">DMS: '+esc(x.dmsSt)+'</div>':'')+'</td><td data-html2canvas-ignore><button type="button" data-fuclose="'+i+'">ตรวจแล้ว ปิดงาน</button></td></tr>').join('')+'</tbody></table></div>';
+  h+='<div class="meta" style="margin-top:6px">"ผ่านมา" นับจากวันแจ้งซ่อม/สั่งอะไหล่ครั้งล่าสุดของลูกค้ารายนี้ (หรือวันเปิดเคสใน DMS ถ้าระบุเลขเคส) ช่องทางซ่อมมาจาก DMS หรือบันทึกคำตอบเดิม · เมื่อตรวจสอบแล้วว่าจบ กด "ตรวจแล้ว ปิดงาน" เคสจะไม่ขึ้นในตารางนี้</div>'}
+ h+=doneHtml();
  box.innerHTML=h}
-document.addEventListener('click',e=>{if(!e.target.closest('#fu-copy'))return;const di=document.getElementById('d-day');if(!di)return;const R=rows(di.value).filter(x=>!fuCat||x.cat===fuCat);const g=id=>((document.getElementById(id)||{}).innerText||'').trim();
+document.addEventListener('click',e=>{if(!e.target.closest('#fu-copy'))return;const di=document.getElementById('d-day');if(!di)return;const R=rows(di.value,true).filter(x=>!fuCat||x.cat===fuCat);const g=id=>((document.getElementById(id)||{}).innerText||'').trim();
  let t='สรุปงานรายวัน '+fmt(di.value)+'\nเคสทั้งหมด '+g('k-total')+' · จบ '+g('k-done')+' · ติดตาม '+g('k-follow')+' · สัดส่วนจบ '+g('k-rate')+'\n\nเคสที่ต้องติดตาม '+R.length+' เคส'+(R.length?(' ('+chSum(R)+')'):'')+'\n';
  R.forEach((x,i)=>{t+=(i+1)+'. '+x.name+' | '+x.cat+' | ช่องทาง: '+x.ch+' | สาเหตุ: '+x.why+' | '+(x.from?('แจ้ง '+fmt(x.from)+' ผ่านมา '+x.n+' วัน'):'ไม่ทราบวันแจ้ง')+' | ตาม '+x.times+' ครั้ง | สถานะ: '+x.st+' | '+(x.closed?('จบ '+fmt(x.closed)):'ยังไม่จบ')+'\n'});
  const done=()=>toast('คัดลอกรายงานแล้ว วางส่งได้เลย');
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,()=>toast('คัดลอกไม่สำเร็จ'));else toast('เบราว์เซอร์นี้คัดลอกอัตโนมัติไม่ได้')});
 function fuLines(R){let x='------------------------\nเคสที่ต้องติดตาม '+R.length+' เคส ('+chSum(R)+')\n';R.forEach((r,i)=>{x+=(i+1)+'. '+r.name+' | '+r.cat+' | ช่องทาง: '+r.ch+' | สาเหตุ: '+r.why+' | '+(r.from?('แจ้ง '+fmt(r.from)+' ผ่านมา '+r.n+' วัน'):'ไม่ทราบวันแจ้ง')+' | ตาม '+r.times+' ครั้ง | สถานะ: '+r.st+' | '+(r.closed?('จบ '+fmt(r.closed)):'ยังไม่จบ')+'\n'});return x}
 let fuFlag=0;document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#d-copy'))fuFlag=Date.now()},true);
-try{const cb=navigator.clipboard;const ow=cb&&cb.writeText?cb.writeText.bind(cb):null;if(ow){cb.writeText=function(t){if(Date.now()-fuFlag<2500){fuFlag=0;try{const di=document.getElementById('d-day');if(di&&di.offsetParent){const R=rows(di.value);if(R.length)t=t+'\n\n'+fuLines(R)}}catch(e){}}return ow(t)}}}catch(e){}
+try{const cb=navigator.clipboard;const ow=cb&&cb.writeText?cb.writeText.bind(cb):null;if(ow){cb.writeText=function(t){if(Date.now()-fuFlag<2500){fuFlag=0;try{const di=document.getElementById('d-day');if(di&&di.offsetParent){const R=rows(di.value,true);if(R.length)t=t+'\n\n'+fuLines(R)}}catch(e){}}return ow(t)}}}catch(e){}
 setInterval(()=>{try{build();document.querySelectorAll('#t-topic tbody tr').forEach(tr=>{const c=((tr.children[0]&&tr.children[0].innerText)||'').trim();if(/^ตาม(งานซ่อม-เคลม|อะไหล่)$/.test(c)){tr.style.cursor='pointer';tr.title='กดเพื่อดูรายงานการติดตาม'}})}catch(e){}},1500);
 })();
 (function(){
