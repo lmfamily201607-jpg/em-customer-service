@@ -4519,24 +4519,26 @@ function rows(day){
   const done=t.status==='จบ';
   return {name:nm||'-',cat:t.category,ch:ch||'ไม่ระบุ',why:(t.detail||'').replace(/\s+/g,' ').slice(0,90),from:from,n:from?dif(from,day):null,times:times,st:t.status||'-',dmsSt:dm?String(dm.st||'').replace(/^\d+\.\s*/,''):'',closed:done?(thDay(t.closedAt)||day):''}});
  out.sort((a,b)=>(a.closed?1:0)-(b.closed?1:0)||((b.n||0)-(a.n||0)));return out}
+let fuCat='';
+document.addEventListener('click',e=>{if(e.target.closest('#fu-all')){fuCat='';build();return}const tr=e.target.closest('#t-topic tr');if(!tr)return;const c=((tr.children[0]&&tr.children[0].innerText)||'').trim();if(/^ตาม(งานซ่อม-เคลม|อะไหล่)$/.test(c)){fuCat=c;build();const b=document.getElementById('fu-box');if(b){b.scrollIntoView({behavior:'smooth',block:'start'});b.style.outline='3px solid #f5c518';setTimeout(()=>{b.style.outline=''},2500)}}});
 function chSum(R){const c={};R.forEach(x=>{c[x.ch]=(c[x.ch]||0)+1});return Object.keys(c).map(k=>k+' '+c[k]).join(' · ')}
 function build(){if(S.view!=='dashboard')return;const s=document.getElementById('d-shot'),di=document.getElementById('d-day');if(!s||!di)return;let box=document.getElementById('fu-box');
  if(!di.offsetParent||!di.value){if(box)box.remove();return}
  if(!S.dmsLoaded&&typeof ensureDms==='function'){try{ensureDms()}catch(e){}}
- const R=rows(di.value);const sig=di.value+'|'+JSON.stringify(R).length+'|'+(S.dms||[]).length;if(box&&box.dataset.sig===sig&&box.parentNode===s)return;
+ const R=rows(di.value).filter(x=>!fuCat||x.cat===fuCat);const sig=fuCat+'|'+di.value+'|'+JSON.stringify(R).length+'|'+(S.dms||[]).length;if(box&&box.dataset.sig===sig&&box.parentNode===s)return;
  if(!box){box=document.createElement('div');box.id='fu-box';box.className='panel'}if(box.parentNode!==s)s.appendChild(box);box.dataset.sig=sig;
- let h='<div class="fu-top"><h3>เคสที่ต้องติดตาม (ตามงานซ่อม-เคลม / ตามอะไหล่) · '+R.length+' เคส</h3><button type="button" id="fu-copy" data-html2canvas-ignore>คัดลอกรายงานประจำวัน</button></div>';
+ let h='<div class="fu-top"><h3>เคสที่ต้องติดตาม (ตามงานซ่อม-เคลม / ตามอะไหล่) · '+R.length+' เคส'+(fuCat?' (เฉพาะ '+esc(fuCat)+')':'')+'</h3><div data-html2canvas-ignore>'+(fuCat?'<button type="button" id="fu-all">ดูทั้งหมด</button> ':'')+'<button type="button" id="fu-copy">คัดลอกรายงานประจำวัน</button></div></div>';
  if(!R.length)h+='<div class="meta">วันนี้ไม่มีเคสติดตาม</div>';
  else{h+='<div class="fu-sum">ช่องทางซ่อมที่ถูกติดตาม: <b>'+esc(chSum(R))+'</b> · ยังไม่จบ <b>'+R.filter(x=>!x.closed).length+'</b> เคส</div><div class="tbl-wrap"><table><thead><tr><th>ลูกค้า</th><th>เรื่องที่ตาม</th><th>ช่องทางซ่อม</th><th>สาเหตุที่ตาม</th><th>แจ้งเมื่อ → ผ่านมา</th><th>ตามกี่ครั้ง</th><th>สถานะ</th><th>จบเมื่อ</th></tr></thead><tbody>'+
   R.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.ch)+'</td><td>'+esc(x.why)+'</td><td>'+(x.from?esc(fmt(x.from))+' → <b>'+x.n+' วัน</b>':'-')+'</td><td>'+x.times+'</td><td class="'+(x.closed?'fu-ok':'fu-open')+'">'+esc(x.st)+(x.dmsSt?'<div class="meta">DMS: '+esc(x.dmsSt)+'</div>':'')+'</td><td>'+(x.closed?esc(fmt(x.closed)):'ยังไม่จบ')+'</td></tr>').join('')+'</tbody></table></div>';
   h+='<div class="meta" style="margin-top:6px">"ผ่านมา" นับจากวันแจ้งซ่อม/สั่งอะไหล่ครั้งล่าสุดของลูกค้ารายนี้ (หรือวันเปิดเคสใน DMS ถ้าระบุเลขเคส) ช่องทางซ่อมมาจาก DMS หรือบันทึกคำตอบเดิม</div>'}
  box.innerHTML=h}
-document.addEventListener('click',e=>{if(!e.target.closest('#fu-copy'))return;const di=document.getElementById('d-day');if(!di)return;const R=rows(di.value);const g=id=>((document.getElementById(id)||{}).innerText||'').trim();
+document.addEventListener('click',e=>{if(!e.target.closest('#fu-copy'))return;const di=document.getElementById('d-day');if(!di)return;const R=rows(di.value).filter(x=>!fuCat||x.cat===fuCat);const g=id=>((document.getElementById(id)||{}).innerText||'').trim();
  let t='สรุปงานรายวัน '+fmt(di.value)+'\nเคสทั้งหมด '+g('k-total')+' · จบ '+g('k-done')+' · ติดตาม '+g('k-follow')+' · สัดส่วนจบ '+g('k-rate')+'\n\nเคสที่ต้องติดตาม '+R.length+' เคส'+(R.length?(' ('+chSum(R)+')'):'')+'\n';
  R.forEach((x,i)=>{t+=(i+1)+'. '+x.name+' | '+x.cat+' | ช่องทาง: '+x.ch+' | สาเหตุ: '+x.why+' | '+(x.from?('แจ้ง '+fmt(x.from)+' ผ่านมา '+x.n+' วัน'):'ไม่ทราบวันแจ้ง')+' | ตาม '+x.times+' ครั้ง | สถานะ: '+x.st+' | '+(x.closed?('จบ '+fmt(x.closed)):'ยังไม่จบ')+'\n'});
  const done=()=>toast('คัดลอกรายงานแล้ว วางส่งได้เลย');
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,()=>toast('คัดลอกไม่สำเร็จ'));else toast('เบราว์เซอร์นี้คัดลอกอัตโนมัติไม่ได้')});
-setInterval(()=>{try{build()}catch(e){}},1500);
+setInterval(()=>{try{build();document.querySelectorAll('#t-topic tbody tr').forEach(tr=>{const c=((tr.children[0]&&tr.children[0].innerText)||'').trim();if(/^ตาม(งานซ่อม-เคลม|อะไหล่)$/.test(c)){tr.style.cursor='pointer';tr.title='กดเพื่อดูรายงานการติดตาม'}})}catch(e){}},1500);
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
