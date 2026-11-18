@@ -4526,8 +4526,28 @@ function rows(day){
   if(!ch&&/อะไหล่/.test(t.category||''))ch='ส่งอะไหล่';
   const times=nm?new Set(all.filter(x=>(x.name||'').trim()===nm&&/^ตาม/.test(x.category||'')&&thDay(x.contactAt)<=day&&dif(thDay(x.contactAt),day)<=60).map(x=>thDay(x.contactAt))).size:1;
   const done=t.status==='จบ';
-  return {name:nm||'-',cat:t.category,ch:ch||'ไม่ระบุ',why:(t.detail||'').replace(/\s+/g,' ').slice(0,90),from:from,n:from?dif(from,day):null,times:times,st:t.status||'-',dmsSt:dm?String(dm.st||'').replace(/^\d+\.\s*/,''):'',closed:done?(thDay(t.closedAt)||day):''}});
+  return {t:t,prior:prior,dm:dm,tk:tk,name:nm||'-',cat:t.category,ch:ch||'ไม่ระบุ',why:(t.detail||'').replace(/\s+/g,' ').slice(0,90),from:from,n:from?dif(from,day):null,times:times,st:t.status||'-',dmsSt:dm?String(dm.st||'').replace(/^\d+\.\s*/,''):'',closed:done?(thDay(t.closedAt)||day):''}});
  out.sort((a,b)=>(a.closed?1:0)-(b.closed?1:0)||((b.n||0)-(a.n||0)));return out}
+const stFd=document.createElement('style');stFd.textContent='.fu-click{cursor:pointer}.fu-click:hover{background:#eef7f2}.fd h4{margin:14px 0 4px;font-size:15px;color:#0b6b30}.fd-r{display:flex;gap:8px;font-size:14px;margin:2px 0}.fd-r i{font-style:normal;color:#5b6b63;min-width:140px;flex:none}.fd table{width:100%;border-collapse:collapse;font-size:13px}.fd th{background:#e1f1ea;text-align:left;padding:5px 7px}.fd td{border-top:1px solid #dbe7e0;padding:5px 7px;vertical-align:top}';document.head.appendChild(stFd);
+window.__fuDetail=function(r){
+ if(!r)return;const all=[].concat(S.tickets||[],S.legacy||[]);const t=r.t||{};const nm=r.name;
+ const kv=(k,v)=>v?'<div class="fd-r"><i>'+k+'</i><span>'+esc(String(v))+'</span></div>':'';
+ const src=/^LOG-/.test(t.ticketNo||'')?'Log Case (นำเข้า)':'บันทึกในแอพ';
+ const who=t.agentName||(t.receiverId&&typeof personName==='function'?personName(t.receiverId):'');
+ let h='<div class="modal-head"><div><h3>ตรวจสอบข้อมูล: '+esc(nm)+'</h3><div class="meta">'+esc(r.cat)+' · '+esc(fmt(thDay(t.contactAt)))+'</div></div><button class="x" data-close>ปิด</button></div><div class="fd">';
+ h+='<h4>1) เคสที่ลูกค้าตาม (ต้นฉบับ)</h4>'+kv('เลขรับเรื่อง',t.ticketNo)+kv('แหล่งข้อมูล',src)+kv('ช่องทางที่ลูกค้าทักมา',t.channel)+kv('ผู้รับเรื่อง',who)+kv('ที่ลูกค้าถาม',t.detail)+kv('ที่ตอบกลับ',t.answer)+kv('หมายเหตุ',t.note)+kv('สถานะ',t.status);
+ h+='<h4>2) เคสต้นทางที่ใช้นับจำนวนวัน</h4>';
+ if(r.dm){const m=r.dm;h+=kv('แหล่งข้อมูล','DMS เลขเคส '+m.tk)+kv('สถานะซ่อม',String(m.st||'').replace(/^\d+\.\s*/,''))+kv('ประเภท',m.ty)+kv('สาขา/ศูนย์',m.br)+kv('วันที่เปิดเคส',fmt(m.d))+kv('อัปเดตล่าสุด',fmt(m.u))+kv('รุ่น',m.m)+kv('อาการ',m.c)}
+ else if(r.prior){const p=r.prior;h+=kv('แหล่งข้อมูล','บันทึกรับเรื่องเดิมของลูกค้ารายนี้ '+(p.ticketNo||''))+kv('วันที่แจ้ง',fmt(thDay(p.contactAt)))+kv('เรื่อง',p.category)+kv('รายละเอียด',p.detail)+kv('คำตอบ',p.answer)+kv('สถานะ',p.status)}
+ else h+='<div class="meta">ไม่พบเคสต้นทางของลูกค้ารายนี้ จึงนับจำนวนวันไม่ได้</div>';
+ const dayT=thDay(t.contactAt);
+ h+='<h4>3) วิธีคำนวณ</h4>'+(r.from?'<div>ผ่านมา = วันที่ตาม '+esc(fmt(dayT))+' − วันแจ้ง '+esc(fmt(r.from))+' = <b>'+r.n+' วัน</b></div>':'<div class="meta">ไม่มีวันแจ้งซ่อม จึงไม่คำนวณจำนวนวัน</div>');
+ const how=r.dm?('ช่องทางซ่อม "'+r.ch+'" มาจาก DMS สาขา '+(r.dm.br||'-')):(r.ch==='ส่งอะไหล่'?'ช่องทางซ่อม "ส่งอะไหล่" มาจากหัวข้อเคสเป็น ตามอะไหล่':(r.ch==='ไม่ระบุ'?'ไม่พบข้อมูลช่องทางซ่อมในบันทึก':'ช่องทางซ่อม "'+r.ch+'" ดูจากคำในคำตอบ/บันทึกของลูกค้ารายนี้ (onsite, ตจว., โชว์รูม, ร้าน)'));
+ h+='<div>'+esc(how)+'</div>';
+ const hist=nm&&nm!=='-'?all.filter(x=>(x.name||'').trim()===nm).sort((a,b)=>String(a.contactAt).localeCompare(String(b.contactAt))).slice(-25):[];
+ h+='<h4>4) ประวัติของลูกค้ารายนี้ ('+hist.length+' รายการล่าสุด แถวสีเหลืองคือเคสที่กำลังตรวจ)</h4><div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th>เรื่อง</th><th>สถานะ</th><th>รายละเอียด / คำตอบ</th></tr></thead><tbody>'+hist.map(x=>'<tr'+(x===t?' style="background:#fff7d6"':'')+'><td>'+esc(fmt(thDay(x.contactAt)))+'</td><td>'+esc(x.category||'')+'</td><td>'+esc(x.status||'')+'</td><td>'+esc(String(x.detail||'').slice(0,90))+(x.answer?'<div class="meta">→ '+esc(String(x.answer).slice(0,70))+'</div>':'')+'</td></tr>').join('')+'</tbody></table></div></div>';
+ modal(h)};
+document.addEventListener('click',e=>{const tr=e.target.closest&&e.target.closest('#fu-box tr[data-fuix]');if(tr&&window.__fuCur)window.__fuDetail(window.__fuCur[+tr.dataset.fuix])});
 let fuCat='';
 document.addEventListener('click',e=>{if(e.target.closest('#fu-all')){fuCat='';build();return}const tr=e.target.closest('#t-topic tr');if(!tr)return;const c=((tr.children[0]&&tr.children[0].innerText)||'').trim();if(/^ตาม(งานซ่อม-เคลม|อะไหล่)$/.test(c)){fuCat=c;build();const b=document.getElementById('fu-box');if(b){b.scrollIntoView({behavior:'smooth',block:'start'});b.style.outline='3px solid #f5c518';setTimeout(()=>{b.style.outline=''},2500)}}});
 function chSum(R){const c={};R.forEach(x=>{c[x.ch]=(c[x.ch]||0)+1});return Object.keys(c).map(k=>k+' '+c[k]).join(' · ')}
@@ -4535,11 +4555,11 @@ function build(){if(S.view!=='dashboard')return;const s=document.getElementById(
  if(!di.offsetParent||!di.value){if(box)box.remove();return}
  if(!S.dmsLoaded&&typeof ensureDms==='function'){try{ensureDms()}catch(e){}}
  const R=rows(di.value).filter(x=>!fuCat||x.cat===fuCat);const sig=fuCat+'|'+di.value+'|'+JSON.stringify(R).length+'|'+(S.dms||[]).length;if(box&&box.dataset.sig===sig&&box.parentNode===s)return;
- if(!box){box=document.createElement('div');box.id='fu-box';box.className='panel'}const g4=s.querySelector('.grid4');if(box.parentNode!==s||(g4&&box.nextElementSibling!==g4))s.insertBefore(box,g4||null);box.dataset.sig=sig;
+ if(!box){box=document.createElement('div');box.id='fu-box';box.className='panel'}const g4=s.querySelector('.grid4');if(box.parentNode!==s||(g4&&box.nextElementSibling!==g4))s.insertBefore(box,g4||null);box.dataset.sig=sig;window.__fuCur=R;
  let h='<div class="fu-top"><h3>เคสที่ต้องติดตาม (ตามงานซ่อม-เคลม / ตามอะไหล่) · '+R.length+' เคส'+(fuCat?' (เฉพาะ '+esc(fuCat)+')':'')+'</h3><div data-html2canvas-ignore>'+(fuCat?'<button type="button" id="fu-all">ดูทั้งหมด</button> ':'')+'<button type="button" id="fu-copy">คัดลอกรายงานประจำวัน</button></div></div>';
  if(!R.length)h+='<div class="meta">วันนี้ไม่มีเคสติดตาม</div>';
  else{h+='<div class="fu-sum">ช่องทางซ่อมที่ถูกติดตาม: <b>'+esc(chSum(R))+'</b> · ยังไม่จบ <b>'+R.filter(x=>!x.closed).length+'</b> เคส</div><div class="tbl-wrap"><table><thead><tr><th>ลูกค้า</th><th>เรื่องที่ตาม</th><th>ช่องทางซ่อม</th><th>สาเหตุที่ตาม</th><th>แจ้งเมื่อ → ผ่านมา</th><th>ตามกี่ครั้ง</th><th>สถานะ</th><th>จบเมื่อ</th></tr></thead><tbody>'+
-  R.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.ch)+'</td><td>'+esc(x.why)+'</td><td>'+(x.from?esc(fmt(x.from))+' → <b>'+x.n+' วัน</b>':'-')+'</td><td>'+x.times+'</td><td class="'+(x.closed?'fu-ok':'fu-open')+'">'+esc(x.st)+(x.dmsSt?'<div class="meta">DMS: '+esc(x.dmsSt)+'</div>':'')+'</td><td>'+(x.closed?esc(fmt(x.closed)):'ยังไม่จบ')+'</td></tr>').join('')+'</tbody></table></div>';
+  R.map((x,i)=>'<tr class="fu-click" data-fuix="'+i+'"><td>'+esc(x.name)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.ch)+'</td><td>'+esc(x.why)+'</td><td>'+(x.from?esc(fmt(x.from))+' → <b>'+x.n+' วัน</b>':'-')+'</td><td>'+x.times+'</td><td class="'+(x.closed?'fu-ok':'fu-open')+'">'+esc(x.st)+(x.dmsSt?'<div class="meta">DMS: '+esc(x.dmsSt)+'</div>':'')+'</td><td>'+(x.closed?esc(fmt(x.closed)):'ยังไม่จบ')+'</td></tr>').join('')+'</tbody></table></div>';
   h+='<div class="meta" style="margin-top:6px">"ผ่านมา" นับจากวันแจ้งซ่อม/สั่งอะไหล่ครั้งล่าสุดของลูกค้ารายนี้ (หรือวันเปิดเคสใน DMS ถ้าระบุเลขเคส) ช่องทางซ่อมมาจาก DMS หรือบันทึกคำตอบเดิม</div>'}
  box.innerHTML=h}
 document.addEventListener('click',e=>{if(!e.target.closest('#fu-copy'))return;const di=document.getElementById('d-day');if(!di)return;const R=rows(di.value).filter(x=>!fuCat||x.cat===fuCat);const g=id=>((document.getElementById(id)||{}).innerText||'').trim();
@@ -4577,7 +4597,7 @@ function rowsR(from,to){
   if(!ch&&/อะไหล่/.test(t.category||''))ch='ส่งอะไหล่';
   const times=nm?new Set(all.filter(x=>(x.name||'').trim()===nm&&/^ตาม/.test(x.category||'')&&thDay(x.contactAt)<=day&&dif(thDay(x.contactAt),day)<=60).map(x=>thDay(x.contactAt))).size:1;
   const done=t.status==='จบ';
-  return {day:day,name:nm||'-',cat:t.category,ch:ch||'ไม่ระบุ',why:(t.detail||'').replace(/\s+/g,' ').slice(0,100),from:from0,n:from0?dif(from0,day):null,late:(!done&&from0)?dif(from0,td):null,times:times,st:t.status||'-',dmsSt:dm?String(dm.st||'').replace(/^\d+\.\s*/,''):'',closed:done?(thDay(t.closedAt)||day):'',who:t.agentName||(t.receiverId&&typeof personName==='function'?personName(t.receiverId):'')||'-'}});
+  return {t:t,prior:prior,dm:dm,tk:tk,day:day,name:nm||'-',cat:t.category,ch:ch||'ไม่ระบุ',why:(t.detail||'').replace(/\s+/g,' ').slice(0,100),from:from0,n:from0?dif(from0,day):null,late:(!done&&from0)?dif(from0,td):null,times:times,st:t.status||'-',dmsSt:dm?String(dm.st||'').replace(/^\d+\.\s*/,''):'',closed:done?(thDay(t.closedAt)||day):'',who:t.agentName||(t.receiverId&&typeof personName==='function'?personName(t.receiverId):'')||'-'}});
  out.sort((a,b)=>(a.closed?1:0)-(b.closed?1:0)||((b.late||0)-(a.late||0))||String(b.day).localeCompare(String(a.day)));return out}
 let sig='',cur=[];
 function filtered(){const f=$$('fu2-from').value,t=$$('fu2-to').value;let R=rowsR(f,t);const chs=[...new Set(R.map(x=>x.ch))].sort();const sel=$$('fu2-ch');const old=sel.value;const have=[...sel.options].slice(1).map(o=>o.value).join('|');if(have!==chs.join('|')){sel.innerHTML='<option value="">ทั้งหมด</option>'+chs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');sel.value=chs.includes(old)?old:''}
@@ -4590,7 +4610,7 @@ function render(force){if(S.view!=='followup'||!$$('fu2-from'))return;
  $$('fu2-kpi').innerHTML='<div class="k"><span>เคสติดตามทั้งหมด</span><b>'+R.length+'</b></div><div class="k"><span>ยังไม่จบ</span><b>'+open+'</b></div><div class="k bad"><span>ค้างเกิน 14 วัน</span><b>'+late+'</b></div><div class="k bad"><span>ลูกค้าตามซ้ำ 2 ครั้งขึ้นไป</span><b>'+rep+'</b></div>';
  let h='';if(!R.length)h='<div class="meta">ไม่มีเคสติดตามในช่วงที่เลือก</div>';
  else{const cs={};R.forEach(x=>{cs[x.ch]=(cs[x.ch]||0)+1});h='<div style="margin-bottom:8px">ช่องทางซ่อมที่ถูกติดตาม: <b>'+esc(Object.keys(cs).map(k=>k+' '+cs[k]).join(' · '))+'</b></div><div class="tbl-wrap"><table><thead><tr><th>วันที่ตาม</th><th>ลูกค้า</th><th>เรื่อง</th><th>ช่องทางซ่อม</th><th>สาเหตุที่ตาม</th><th>แจ้งเมื่อ → ผ่านมา</th><th>ตามกี่ครั้ง</th><th>ผู้รับเรื่อง</th><th>สถานะ</th><th>จบเมื่อ</th></tr></thead><tbody>'+
-  R.map(x=>'<tr class="'+((!x.closed&&x.late>14)?'late':'')+'"><td>'+esc(fmt(x.day))+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.ch)+'</td><td>'+esc(x.why)+'</td><td>'+(x.from?esc(fmt(x.from))+' → <b>'+x.n+' วัน</b>'+((!x.closed&&x.late>14)?'<div class="bad">ค้าง '+x.late+' วันถึงวันนี้</div>':''):'-')+'</td><td class="'+(x.times>=2?'bad':'')+'">'+x.times+'</td><td>'+esc(x.who)+'</td><td class="'+(x.closed?'ok':'bad')+'">'+esc(x.st)+(x.dmsSt?'<div class="meta">DMS: '+esc(x.dmsSt)+'</div>':'')+'</td><td>'+(x.closed?esc(fmt(x.closed)):'ยังไม่จบ')+'</td></tr>').join('')+'</tbody></table></div><div class="meta" style="margin-top:6px">"ผ่านมา" นับจากวันแจ้งซ่อม/สั่งอะไหล่ครั้งล่าสุดของลูกค้ารายนี้ (หรือวันเปิดเคสใน DMS ถ้าระบุเลขเคส) ช่องทางซ่อมมาจาก DMS หรือบันทึกคำตอบเดิม แถวสีแดงคือเคสที่ยังไม่จบและค้างเกิน 14 วัน</div>'}
+  R.map((x,i)=>'<tr data-fu2ix="'+i+'" class="fu-click '+((!x.closed&&x.late>14)?'late':'')+'"><td>'+esc(fmt(x.day))+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.ch)+'</td><td>'+esc(x.why)+'</td><td>'+(x.from?esc(fmt(x.from))+' → <b>'+x.n+' วัน</b>'+((!x.closed&&x.late>14)?'<div class="bad">ค้าง '+x.late+' วันถึงวันนี้</div>':''):'-')+'</td><td class="'+(x.times>=2?'bad':'')+'">'+x.times+'</td><td>'+esc(x.who)+'</td><td class="'+(x.closed?'ok':'bad')+'">'+esc(x.st)+(x.dmsSt?'<div class="meta">DMS: '+esc(x.dmsSt)+'</div>':'')+'</td><td>'+(x.closed?esc(fmt(x.closed)):'ยังไม่จบ')+'</td></tr>').join('')+'</tbody></table></div><div class="meta" style="margin-top:6px">"ผ่านมา" นับจากวันแจ้งซ่อม/สั่งอะไหล่ครั้งล่าสุดของลูกค้ารายนี้ (หรือวันเปิดเคสใน DMS ถ้าระบุเลขเคส) ช่องทางซ่อมมาจาก DMS หรือบันทึกคำตอบเดิม แถวสีแดงคือเคสที่ยังไม่จบและค้างเกิน 14 วัน</div>'}
  $$('fu2-body').innerHTML=h}
 document.addEventListener('input',e=>{if(e.target&&/^fu2-/.test(e.target.id||''))render(true)});
 document.addEventListener('change',e=>{if(e.target&&/^fu2-/.test(e.target.id||''))render(true)});
@@ -4599,6 +4619,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   cur.forEach((r,i)=>{x+=(i+1)+'. '+fmt(r.day)+' | '+r.name+' | '+r.cat+' | ช่องทาง: '+r.ch+' | สาเหตุ: '+r.why+' | '+(r.from?('แจ้ง '+fmt(r.from)+' ผ่านมา '+r.n+' วัน'):'ไม่ทราบวันแจ้ง')+' | ตาม '+r.times+' ครั้ง | ผู้รับเรื่อง: '+r.who+' | สถานะ: '+r.st+' | '+(r.closed?('จบ '+fmt(r.closed)):'ยังไม่จบ')+'\n'});
   const ok=()=>toast('คัดลอกรายงานแล้ว วางส่งได้เลย');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(x).then(ok,()=>toast('คัดลอกไม่สำเร็จ'));else toast('เบราว์เซอร์นี้คัดลอกอัตโนมัติไม่ได้');return}
  const t=today();$$('fu2-to').value=t;$$('fu2-from').value=b.id==='fu2-d1'?t:add(t,b.id==='fu2-d7'?-6:-29);render(true)});
+document.addEventListener('click',e=>{const tr=e.target.closest&&e.target.closest('tr[data-fu2ix]');if(tr&&cur[+tr.dataset.fu2ix])window.__fuDetail(cur[+tr.dataset.fu2ix])});
 setInterval(()=>{try{render(false)}catch(e){}},1500);
 })();
 (function(){
