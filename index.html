@@ -4598,6 +4598,26 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
  const t=today();$$('fu2-to').value=t;$$('fu2-from').value=b.id==='fu2-d1'?t:add(t,b.id==='fu2-d7'?-6:-29);render(true)});
 setInterval(()=>{try{render(false)}catch(e){}},1500);
 })();
+(function(){
+const st=document.createElement('style');st.textContent='#dn-box{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 8px 4px}#dn-box svg{width:210px;height:210px;flex:none}#dn-box .dn-c1{font:700 30px Prompt,sans-serif;fill:#14301f}#dn-box .dn-c2{font:13px Prompt,sans-serif;fill:#5b6b63}.dn-dot{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:middle}';document.head.appendChild(st);
+const PAL=['#10893e','#2f6fe4','#f59e0b','#d92d20','#8b5cf6','#0ea5a4','#ec4899','#84cc16','#64748b'];
+let sig='';
+function tick(){if(S.view!=='dashboard')return;const t=document.getElementById('t-topic');if(!t)return;const tb=t.tagName==='TABLE'?t:(t.querySelector('table')||t.closest('table'));if(!tb)return;
+ const trs=[...tb.querySelectorAll('tbody tr')];if(!trs.length)return;
+ const rows=trs.map(tr=>({name:((tr.children[0]&&tr.children[0].innerText)||'').trim(),n:parseInt(String((tr.children[1]&&tr.children[1].innerText)||'0').replace(/[^0-9]/g,''))||0,tr:tr})).filter(r=>r.name);
+ const tot=rows.reduce((a,r)=>a+r.n,0);if(!tot)return;
+ const top=rows.slice(0,8),rest=rows.slice(8),restN=rest.reduce((a,r)=>a+r.n,0);
+ const parts=top.map((r,i)=>({name:r.name,n:r.n,c:PAL[i%PAL.length]}));if(restN)parts.push({name:'อื่น ๆ',n:restN,c:PAL[8]});
+ rows.forEach((r,i)=>{const cell=r.tr.children[0];if(cell&&!cell.querySelector('.dn-dot')){const dot=document.createElement('i');dot.className='dn-dot';dot.style.background=PAL[Math.min(i,8)];cell.insertBefore(dot,cell.firstChild)}else if(cell){const dot=cell.querySelector('.dn-dot');dot.style.background=PAL[Math.min(i,8)]}});
+ const s=parts.map(p=>p.name+':'+p.n).join('|');let box=document.getElementById('dn-box');const wrap=tb.closest('.tbl-wrap')||tb;
+ if(box&&box.dataset.sig===s&&box.parentNode===wrap.parentNode)return;
+ if(!box){box=document.createElement('div');box.id='dn-box'}
+ if(box.parentNode!==wrap.parentNode)wrap.parentNode.insertBefore(box,wrap);box.dataset.sig=s;
+ const R=70,C=2*Math.PI*R;let off=0,arcs='';
+ parts.forEach(p=>{const len=C*p.n/tot;arcs+='<circle r="'+R+'" cx="105" cy="105" fill="none" stroke="'+p.c+'" stroke-width="38" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 105 105)"><title>'+esc(p.name)+' '+p.n+' เคส ('+(p.n*100/tot).toFixed(1)+'%)</title></circle>';off+=len});
+ box.innerHTML='<svg viewBox="0 0 210 210" role="img" aria-label="สัดส่วนหัวข้อที่ลงข้อมูล">'+arcs+'<text x="105" y="108" text-anchor="middle" class="dn-c1">'+tot+'</text><text x="105" y="128" text-anchor="middle" class="dn-c2">เคสทั้งหมด</text></svg>'}
+setInterval(()=>{try{tick()}catch(e){}},1500);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
