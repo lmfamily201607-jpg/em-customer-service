@@ -4509,10 +4509,11 @@ function rows(day){
   const nm=(t.name||'').trim();
   const m=((t.detail||'')+' '+(t.answer||'')+' '+(t.refTicket||'')).match(/(?:^|\D)(\d{4,5})(?!\d)/);const tk=m&&m[1];
   const dm=tk?(S.dms||[]).find(r=>String(r.tk).replace(/\D/g,'')===tk):null;
-  const prior=nm?all.filter(x=>(x.name||'').trim()===nm&&String(x.contactAt)<String(t.contactAt)&&/^(แจ้งซ่อม-เคลม|สั่งซื้ออะไหล่)/.test(x.category||'')).sort((a,b)=>String(b.contactAt).localeCompare(String(a.contactAt)))[0]:null;
+  const prior=nm?all.filter(x=>(x.name||'').trim()===nm&&String(x.contactAt)<String(t.contactAt)&&/^(แจ้งซ่อม-เคลม|สั่งซื้ออะไหล่|แจ้งปัญหาการใช้งาน)/.test(x.category||'')).sort((a,b)=>String(b.contactAt).localeCompare(String(a.contactAt)))[0]:null;
   const from=dm&&dm.d?dm.d:(prior?thDay(prior.contactAt):'');
   let ch=dm?chanOf(dm.br):'';
   if(!ch&&prior){const a=(prior.answer||'')+' '+(prior.note||'');if(/onsite/i.test(a))ch='Onsite';else if(/โชว์รูม|showroom/i.test(a))ch='Showroom';else if(/ร้าน/.test(a))ch='ร้านค้า'}
+  if(!ch&&nm){const rec=all.filter(x=>(x.name||'').trim()===nm&&String(x.contactAt)<=String(t.contactAt)&&dif(thDay(x.contactAt),day)<=60).map(x=>(x.answer||'')+' '+(x.note||'')+' '+(x.detail||'')).join(' ');if(/onsite|ตจว/i.test(rec))ch='Onsite';else if(/โชว์รูม|showroom/i.test(rec))ch='Showroom'}
   if(!ch&&/อะไหล่/.test(t.category||''))ch='ส่งอะไหล่';
   const times=nm?new Set(all.filter(x=>(x.name||'').trim()===nm&&/^ตาม/.test(x.category||'')&&thDay(x.contactAt)<=day&&dif(thDay(x.contactAt),day)<=60).map(x=>thDay(x.contactAt))).size:1;
   const done=t.status==='จบ';
