@@ -4757,6 +4757,11 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 setInterval(()=>{if(S.view!=='replyguide')return;const s=document.getElementById('v-replyguide');if(s&&!document.getElementById('rg-flow'))s.insertAdjacentHTML('beforeend',html())},1000);
 })();
 
+/*QATABS*/(function(){
+const st=document.createElement('style');st.textContent='a[data-v="replyguide"]{display:none!important}#qa-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}#qa-tabs a{padding:9px 16px;border:1px solid var(--line,#ddd);border-radius:999px;background:#fff;color:inherit;text-decoration:none;font-weight:600}#qa-tabs a.on{background:#c2680a;border-color:#c2680a;color:#fff}';document.head.appendChild(st);
+setInterval(function(){try{const w=S.view;if(w!=='assistant'&&w!=='replyguide')return;const v=document.getElementById('v-'+w);if(!v||v.querySelector('#qa-tabs'))return;const d=document.createElement('div');d.id='qa-tabs';d.innerHTML='<a href="#assistant" class="'+(w==='assistant'?'on':'')+'">ถามผู้ช่วย (ค้นหา + AI ร่างคำตอบ)</a><a href="#replyguide" class="'+(w==='replyguide'?'on':'')+'">คำถาม-คำตอบสำเร็จรูป (คัดลอกไปตอบ)</a>';v.insertBefore(d,v.firstChild)}catch(e){}},500);
+})();
+
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
