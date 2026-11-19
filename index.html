@@ -2129,7 +2129,7 @@ function zoomImg(src){zoomClose();const z=document.createElement('div');z.id='zo
   document.body.appendChild(z);z.querySelector('.zx').focus()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zoomClose()});
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[data-zoom]');if(a){e.preventDefault();zoomImg(a.getAttribute('href'))}});
-function renderParts2(){
+function renderParts2Raw(){
   const P=S.parts,use=ppUsage(),bi=bomIndex();
   if(!$('#pp-models').children.length||S.ppModelsSig!==S.ncr.length+':'+S.bom.length){
     S.ppModelsSig=S.ncr.length+':'+S.bom.length;
@@ -2145,9 +2145,9 @@ function renderParts2(){
   const known=new Set(P.map(p=>p.s.toUpperCase()));
   // BOM parts with no entry in the price list still show, marked as unpriced
   const extra=mk?S.bom.filter(r=>bomHit(r,bk)&&!known.has(r.s)).reduce((a,r)=>{if(!a.some(x=>x.s===r.s))a.push({s:r.s,name:r.name,u:'',p:0,k:ppKey(r.name),unlisted:true});return a},[]):[];
-  let rows=dedupeParts([...P,...extra]).map(p=>{const u=use.get(p.s)||{};let n=0;if(mk)for(const [m,c] of Object.entries(u))if(ppKey(m).includes(mk)||mk.includes(ppKey(m).replace(/^EM(?=[A-Z])/,'')))n+=c;
+  let rows=dedupeParts([...P,...extra]).map(p=>{const u=use.get(p.s)||{};let n=0;if(mk)for(const [m,c] of Object.entries(u))if(ppMatch(ppKey(m),mk)||mk.includes(ppKey(m).replace(/^EM(?=[A-Z])/,'')))n+=c;
     // short model codes (X3, EM8) must stand alone in the name, or sizes like 2.75X3 would match
-    const byName=mk?(mk.length<=4?ppShortRe(mk).test(String(p.name).toUpperCase()):p.k.includes(mk)):false;const total=Object.values(u).reduce((a,b)=>a+b,0);
+    const byName=mk?(mk.length<=4?ppShortRe(mk).test(String(p.name).toUpperCase()):ppMatch(p.k,mk)):false;const total=Object.values(u).reduce((a,b)=>a+b,0);
     const boms=bi.bySku.get(String(p.s).toUpperCase())||[],bom=mk?boms.filter(r=>bomHit(r,bk)):[];
     return {...p,n,byName,total,bom,bomModels:[...new Set(boms.map(r=>r.m))],models:Object.entries(u).sort((a,b)=>b[1]-a[1]).slice(0,4)}});
   // a model with a BOM shows only its own BOM parts; repair history and name matches are the fallback for models with no BOM (they pulled in parts of other models)
@@ -4666,6 +4666,25 @@ function tick(){if(S.view!=='dashboard')return;const t=document.getElementById('
  parts.forEach(p=>{const len=C*p.n/tot;arcs+='<circle r="'+R+'" cx="105" cy="105" fill="none" stroke="'+p.c+'" stroke-width="38" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 105 105)"><title>'+esc(p.name)+' '+p.n+' เคส ('+(p.n*100/tot).toFixed(1)+'%)</title></circle>';off+=len});
  box.innerHTML='<svg viewBox="0 0 210 210" role="img" aria-label="สัดส่วนหัวข้อที่ลงข้อมูล">'+arcs+'<text x="105" y="108" text-anchor="middle" class="dn-c1">'+tot+'</text><text x="105" y="128" text-anchor="middle" class="dn-c2">เคสทั้งหมด</text></svg><div class="dn-top"><div class="dn-h">3 อันดับแรก</div>'+parts.slice(0,3).map(p=>'<div class="dn-it"><b>'+(p.n*100/tot).toFixed(1)+'%</b><i class="dn-dot" style="background:'+p.c+'"></i>'+esc(p.name)+' · '+p.n+' เคส</div>').join('')+'</div>'}
 setInterval(()=>{try{tick()}catch(e){}},1500);
+})();
+const PP_MAP={'93031801125':['QAREZ','OWEN','LEGEND'],'97031883127':['OWEN LONG RANGE'],'97031873024':['ENZO','MILANO'],'93031801124':['LEGEND PRO']};
+window.__ppOff=window.__ppOff||{};
+function ppMatch(s,mk){s=String(s||'');if(mk==='LEGEND')s=s.replace(/LEGENDPRO/g,'');return s.includes(mk)}
+function ppApplyMap(){const B=S.bom;if(!B||!B.length||B.__pm||!S.parts||!S.parts.length)return;const nm={};S.parts.forEach(p=>{nm[p.s]=p.name});const keep=B.filter(r=>!PP_MAP[String(r.s).toUpperCase()]);Object.keys(PP_MAP).forEach(k=>PP_MAP[k].forEach(m=>keep.push({m:m,q:1,s:k,v:'',name:nm[k]||''})));keep.__pm=1;S.bom=keep;S.bomIdx=null}
+function renderParts2(){ppApplyMap();const off=window.__ppOff,hide=Object.keys(off);if(!hide.length)return renderParts2Raw();const P0=S.parts,B0=S.bom;try{S.parts=(P0||[]).filter(p=>!off[p.s]);S.bom=(B0||[]).filter(r=>!off[String(r.s)]&&!off[String(r.s).toUpperCase()]);S.bomIdx=null;return renderParts2Raw()}finally{S.parts=P0;S.bom=B0;S.bomIdx=null}}
+(function(){let sb=null,last=0,show=false;
+async function loadOff(){last=Date.now();try{if(!sb&&window.supabase&&window.EM_CONFIG)sb=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey);if(!sb)return;const q=await sb.from('em_docs').select('path,data').like('path','audit/_partoff/%').range(0,999);if(q.error||!q.data)return;const D={};q.data.forEach(x=>{const o=x.data||{};if(o.sku)D[o.sku]=o});if(Object.keys(D).sort().join()!==Object.keys(window.__ppOff).sort().join()){window.__ppOff=D;if(S.view==='parts')renderParts2()}else window.__ppOff=D}catch(e){}}
+function deco(){if(S.view!=='parts')return;const t=document.getElementById('pp-table');if(!t)return;
+ if(S.isAdmin){t.querySelectorAll('tbody tr').forEach(tr=>{const td=tr.children[0];if(!td||td.querySelector('[data-ppoff]'))return;const sku=(td.innerText||'').trim().split(/\s+/)[0];if(!/^[A-Za-z0-9-]{5,}$/.test(sku))return;const b=document.createElement('button');b.type='button';b.setAttribute('data-ppoff',sku);b.textContent='ลบรหัส';b.style.cssText='margin-left:6px;color:#b00020';td.appendChild(b)})}
+ let box=document.getElementById('pp-off');if(!box){const c=document.getElementById('pp-count');if(!c)return;box=document.createElement('div');box.id='pp-off';box.className='meta';c.insertAdjacentElement('afterend',box)}
+ const ks=Object.keys(window.__ppOff);const h=ks.length?'<a href="#" id="pp-offtoggle">'+(show?'ซ่อน':'ดู')+'รหัสที่ยกเลิกใช้แล้ว ('+ks.length+')</a>'+(show?'<ul style="margin:6px 0;padding-left:18px">'+ks.map(k=>'<li>'+esc(k)+' '+esc(window.__ppOff[k].name||'')+(S.isAdmin?' <button type="button" data-ppon="'+esc(k)+'">คืนค่า</button>':'')+'</li>').join('')+'</ul>':''):'';
+ if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h}}
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-ppoff]');
+ if(b){const sku=b.getAttribute('data-ppoff');const p=(S.parts||[]).find(x=>x.s===sku);if(!S.isAdmin)return;if(!confirm('ยกเลิกใช้รหัส '+sku+(p?' ('+p.name+')':'')+' ? รหัสจะไม่แสดงในหน้านี้ (คืนค่าได้)'))return;
+  try{await S.db.doc('audit/_partoff/'+encodeURIComponent(sku)).set({sku:sku,name:p?p.name:'',at:new Date().toISOString(),by:S.uid});window.__ppOff[sku]={sku:sku,name:p?p.name:''};renderParts2();toast('ยกเลิกรหัสแล้ว')}catch(err){toast('ไม่สำเร็จ: '+errText(err))}return}
+ if(e.target.closest&&e.target.closest('#pp-offtoggle')){e.preventDefault();show=!show;const bx=document.getElementById('pp-off');if(bx)bx.dataset.h='';deco();return}
+ const o=e.target.closest&&e.target.closest('[data-ppon]');if(o&&S.isAdmin){const k=o.getAttribute('data-ppon');try{await S.db.doc('audit/_partoff/'+encodeURIComponent(k)).delete();delete window.__ppOff[k];renderParts2();toast('คืนค่ารหัสแล้ว')}catch(err){toast('ไม่สำเร็จ: '+errText(err))}}});
+setInterval(()=>{if(S.view==='parts'){if(Date.now()-last>30000)loadOff();deco()}},1000);
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
