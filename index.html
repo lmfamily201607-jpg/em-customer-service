@@ -4718,6 +4718,44 @@ document.addEventListener('click',async ev=>{const t=ev.target;if(!t.closest)ret
 setInterval(()=>{if(S.view!=='parts'||!S.isAdmin)return;const t=document.getElementById('pp-table');if(t)t.querySelectorAll('tbody tr').forEach(tr=>{const td=[...tr.children].find(c=>/คัดลอก/.test(c.innerText||''));if(!td||td.querySelector('[data-ppedit]'))return;const sku=(td.innerText||'').trim().split(/\s+/)[0];if(!/^[A-Za-z0-9._-]{3,}$/.test(sku))return;const b=document.createElement('button');b.type='button';b.setAttribute('data-ppedit',sku);b.textContent='แก้ไข';b.style.cssText='margin-left:6px';td.appendChild(b)});
  if(!document.getElementById('pp-addbtn')){const c=document.getElementById('pp-count');if(c){const b=document.createElement('button');b.type='button';b.id='pp-addbtn';b.textContent='+ เพิ่มรหัสอะไหล่';b.style.cssText='margin:6px 8px 6px 0';c.insertAdjacentElement('beforebegin',b)}}},1000);
 })();
+(function(){
+const T={
+ ask:'EM MOTOR สวัสดีค่ะ 😊💚\n\nรบกวนแจ้งข้อมูลเพื่อเปิดเคสค่ะ\n👤 ชื่อ-เบอร์โทร\n🏠 ที่อยู่รับบริการ\n📍 พิกัด Google Maps\n🔢 เลขตัวถัง\n🔧 อาการเสีย + วิดีโอ\n🧾 ใบเสร็จ/ใบรับประกัน + รูปรถเต็มคัน\n\n⚠️ หากซอยแคบ รถใหญ่เข้าไม่ได้ กรุณาแจ้งล่วงหน้าค่ะ',
+ appt:'🛵 สรุปยืนยันการนัดหมายคิวช่างที่ให้บริการ\n----------------------------------------\n📋 รหัส Ticket: REP-[เลขแจ้งซ่อม] (ซ่อม)\n📞 เบอร์ติดต่อ: [เบอร์ลูกค้า]\n📍 สถานที่/พื้นที่: [จังหวัด]\n📅 วันที่นัดหมาย: [วัน/เดือน/ปี]\n⏰ เวลานัด: [เวลา] น. (ช่างอาจคลาดเคลื่อน ±30 นาที ตามสภาพการจราจร)\n----------------------------------------\n* เจ้าหน้าที่จะติดต่อยืนยันก่อนเดินทางถึงหน้างาน 30 นาที ขอบคุณครับ/ค่ะ 🙏',
+ queue:'คิวเข้ารับบริการวันที่ [วัน/เดือน/ปี] ช่วงเวลาแอดมินจะทำการติดต่อโทรแจ้งให้ทราบล่วงหน้า 1 วัน นะคะ',
+ wait:'ลูกค้าต้องการสอบถามข้อมูลส่วนไหนเพิ่มเติมไหมคะ แจ้งแอดมินได้เลยนะคะ แอดมินจะตรวจสอบข้อมูลและแจ้งรายละเอียดให้ค่ะ 😊',
+ photo:'รบกวนขอรูปภาพเพิ่มเติมค่ะ',
+ nopart:'ต้องขอประทานโทษด้วยนะคะ รุ่นนี้ไม่มีการผลิตอะไหล่จำหน่ายแล้วค่ะ 🙏',
+ close1:'💚 EM MOTOR ยินดีให้บริการค่ะ ขอบพระคุณที่ไว้วางใจนะคะ 🙏',
+ close2:'หากต้องการสอบถามเพิ่มเติม สามารถทักหาแอดมินได้ตลอดเลยนะคะ 🙏',
+ packed:'แพ็คแล้วค่ะ',
+ bill:'ออกบิลจัดส่งของแล้วค่ะ',
+ addmore:'ทางร้านสั่งซื้อเพิ่มมาได้เลยค่ะ',
+ late:'ไม่ทันแล้วค่ะ รอบนี้แพ็คสินค้าเรียบร้อยแล้ว หากต้องการเพิ่มรายการ รบกวนสั่งรอบใหม่นะคะ',
+ thanks:'ขอบคุณค่ะ'};
+const tb=(k,label)=>'<div class="meta" style="margin:8px 0 2px">'+label+'</div><pre style="white-space:pre-wrap;background:#f4f7f5;border:1px solid #dfe7e2;border-radius:8px;padding:8px;margin:0 0 4px;font:inherit">'+esc(T[k])+'</pre><button type="button" data-rgcopy="'+k+'">คัดลอก</button>';
+function html(){return '<div id="rg-flow" class="panel" style="margin-top:16px">'+
+'<h3>ขั้นตอนรับเคส ตอบเคส ส่งข้อมูล (สรุปจากทิกเก็ตที่ปิดแล้วใน Zaapi)</h3>'+
+'<p class="meta">สรุปจากการดูทิกเก็ตตัวอย่าง วันที่ 19 พ.ย. 2569 ของ EM SERVICE CENTER และ EM - Dealer Service ไม่เก็บชื่อ เบอร์ ที่อยู่ หรือเลขตัวถังของลูกค้า</p>'+
+'<h4 style="margin:14px 0 4px">EM SERVICE CENTER (LINE) — ลูกค้าทั่วไป / แจ้งซ่อม / อะไหล่ / Grab</h4><ol style="margin:0 0 6px;padding-left:20px;line-height:1.7">'+
+'<li><b>ลูกค้าทักมา:</b> เมนูอัตโนมัติ "Customer Service" ให้ลูกค้าเลือกหัวข้อ คือ สนใจสั่งซื้อสินค้า, สั่งซื้ออะไหล่, แจ้งซ่อม, Grab, สอบถามทั่วไป ระบบเปิดทิกเก็ตให้อัตโนมัติ</li>'+
+'<li><b>รับเคส:</b> ทีม CS รับเรื่องแล้วมอบหมายให้ผู้รับผิดชอบ (เช่น ทีม Service) ติดแท็กหัวข้อ เช่น แจ้งซ่อม, สั่งซื้ออะไหล่</li>'+
+'<li><b>ขอข้อมูลเปิดเคส:</b> ส่งข้อความขอข้อมูลตามแบบด้านล่าง</li>'+
+'<li><b>บันทึกข้อมูลภายใน:</b> ใส่เป็นโน้ต/ความคิดเห็นในทิกเก็ต (เลขแจ้งซ่อม, ชื่อ-เบอร์, เลขตัวถัง, ที่อยู่ + ลิงก์แผนที่) ไม่พิมพ์ซ้ำในแชทลูกค้า</li>'+
+'<li><b>นัดหมายคิวช่าง:</b> แจ้งวันคิว แล้วส่งสรุปยืนยันนัดหมาย เจ้าหน้าที่โทรยืนยันล่วงหน้า 1 วัน และอีกครั้งก่อนถึงหน้างาน 30 นาที</li>'+
+'<li><b>ระหว่างรอ/ตอบข้อมูล:</b> ถ้าต้องตรวจสอบเพิ่ม ให้แจ้งลูกค้าว่าแอดมินจะตรวจสอบแล้วแจ้งกลับ ถ้าอะไหล่ไม่มีจำหน่าย ให้แจ้งตรง ๆ พร้อมขอโทษ</li>'+
+'<li><b>ปิดทิกเก็ต:</b> ส่งข้อความปิดท้าย แล้วผู้รับผิดชอบกดปิดทิกเก็ต</li></ol>'+
+tb('ask','ข้อความขอข้อมูลเปิดเคสซ่อม')+tb('queue','แจ้งคิวเข้ารับบริการ')+tb('appt','สรุปยืนยันนัดหมายคิวช่าง (แทนค่าในวงเล็บเหลี่ยม)')+tb('wait','ระหว่างรอตรวจสอบข้อมูล')+tb('photo','ขอรูปเพิ่ม')+tb('nopart','อะไหล่ไม่มีจำหน่ายแล้ว')+tb('close1','ปิดท้าย (หลังให้บริการเสร็จ)')+tb('close2','ปิดท้าย (เชิญสอบถามเพิ่ม)')+
+'<h4 style="margin:18px 0 4px">EM - Dealer Service (LINE) — ร้านค้า/Dealer สั่งอะไหล่</h4><ol style="margin:0 0 6px;padding-left:20px;line-height:1.7">'+
+'<li><b>ร้านค้าส่งรายการสั่ง:</b> ส่งใบสั่งซื้อ/รายการอะไหล่ในแชท (ข้อความหรือรูป)</li>'+
+'<li><b>ทีม Service Dealer ตรวจและแจ้งยอด:</b> แจ้งรายการ ยอด และค่าส่ง ร้านค้าส่งสลิปโอนเงินกลับมาในแชท</li>'+
+'<li><b>แพ็คและออกบิลจัดส่ง:</b> แจ้งว่าแพ็คแล้วและออกบิลจัดส่งแล้ว ถ้าร้านขอเพิ่มรายการก่อนแพ็คทำได้ แต่ถ้าแพ็คแล้วให้สั่งรอบใหม่</li>'+
+'<li><b>ปิดทิกเก็ต:</b> ขอบคุณลูกค้า แล้วผู้รับผิดชอบกดปิดทิกเก็ต</li></ol>'+
+tb('packed','แจ้งแพ็คสินค้าแล้ว')+tb('bill','แจ้งออกบิลจัดส่ง')+tb('addmore','ร้านขอสั่งเพิ่ม (ก่อนแพ็ค)')+tb('late','ร้านขอเพิ่มแต่แพ็คแล้ว')+tb('thanks','ปิดท้าย')+
+'<p class="meta" style="margin-top:14px">หมายเหตุ: สรุปนี้ได้จากทิกเก็ตตัวอย่างไม่กี่รายการ ข้อความที่ทีมใช้จริงอาจต่างกันตามแต่ละเคส โปรดตรวจก่อนส่ง</p></div>'}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-rgcopy]');if(!b)return;const t=T[b.dataset.rgcopy];(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('คัดลอกแล้ว'),()=>toast('คัดลอกไม่สำเร็จ'))});
+setInterval(()=>{if(S.view!=='replyguide')return;const s=document.getElementById('v-replyguide');if(s&&!document.getElementById('rg-flow'))s.insertAdjacentHTML('beforeend',html())},1000);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
