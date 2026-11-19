@@ -64,7 +64,7 @@ h3{font-family:var(--display);font-size:16px;margin:0 0 10px}
 .banner.info{background:var(--accent-soft);color:var(--ink)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
 .grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
-#d-shot .grid2{display:none!important}
+#d-shot .grid2{grid-template-columns:minmax(0,1fr)!important}#d-shot .grid2>*:nth-child(2){display:none!important}
 .grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .gridh{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media (max-width:1000px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -604,7 +604,7 @@ a{transition:color .12s}
       <div class="kb"><span>สัดส่วนสถานะจบ</span><b id="k-rate">-</b></div>
     </div>
     <div class="grid2" style="margin-bottom:16px;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)">
-      <div class="rtable"><div class="rt-h">การลงข้อมูลแยกตามหัวข้อ</div><table id="t-topic"></table></div>
+      <div class="rtable"><div class="rt-h">หัวข้อที่ลูกค้าติดต่อมา</div><table id="t-topic"></table></div>
       <div class="panel"><h3 id="trend-title">จำนวนเคสรายชั่วโมง</h3><div class="cols" id="d-trend" style="height:220px"></div></div>
     </div>
     <div class="grid4" style="margin-bottom:16px">
