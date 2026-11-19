@@ -4675,8 +4675,9 @@ function ppMotoKey(m){try{const S0=S.dms||[];if(!S0.length){try{ensureDms()}catc
 function ppApplyMap(){const B=S.bom;if(!B||!B.length||B.__pm||!S.parts||!S.parts.length)return;const nm={};S.parts.forEach(p=>{nm[p.s]=p.name});const keep=B.filter(r=>!PP_MAP[String(r.s).toUpperCase()]);Object.keys(PP_MAP).forEach(k=>PP_MAP[k].forEach(m=>keep.push({m:m,q:1,s:k,v:'',name:nm[k]||''})));keep.__pm=1;S.bom=keep;S.bomIdx=null}
 window.__ppImg=window.__ppImg||{};
 window.__ppEdit=window.__ppEdit||{};
+{const __pu=ppUsage;let __src=null,__out=null;ppUsage=function(){const m=__pu.apply(this,arguments);if(!m||typeof m.get!=='function'||typeof m.delete!=='function')return m;if(m===__src)return __out;const c=new Map(m);Object.keys(PP_MAP).forEach(k=>c.delete(k));__src=m;__out=c;return c}}
 function renderParts2(){ppApplyMap();const off=window.__ppOff,im=window.__ppImg,ed=window.__ppEdit;const P0=S.parts,B0=S.bom;try{
- const P=(P0||[]).filter(p=>!off[p.s]).map(p=>{let q=p;const e=ed[p.s];if(e){q=Object.assign({},q,{name:e.name||q.name,u:(e.u!==undefined&&e.u!=='')?e.u:q.u,p:(e.p!==undefined&&e.p!==null&&e.p!=='')?+e.p:q.p});q.k=ppKey(q.name)}if(im[p.s]&&!q.img)q=Object.assign({},q,{img:im[p.s]});return q});
+ const P=(P0||[]).filter(p=>!off[p.s]).map(p=>{let q=p;const e=ed[p.s];if(e){q=Object.assign({},q,{name:e.name||q.name,u:(e.u!==undefined&&e.u!=='')?e.u:q.u,p:(e.p!==undefined&&e.p!==null&&e.p!=='')?+e.p:q.p});q.k=ppKey(q.name)}if(im[p.s]&&!q.img)q=Object.assign({},q,{img:im[p.s]});if(PP_MAP[p.s])q=Object.assign({},q,{k:'~'+p.s});return q});
  const have=new Set(P.map(p=>p.s));Object.keys(ed).forEach(k=>{const e=ed[k];if(!have.has(k)&&!off[k]){P.push({s:k,name:e.name||k,u:e.u||'',p:+e.p||0,k:ppKey(e.name||k),img:im[k]||''})}});
  let B=(B0||[]).filter(r=>!off[String(r.s)]&&!off[String(r.s).toUpperCase()]);
  Object.keys(ed).forEach(k=>{const e=ed[k];if(e.models&&e.models.length){B=B.filter(r=>String(r.s)!==k);e.models.forEach(m=>B.push({m:m,q:1,s:k,v:'',name:e.name||''}))}});
