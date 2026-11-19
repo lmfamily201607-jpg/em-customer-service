@@ -1919,7 +1919,7 @@ const WC_MAINT=[['เช็คระยะ 1,000 กม. / 3 เดือน',15
 const topicBy=title=>S.topics.find(t=>t.title.trim()===title);
 const num=v=>{const n=parseFloat(String(v??'').replace(/[^\d.]/g,''));return isNaN(n)?0:n};
 const baht=n=>Math.round(n).toLocaleString('th-TH')+' บาท';
-function wcClassOf(m){m=String(m||'');if(/GRAB/i.test(m))return 'grab';if(/รถจักรยานยนต์ไฟฟ้า|มอเตอร์ไซค์ไฟฟ้า|รถมอเตอร์ไซค์/.test(m))return 'moto';if(/^\s*ECO\b/i.test(m))return 'eco';return 'em'}
+function wcClassOf(m){m=String(m||'');if(/GRAB/i.test(m))return 'grab';if(/รถจักรยานยนต์ไฟฟ้า|มอเตอร์ไซค์ไฟฟ้า|รถมอเตอร์ไซค์/.test(m))return 'moto';if(/^\s*ECO\b/i.test(m))return 'eco';if(typeof ppMotoKey==='function'&&ppMotoKey(m))return 'moto';return 'em'}
 function wcChemOf(m){return /lithium|lithuim|ลิเธียม|ลิเธี่ยม/i.test(m)?'li':/lead|acid|ตะกั่ว/i.test(m)?'lead':''}
 function wcRules(cls,buy){
   const L=[],add=(items,months,km)=>items.forEach(item=>L.push({item,months,km}));
@@ -4669,7 +4669,9 @@ setInterval(()=>{try{tick()}catch(e){}},1500);
 })();
 const PP_MAP={'93031801125':['QAREZ','OWEN','LEGEND'],'97031883127':['OWEN LONG RANGE'],'97031873024':['ENZO','MILANO'],'93031801124':['LEGEND PRO']};
 window.__ppOff=window.__ppOff||{};
-function ppMatch(s,mk){s=String(s||'');if(mk==='LEGEND')s=s.replace(/LEGENDPRO/g,'');return s.includes(mk)}
+const __ppLong={};function ppLongKeys(mk){const sig=(S.bom?S.bom.length:0)+':'+(S.ncr?S.ncr.length:0);if(__ppLong.sig!==sig){for(const k in __ppLong)delete __ppLong[k];__ppLong.sig=sig;const set=new Set();try{allModels().forEach(m=>set.add(bomKey(m)));(S.bom||[]).forEach(r=>set.add(bomKey(r.m)))}catch(e){}__ppLong.all=[...set].filter(Boolean)}if(!__ppLong[mk])__ppLong[mk]=__ppLong.all.filter(k=>k!==mk&&k.includes(mk)).sort((a,b)=>b.length-a.length);return __ppLong[mk]}
+function ppMatch(s,mk){s=String(s||'').toUpperCase().replace(/[\s\-_.]/g,'');if(mk==='LEGEND')s=s.replace(/LEGENDPRO/g,'');ppLongKeys(mk).forEach(k=>{s=s.split(k).join('~')});return s.includes(mk)}
+function ppMotoKey(m){try{const S0=S.dms||[];if(!S0.length){try{ensureDms()}catch(e){}return false}if(!window.__motoSet||window.__motoSet.n!==S0.length){const st=new Set();S0.forEach(r=>{if(/^รถจักรยานยนต์ไฟฟ้า/.test(String(r.m||''))){const k=bomKey(r.mf||'');if(k)st.add(k)}});window.__motoSet={n:S0.length,st:st}}const k=bomKey(String(m||'').replace(/^รถจักรยานยนต์ไฟฟ้า\s*/,'').trim());return !!k&&window.__motoSet.st.has(k)}catch(e){return false}}
 function ppApplyMap(){const B=S.bom;if(!B||!B.length||B.__pm||!S.parts||!S.parts.length)return;const nm={};S.parts.forEach(p=>{nm[p.s]=p.name});const keep=B.filter(r=>!PP_MAP[String(r.s).toUpperCase()]);Object.keys(PP_MAP).forEach(k=>PP_MAP[k].forEach(m=>keep.push({m:m,q:1,s:k,v:'',name:nm[k]||''})));keep.__pm=1;S.bom=keep;S.bomIdx=null}
 function renderParts2(){ppApplyMap();const off=window.__ppOff,hide=Object.keys(off);if(!hide.length)return renderParts2Raw();const P0=S.parts,B0=S.bom;try{S.parts=(P0||[]).filter(p=>!off[p.s]);S.bom=(B0||[]).filter(r=>!off[String(r.s)]&&!off[String(r.s).toUpperCase()]);S.bomIdx=null;return renderParts2Raw()}finally{S.parts=P0;S.bom=B0;S.bomIdx=null}}
 (function(){let sb=null,last=0,show=false;
