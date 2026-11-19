@@ -4725,6 +4725,18 @@ const st=document.createElement('style');st.textContent='a[data-v="replyguide"]{
 setInterval(function(){try{const w=S.view;if(w!=='assistant'&&w!=='replyguide')return;const v=document.getElementById('v-'+w);if(!v||v.querySelector('#qa-tabs'))return;const d=document.createElement('div');d.id='qa-tabs';d.innerHTML='<a href="#assistant" class="'+(w==='assistant'?'on':'')+'">ถามผู้ช่วย (ค้นหา + AI ร่างคำตอบ)</a><a href="#replyguide" class="'+(w==='replyguide'?'on':'')+'">คำถาม-คำตอบสำเร็จรูป (คัดลอกไปตอบ)</a>';v.insertBefore(d,v.firstChild)}catch(e){}},500);
 })();
 
+/*QAHITS*/(function(){
+let cache=null,at=0;
+async function cards(){if(cache&&Date.now()-at<60000)return cache;try{const s=await S.db.collection('replyguide').get();cache=s.docs.map(d=>d.data());at=Date.now()}catch(e){cache=cache||[]}return cache}
+let busy=false;
+setInterval(async function(){try{if(busy||S.view!=='assistant')return;const h=document.getElementById('ask-hits');const qe=document.getElementById('ask-q');const q=qe&&qe.value.trim();if(!h||!q||!h.children.length)return;const ex=h.querySelector('#rg-hit');if(ex&&ex.dataset.q===q)return;busy=true;
+const p=kwPrep(q);const rows=(await cards()).filter(x=>x&&x.q&&x.a).map(x=>{const all=((x.cat||'')+' '+x.q+' '+x.a).toLowerCase(),head=((x.cat||'')+' '+x.q).toLowerCase();const s=kwScore(all,p),t=kwScore(head,p);return{x,sc:s.cover+t.cover*.8+s.exact}}).filter(r=>r.sc>=.6).sort((a,b)=>b.sc-a.sc).slice(0,4);
+if(ex)ex.remove();const d=document.createElement('div');d.id='rg-hit';d.dataset.q=q;d.style.cssText='border:1px solid #c2680a;background:#fff8ef;border-radius:10px;padding:10px 12px;margin-bottom:12px';
+d.innerHTML='<b>คำตอบสำเร็จรูปของทีม (จากเมนู คำถาม-คำตอบ)</b>'+(rows.length?rows.map((r,i)=>'<div style="border-top:1px dashed #e0c9a8;margin-top:8px;padding-top:8px"><span class="meta">'+esc(r.x.cat||'')+'</span> <b>'+esc(r.x.q)+'</b><div style="white-space:pre-wrap;margin:4px 0">'+esc(r.x.a)+'</div><button type="button" data-rghit="'+i+'">คัดลอกคำตอบ</button></div>').join(''):'<div class="meta" style="margin-top:6px">ไม่พบคำตอบสำเร็จรูปที่ตรงกับคำถามนี้</div>');
+d.querySelectorAll('[data-rghit]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(rows[+b.dataset.rghit].x.a);toast('คัดลอกคำตอบแล้ว')}catch(e){toast('คัดลอกไม่ได้ในเบราว์เซอร์นี้')}});
+h.insertBefore(d,h.firstChild)}catch(e){}finally{busy=false}},900);
+})();
+
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
