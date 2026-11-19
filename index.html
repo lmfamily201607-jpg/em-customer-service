@@ -4243,7 +4243,7 @@ function findImg(model){const P=S.pimg||{};const m=String(model||'').trim();if(!
  const up=m.toUpperCase().replace(/\s+/g,' ');let best=null,bl=0;
  const tries=[m];try{tries.push(canonModel(m))}catch(e){}
  for(const t of tries){const k=pdKey(t);if(P[k]&&P[k].img)return {m:P[k].m||t,img:P[k].img}}
- Object.keys(P).forEach(k=>{const o=P[k];if(!o||!o.img||!o.m)return;const n=String(o.m).toUpperCase().replace(/\s+/g,' ');if((up===n||up.includes(n)||n.includes(up))&&n.length>bl){best=o;bl=n.length}});
+ Object.keys(P).forEach(k=>{const o=P[k];if(!o||!o.img||!o.m)return;const n=String(o.m).toUpperCase().replace(/\s+/g,' ');if((up===n||up.includes(n)||up.replace(/^EM /,'')===n.replace(/^EM /,''))&&n.length>bl){best=o;bl=n.length}});
  return best?{m:best.m,img:best.img}:null}
 function show(){if(S.view!=='warranty')return;if(S.db&&typeof ensurePimg==='function')ensurePimg();
  const ver=document.getElementById('wc-verdict');if(!ver||!ver.parentNode)return;
@@ -4351,7 +4351,7 @@ function findImg(model){const P=S.pimg||{};const m=String(model||'').trim();if(!
  const up=m.toUpperCase().replace(/\s+/g,' ');let best=null,bl=0;
  const tries=[m];try{tries.push(canonModel(m))}catch(e){}
  for(const t of tries){const k=pdKey(t);if(P[k]&&P[k].img)return {m:P[k].m||t,img:P[k].img}}
- Object.keys(P).forEach(k=>{const o=P[k];if(!o||!o.img||!o.m)return;const n=String(o.m).toUpperCase().replace(/\s+/g,' ');if((up===n||up.includes(n)||n.includes(up))&&n.length>bl){best=o;bl=n.length}});
+ Object.keys(P).forEach(k=>{const o=P[k];if(!o||!o.img||!o.m)return;const n=String(o.m).toUpperCase().replace(/\s+/g,' ');if((up===n||up.includes(n)||up.replace(/^EM /,'')===n.replace(/^EM /,''))&&n.length>bl){best=o;bl=n.length}});
  return best?{m:best.m,img:best.img}:null}
 function show(){if(S.view!=='parts')return;if(S.db&&typeof ensurePimg==='function')ensurePimg();
  const anchor=document.getElementById('pp-vin-res');if(!anchor||!anchor.parentNode)return;
