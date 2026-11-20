@@ -411,6 +411,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#export" data-v="export">ส่งออกข้อมูล</a>
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
       <a href="#replyguide" data-v="replyguide">วิธีตอบคำถามลูกค้า</a>
+      <a href="#dealerlabor" data-v="dealerlabor">ทำเบิกค่าแรง Dealer</a>
       <a href="#problems" data-v="problems">ปัญหา</a>
       <a href="#manual" data-v="manual">คู่มือการใช้งาน</a>
       <a href="#import" data-v="import">นำเข้าข้อมูล</a>
@@ -457,7 +458,7 @@ progress{width:100%;accent-color:var(--accent)}
     // Grouped top menu. Links keep their data-v/href; only their place on screen changes.
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
-      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','extfollow','chat']],
+      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','dealerlabor','extfollow','chat']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair','advice']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','problems','manual','links']],
         ['rep','📈','รายงาน',['kpi','kpidash','activity','followup','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
@@ -1084,6 +1085,52 @@ a{transition:color .12s}
     <div id="rg-body"></div>
   </section>
 
+  <!-- Dealer labor claim -->
+  <section id="v-dealerlabor" hidden>
+    <h2>ทำเบิกค่าแรง Dealer</h2>
+    <p class="sub">ขั้นตอนการเบิกค่าแรงเคลมให้ร้านค้า/ดีลเลอร์ หน้าที่ของแต่ละฝ่าย และนโยบายตัดจบเคสค้างเก่า</p>
+    <div class="panel">
+      <h3>ขั้นตอนการปฏิบัติงาน</h3>
+      <p class="meta">เริ่มเมื่อได้รับอะไหล่เสียคืนจากร้านค้า</p>
+      <ol style="margin:6px 0 0;padding-left:22px;line-height:1.9">
+        <li><b>ลงบันทึกคืนอะไหล่เสียเข้าคลัง (Warehouse)</b></li>
+        <li><b>บันทึกจัดทำ "ใบสรุปค่าแรงเคลม"</b> และเปลี่ยนสถานะเป็น "รอค่าแรง"</li>
+        <li><b>ตรวจสอบอัตราค่าแรง/ค่าส่ง</b> จากระบบ Excel / DMS / บัญชี</li>
+        <li><b>ฝ่ายบัญชีโอนเงินให้ร้านค้า/ดีลเลอร์</b> (โอนเป็นยอดรวมได้)</li>
+        <li><b>ฝ่ายบัญชีเพิ่มคอมเมนต์ในทิกเก็ต</b> ภายใน 3 วันหลังโอนเงิน</li>
+        <li><b>ฝ่ายบริการ (Service) ตรวจสอบและปิดเคส (Close Ticket)</b></li>
+      </ol>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h3>หน้าที่และความรับผิดชอบ</h3>
+      <h4 style="margin:12px 0 4px">เจ้าหน้าที่ดำเนินการ (ชมพู่ / แอดมิน)</h4>
+      <ul style="margin:0;padding-left:20px;line-height:1.8">
+        <li>รับอะไหล่เสียและทำเรื่องคืนเข้าคลังสินค้า</li>
+        <li>จัดทำใบสรุปค่าแรงเคลม และตั้งเรื่องเบิกค่าแรงตามมาตรฐาน</li>
+        <li>ตรวจสอบข้อมูลใน DMS/Ticket เพื่อรวมรายการเบิก</li>
+      </ul>
+      <h4 style="margin:12px 0 4px">ฝ่ายบัญชี (AT Account)</h4>
+      <ul style="margin:0;padding-left:20px;line-height:1.8">
+        <li>ตรวจสอบรายการซ่อมและอัตราค่าบริการ</li>
+        <li>ดำเนินการโอนเงิน (โอนเป็นยอดรวมได้)</li>
+        <li>เพิ่มคอมเมนต์ในทิกเก็ตว่า "โอนค่าแรงเรียบร้อยแล้ว เมื่อวันที่ [ระบุวันที่]" ภายในไม่เกิน 3 วันหลังโอนเงิน (ไม่จำเป็นต้องแนบสลิปโอนเงินก้อนใหญ่ลงในทิกเก็ตย่อย)</li>
+      </ul>
+      <h4 style="margin:12px 0 4px">ฝ่ายบริการ (Service / เพชร)</h4>
+      <ul style="margin:0;padding-left:20px;line-height:1.8">
+        <li>ตรวจสอบคอมเมนต์จากฝ่ายบัญชี</li>
+        <li>กดปิดเคส (Close Ticket) ในระบบ เพื่อป้องกันการดึงข้อมูลมาทำเรื่องเบิกซ้ำ</li>
+      </ul>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h3>นโยบายตัดจบเคสค้างเก่า (Cut-off) และรอบการจ่ายเงิน</h3>
+      <ul style="margin:6px 0 0;padding-left:20px;line-height:1.8">
+        <li><b>Cut-off:</b> เคสที่มีทิกเก็ตตั้งแต่เดือน 1 ถึงเดือน 8 ไม่รับทำเรื่องเบิกค่าแรงในระบบปกติแล้ว ถ้าร้านค้ายืนยันว่ายังไม่ได้รับเงิน ให้ตรวจสอบประวัติและพิจารณาเป็นรายเคส (Case-by-case) เท่านั้น</li>
+        <li><b>งานปกติ:</b> เริ่มจับเฉพาะทิกเก็ตตั้งแต่เดือน 9 เป็นต้นไป</li>
+        <li><b>รอบส่งเอกสารและจ่ายเงิน:</b> ส่งเอกสารทุก 15 วัน (รอบจ่ายเงินวันที่ 10 และวันที่ 15 ตามระบบพย.) ถ้าทำเอกสารเสร็จแล้วส่งต่อได้ทันที ไม่ต้องรอให้ตรงวัน</li>
+      </ul>
+    </div>
+  </section>
+
   <!-- Problems guide -->
   <section id="v-problems" hidden>
     <h2>ปัญหา</h2>
@@ -1393,7 +1440,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','dealerlabor','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
