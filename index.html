@@ -5035,6 +5035,71 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
   }
   setInterval(mount,1000);
 })();
+/*INTAKECFG*/
+(function(){
+  const DOC='audit/_cfg/intake';
+  let cfg={fields:[],channels:[],vehicles:[],categories:[]},loading=false,done=false;
+  const TYPES={text:'ข้อความสั้น',area:'ข้อความยาว',num:'ตัวเลข',date:'วันที่',sel:'ตัวเลือก'};
+  const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const K=f=>'cf_'+f.id;
+  function addU(arr,extra){(extra||[]).forEach(x=>{x=String(x).trim();if(x&&!arr.includes(x)){const i=arr.indexOf('อื่นๆ');if(i>=0)arr.splice(i,0,x);else arr.push(x)}})}
+  function applyCfg(){
+    addU(CHANNELS,cfg.channels);addU(VEHICLES,cfg.vehicles);addU(CATEGORIES,cfg.categories);
+    (cfg.fields||[]).forEach(f=>{const k=K(f);LABEL[k]=f.label;if(!EDITABLE.includes(k))EDITABLE.push(k);const i=EXPORT_COLS.findIndex(c=>c[0]===k);if(i>=0)EXPORT_COLS[i][1]=f.label;else EXPORT_COLS.push([k,f.label])});
+  }
+  const _ff=formFields;
+  formFields=function(p,t){t=t||{};let h=_ff(p,t);const fl=cfg.fields||[];if(!fl.length)return h;
+    return h+'<div class="fields" style="margin-top:6px">'+fl.map(f=>{const k=K(f),v=t[k]||'',id=p+'-'+k;let inp;
+      if(f.type==='area')inp='<textarea id="'+id+'" rows="2">'+E(v)+'</textarea>';
+      else if(f.type==='sel')inp='<select id="'+id+'"><option value="">เลือก</option>'+(f.opts||[]).map(o=>'<option'+(o===v?' selected':'')+'>'+E(o)+'</option>').join('')+'</select>';
+      else inp='<input id="'+id+'" type="'+(f.type==='num'?'number':f.type==='date'?'date':'text')+'" value="'+E(v)+'" maxlength="500">';
+      return '<div class="f"><label for="'+id+'">'+E(f.label)+'</label>'+inp+'</div>'}).join('')+'</div>';
+  };
+  const _rf=readForm;
+  readForm=function(p){const t=_rf(p);(cfg.fields||[]).forEach(f=>{const el=document.getElementById(p+'-'+K(f));t[K(f)]=el?String(el.value||'').trim():''});return t};
+  function patchTable(){
+    const tb=document.getElementById('sc-rows');if(!tb)return;const head=tb.closest('table').querySelector('thead tr');if(!head)return;
+    const fl=cfg.fields||[];
+    if(head.dataset.cf!==String(fl.length)){head.querySelectorAll('th.cf').forEach(x=>x.remove());const last=head.lastElementChild;fl.forEach(f=>{const th=document.createElement('th');th.className='cf';th.textContent=f.label;head.insertBefore(th,last)});head.dataset.cf=String(fl.length)}
+    tb.querySelectorAll('tr[data-open]').forEach(tr=>{if(tr.dataset.cf===String(fl.length))return;tr.querySelectorAll('td.cf').forEach(x=>x.remove());
+      const t=S.all.find(x=>x.ticketNo===tr.dataset.open)||{};const last=tr.lastElementChild;
+      fl.forEach(f=>{const td=document.createElement('td');td.className='cf sct';td.textContent=t[K(f)]||'';tr.insertBefore(td,last)});tr.dataset.cf=String(fl.length)});
+  }
+  function rowHTML(f){return '<div class="cf-row" data-id="'+E(f.id)+'" style="display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:6px;margin-bottom:6px"><input class="cf-l" value="'+E(f.label)+'" placeholder="ชื่อหัวข้อ" maxlength="60"><select class="cf-t">'+Object.keys(TYPES).map(k=>'<option value="'+k+'"'+(k===f.type?' selected':'')+'>'+TYPES[k]+'</option>').join('')+'</select><input class="cf-o" value="'+E((f.opts||[]).join(', '))+'" placeholder="ตัวเลือก คั่นด้วย , (ชนิดตัวเลือกเท่านั้น)"><button type="button" class="cf-d">ลบ</button></div>'}
+  function openCfg(){
+    modal('<div class="modal-head"><h3 style="margin:0">จัดการหัวข้อรับเรื่อง</h3><button type="button" data-close>ปิด</button></div><div style="padding:4px 2px;max-height:70vh;overflow:auto">'+
+      '<h4 style="margin:6px 0 2px">ช่องเพิ่มเติม</h4><div style="font-size:12px;color:#667085;margin-bottom:8px">ขึ้นในฟอร์มรับเรื่อง ตารางเรื่องที่บันทึกแล้ว และไฟล์ Excel · การลบหัวข้อแค่ซ่อน ข้อมูลที่กรอกไว้ยังอยู่</div>'+
+      '<div id="cf-list">'+(cfg.fields||[]).map(rowHTML).join('')+'</div><button type="button" id="cf-add">+ เพิ่มหัวข้อ</button>'+
+      '<h4 style="margin:16px 0 2px">เพิ่มตัวเลือกในช่องเลือกเดิม</h4><div style="font-size:12px;color:#667085">พิมพ์ 1 บรรทัดต่อ 1 ตัวเลือก (ตัวเลือกเดิมยังอยู่ครบ)</div>'+
+      [['channels','ช่องทางการติดต่อ'],['vehicles','ประเภทรถ'],['categories','การติดต่อเรื่อง']].map(x=>'<label style="display:block;margin-top:8px">'+x[1]+'<textarea id="cfo-'+x[0]+'" rows="3" style="width:100%">'+E((cfg[x[0]]||[]).join('\n'))+'</textarea></label>').join('')+
+      '<div style="margin-top:14px;display:flex;gap:8px;align-items:center"><button type="button" class="primary" id="cf-save">บันทึก</button><span id="cf-msg" style="color:#667085;font-size:13px"></span></div></div>');
+    const list=document.getElementById('cf-list');
+    list.onclick=e=>{if(e.target.classList.contains('cf-d'))e.target.closest('.cf-row').remove()};
+    document.getElementById('cf-add').onclick=()=>{list.insertAdjacentHTML('beforeend',rowHTML({id:'',label:'',type:'text',opts:[]}))};
+    document.getElementById('cf-save').onclick=async()=>{
+      const msg=document.getElementById('cf-msg');
+      const fields=[...list.querySelectorAll('.cf-row')].map((r,i)=>({id:r.dataset.id||('x'+Date.now().toString(36)+i),label:r.querySelector('.cf-l').value.trim(),type:r.querySelector('.cf-t').value,opts:r.querySelector('.cf-o').value.split(',').map(x=>x.trim()).filter(Boolean)})).filter(f=>f.label);
+      const ls=id=>document.getElementById(id).value.split('\n').map(x=>x.trim()).filter(Boolean);
+      const out={fields:fields,channels:ls('cfo-channels'),vehicles:ls('cfo-vehicles'),categories:ls('cfo-categories'),updatedAt:Date.now()};
+      msg.textContent='กำลังบันทึก…';
+      try{await S.db.doc(DOC).set(out);toast('บันทึกหัวข้อแล้ว กำลังรีเฟรชหน้า');setTimeout(()=>location.reload(),900)}catch(e){msg.textContent=(typeof errText==='function'?errText(e):String(e))}
+    };
+  }
+  async function load(){
+    if(loading||done||!S.uid||!S.db)return;loading=true;
+    try{const d=await S.db.doc(DOC).get();const x=d&&d.data?d.data():d;if(x&&typeof x==='object')cfg=Object.assign(cfg,{fields:x.fields||[],channels:x.channels||[],vehicles:x.vehicles||[],categories:x.categories||[]});done=true;applyCfg();
+      const nm=document.getElementById('f-name'),ph=document.getElementById('f-phone');
+      if(S.view==='intake'&&nm&&!nm.value&&!(ph&&ph.value)&&(cfg.fields.length||cfg.channels.length||cfg.vehicles.length||cfg.categories.length))mountIntake();
+    }catch(e){done=true}
+    loading=false;
+  }
+  function mountBtn(){
+    const sec=document.getElementById('v-intake');if(!sec||document.getElementById('cfg-btn')||!S.isAdmin)return;
+    const b=document.createElement('button');b.id='cfg-btn';b.type='button';b.textContent='⚙ จัดการหัวข้อ';b.style.cssText='margin:0 0 10px;padding:6px 14px;border-radius:10px;border:1px solid #d0d5dd;background:#fff;cursor:pointer;font:inherit';b.onclick=openCfg;
+    const sub=sec.querySelector('p.sub');(sub||sec.querySelector('h2')).insertAdjacentElement('afterend',b);
+  }
+  setInterval(()=>{load();mountBtn();if(done)patchTable()},1000);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
