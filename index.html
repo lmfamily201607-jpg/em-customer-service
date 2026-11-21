@@ -4876,7 +4876,8 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
   const C1=['ความรวดเร็วในการนัดหมายและให้บริการ','คุณภาพของงานซ่อม (แก้ปัญหาตรงจุด)','มารยาทและความเป็นมืออาชีพ','ความสะอาดเรียบร้อยหลังเสร็จงาน','ความคุ้มค่าของราคา'];
   const C2=['การรับแจ้งและประสานงาน','การให้ข้อมูลเกี่ยวกับการซ่อม','การนัดหมายเข้าบริการ','การเข้าบริการตามเวลานัดหมาย','ความสุภาพและความรู้ของช่าง','คำแนะนำหลังการซ่อม'];
   const CH={O:'Onsite (ช่างไปหน้างาน)',H:'HomePro / Siamchai',L:'LINE',S:'Showroom',D:'Dealer',X:'อื่นๆ'};
-  let rows=null,loading=false,loadedAt=0,month='all',cmt='low',err='';
+  let rows=null,loading=false,loadedAt=0,month='all',cmt='low',err='',chf='all';
+  function chOk(r){return chf==='all'||(chf==='none'?!r[5]:r[5]===chf)}
   const $=id=>document.getElementById(id);
   const avg=a=>{a=a.filter(x=>typeof x==='number');return a.length?a.reduce((p,c)=>p+c,0)/a.length:null};
   const f1=x=>x==null?'-':x.toFixed(2);
@@ -4897,20 +4898,21 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     if(err){b.innerHTML='<div class="card">โหลดข้อมูลไม่สำเร็จ: '+esc2(err)+'</div>';return}
     if(!rows){b.innerHTML='<div class="card">กำลังโหลด…</div>';return}
     if(!rows.length){b.innerHTML='<div class="card">ยังไม่มีข้อมูลแบบประเมิน</div>';return}
-    const months=[...new Set(rows.map(r=>r[0]))].sort((a,c)=>a-c);
-    const R=month==='all'?rows:rows.filter(r=>String(r[0])===month);
+    const months=[...new Set(rows.filter(chOk).map(r=>r[0]))].sort((a,c)=>a-c);
+    const R=rows.filter(r=>(month==='all'||String(r[0])===month)&&chOk(r));
     const O=R.map(ov).filter(x=>x!=null);
     const sat=O.filter(x=>x>=4).length,bad=O.filter(x=>x<3).length;
     const F2=R.filter(r=>r[1]===2),okn=F2.filter(r=>!r[4]).length;
     let h='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0">'+
       '<label>เดือนที่ซ่อม <select id="ks-m" style="padding:6px 10px;border-radius:8px;border:1px solid #d0d5dd"><option value="all">ทุกเดือน</option>'+
       months.map(m=>'<option value="'+m+'"'+(String(m)===month?' selected':'')+'>'+MN[m]+' 2569</option>').join('')+'</select></label>'+
+      '<label>ช่องทาง <select id="ks-ch" style="padding:6px 10px;border-radius:8px;border:1px solid #d0d5dd"><option value="all">ทุกช่องทาง</option>'+Object.keys(CH).concat('none').filter(k=>rows.some(r=>k==='none'?!r[5]:r[5]===k)).map(k=>'<option value="'+k+'"'+(k===chf?' selected':'')+'>'+(k==='none'?'ไม่ระบุช่องทาง (แบบเดิม)':CH[k])+'</option>').join('')+'</select></label>'+
       '<button class="btn" id="ks-r" type="button">รีเฟรชข้อมูล</button></div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px">'+
       [['จำนวนแบบประเมิน',R.length+' ฉบับ','#1d2939'],['คะแนนเฉลี่ยรวม (เต็ม 5)',f1(avg(O)),col(avg(O))],['พอใจ (4–5 คะแนน)',pc(sat,O.length),'#0f9145'],['ไม่พอใจ (ต่ำกว่า 3)',pc(bad,O.length),bad?'#d92d20':'#0f9145'],['ใช้งานได้ปกติหลังซ่อม',F2.length?pc(okn,F2.length):'-','#1d2939']].map(t=>
       '<div style="background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:12px 14px"><div style="font-size:12px;color:#667085">'+t[0]+'</div><div style="font-size:26px;font-weight:700;color:'+t[2]+'">'+t[1]+'</div></div>').join('')+'</div>';
     h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px">คะแนนรายเดือน (ตามเดือนที่เข้าซ่อม)</h3><table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#667085;font-size:13px"><th>เดือน</th><th>จำนวน</th><th>คะแนนเฉลี่ย</th><th style="width:40%"></th><th>พอใจ ≥4</th></tr>'+
-      months.map(m=>{const rr=rows.filter(r=>r[0]===m).map(ov).filter(x=>x!=null);const a=avg(rr);return '<tr style="border-top:1px solid #eef2f6"><td>'+MN[m]+'</td><td>'+rr.length+'</td><td style="font-weight:600;color:'+col(a)+'">'+f1(a)+'</td><td>'+bar(a,5)+'</td><td>'+pc(rr.filter(x=>x>=4).length,rr.length)+'</td></tr>'}).join('')+'</table></div>';
+      months.map(m=>{const rr=rows.filter(r=>r[0]===m&&chOk(r)).map(ov).filter(x=>x!=null);const a=avg(rr);return '<tr style="border-top:1px solid #eef2f6"><td>'+MN[m]+'</td><td>'+rr.length+'</td><td style="font-weight:600;color:'+col(a)+'">'+f1(a)+'</td><td>'+bar(a,5)+'</td><td>'+pc(rr.filter(x=>x>=4).length,rr.length)+'</td></tr>'}).join('')+'</table></div>';
     function crit(list,title,rs){
       if(!rs.length)return '';
       return '<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 4px">'+title+'</h3><div style="font-size:12px;color:#667085;margin-bottom:8px">'+rs.length+' ฉบับ</div><table style="width:100%;border-collapse:collapse">'+
@@ -4926,6 +4928,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     b.innerHTML=h;
     $('ks-m').onchange=e=>{month=e.target.value;render()};
     $('ks-c').onchange=e=>{cmt=e.target.value;render()};
+    $('ks-ch').onchange=e=>{chf=e.target.value;render()};
     $('ks-r').onclick=()=>load(true);
   }
   setInterval(()=>{const v=$('v-kpidash');if(v&&!v.hidden&&S.uid&&S.isAdmin&&$('ks-body'))load(false)},1500);
