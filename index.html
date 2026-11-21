@@ -418,7 +418,6 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
       
       <a href="#kpidash" data-v="kpidash">แดชบอร์ด KPI</a>
-      <a href="#kpisat" data-v="kpisat">KPI ความพึงพอใจ</a>
       <a href="#activity" data-v="activity">รายงานการทำงาน USER</a>
       <a href="#followup" data-v="followup">รายงานติดตามเคส</a>
       <a href="#users" data-v="users">จัดการผู้ใช้</a>
@@ -461,7 +460,7 @@ progress{width:100%;accent-color:var(--accent)}
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','dealerlabor','extfollow','chat']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair','advice']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','problems','manual','links']],
-        ['rep','📈','รายงาน',['kpi','kpidash','kpisat','activity','followup','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
+        ['rep','📈','รายงาน',['kpi','kpidash','activity','followup','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
       const planned=new Set(GROUPS.flatMap(g=>g[3])),extra=links.filter(a=>!planned.has(a.dataset.v)).map(a=>a.dataset.v);
@@ -1165,11 +1164,6 @@ a{transition:color .12s}
     </div>
   </section>
 
-  <section id="v-kpisat" hidden>
-    <h2>KPI ความพึงพอใจ</h2>
-    <p class="sub">ผลแบบประเมินความพึงพอใจหลังรับบริการ Onsite · ข้อมูลจาก Google Sheet "ประเมิน Onsite" · ดูได้เฉพาะผู้ดูแลระบบ</p>
-    <div id="ks-body"></div>
-  </section>
   <!-- KPI DASHBOARD -->
   <section id="v-kpidash" hidden>
     <h2>แดชบอร์ด KPI</h2>
@@ -1447,7 +1441,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','dealerlabor','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','kpisat','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','dealerlabor','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1491,7 +1485,7 @@ function errText(e){
 /* ---------- team members: nickname, role, menus, edit/delete rights ---------- */
 // Share level stays the hard boundary (db rules); these per-person settings shape menus and buttons on top of it.
 const ROLES={admin:'ผู้ดูแล',callcenter:'Call Center',viewer:'ดูอย่างเดียว'};
-const ADMIN_ONLY=['import','users','kpirep','kpidash','kpisat'];
+const ADMIN_ONLY=['import','users','kpirep','kpidash'];
 const MENU_ALL=VIEWS.filter(v=>v!=='users'&&v!=='kpi'); // admin-only pages, never handed out per user
 const RIGHTS={any:'ทุกเคส',own:'เฉพาะเคสที่ตัวเองรับ',none:'ไม่ได้'};
 const PRESET={
@@ -4934,7 +4928,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     $('ks-c').onchange=e=>{cmt=e.target.value;render()};
     $('ks-r').onclick=()=>load(true);
   }
-  setInterval(()=>{const v=$('v-kpisat');if(v&&!v.hidden&&S.uid)load(false)},1500);
+  setInterval(()=>{const v=$('v-kpidash');if(v&&!v.hidden&&S.uid&&S.isAdmin&&$('ks-body'))load(false)},1500);
 })();
 /*KPIZP*/
 (function(){
@@ -4987,6 +4981,39 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
   }
   function mount(){const sec=$('v-kpidash');if(!sec||$('zp-wrap'))return;const w=document.createElement('div');w.id='zp-wrap';w.style.marginTop='28px';w.innerHTML='<h2>ประสิทธิภาพแชท Zaapi</h2><p class="sub">การตอบกลับและการทำงานของทีม ดึงจาก Zaapi Analytics อัตโนมัติทุก 2 ชั่วโมง</p><div id="zp-body"></div>';sec.appendChild(w)}
   setInterval(()=>{mount();const v=$('v-kpidash');if(v&&!v.hidden&&S.uid&&S.isAdmin)load(false)},1500);
+})();
+/*KPITABS*/
+(function(){
+  const TABS=[['ov','ภาพรวม KPI'],['zp','การตอบกลับ Zaapi'],['ks','ความพึงพอใจ Onsite']];
+  const K='em_kpi_tab';
+  let cur='ov';try{cur=localStorage.getItem(K)||'ov'}catch(e){}
+  if(!TABS.some(t=>t[0]===cur))cur='ov';
+  function show(t){
+    cur=t;try{localStorage.setItem(K,t)}catch(e){}
+    TABS.forEach(x=>{const p=document.getElementById('kt-'+x[0]);if(p)p.style.display=x[0]===t?'':'none';
+      const b=document.getElementById('ktb-'+x[0]);if(b){const on=x[0]===t;b.style.background=on?'#0f9145':'#fff';b.style.color=on?'#fff':'#1d2939';b.style.borderColor=on?'#0f9145':'#d0d5dd'}});
+  }
+  function mount(){
+    const sec=document.getElementById('v-kpidash');
+    if(!sec||sec.dataset.tabs)return;
+    const zp=document.getElementById('zp-wrap');
+    if(!zp)return;
+    sec.dataset.tabs='1';
+    const sub=sec.querySelector('p.sub');
+    const bar=document.createElement('div');bar.id='kpi-tabs';bar.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px';
+    bar.innerHTML=TABS.map(t=>'<button type="button" id="ktb-'+t[0]+'" style="padding:8px 16px;border-radius:999px;border:1px solid #d0d5dd;cursor:pointer;font:inherit;font-weight:600">'+t[1]+'</button>').join('');
+    const ov=document.createElement('div');ov.id='kt-ov';
+    [...sec.children].forEach(c=>{if(c.tagName==='H2'||c===sub||c===zp)return;ov.appendChild(c)});
+    zp.id='kt-zp';zp.style.marginTop='0';
+    const zh=zp.querySelector('h2'),zs=zp.querySelector('p.sub');if(zh)zh.style.display='none';
+    const ks=document.createElement('div');ks.id='kt-ks';
+    ks.innerHTML='<p class="sub">ผลแบบประเมินความพึงพอใจหลังรับบริการ Onsite · ข้อมูลจาก Google Sheet "ประเมิน Onsite"</p><div id="ks-body"></div>';
+    (sub||sec.querySelector('h2')).insertAdjacentElement('afterend',bar);
+    bar.insertAdjacentElement('afterend',ov);ov.insertAdjacentElement('afterend',zp);zp.insertAdjacentElement('afterend',ks);
+    TABS.forEach(t=>{document.getElementById('ktb-'+t[0]).onclick=()=>show(t[0])});
+    show(cur);
+  }
+  setInterval(mount,1000);
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
