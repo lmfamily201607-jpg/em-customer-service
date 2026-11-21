@@ -418,6 +418,7 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#kpi" data-v="kpi" hidden>KPI รายบุคคล</a>
       
       <a href="#kpidash" data-v="kpidash">แดชบอร์ด KPI</a>
+      <a href="#kpisat" data-v="kpisat">KPI ความพึงพอใจ</a>
       <a href="#activity" data-v="activity">รายงานการทำงาน USER</a>
       <a href="#followup" data-v="followup">รายงานติดตามเคส</a>
       <a href="#users" data-v="users">จัดการผู้ใช้</a>
@@ -460,7 +461,7 @@ progress{width:100%;accent-color:var(--accent)}
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
       const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','dealerlabor','extfollow','chat']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair','advice']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','problems','manual','links']],
-        ['rep','📈','รายงาน',['kpi','kpidash','activity','followup','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
+        ['rep','📈','รายงาน',['kpi','kpidash','kpisat','activity','followup','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
       // any menu not in the plan above is kept in its own group so nothing is lost
       const planned=new Set(GROUPS.flatMap(g=>g[3])),extra=links.filter(a=>!planned.has(a.dataset.v)).map(a=>a.dataset.v);
@@ -1164,6 +1165,11 @@ a{transition:color .12s}
     </div>
   </section>
 
+  <section id="v-kpisat" hidden>
+    <h2>KPI ความพึงพอใจ</h2>
+    <p class="sub">ผลแบบประเมินความพึงพอใจหลังรับบริการ Onsite · ข้อมูลจาก Google Sheet "ประเมิน Onsite" · ดูได้เฉพาะผู้ดูแลระบบ</p>
+    <div id="ks-body"></div>
+  </section>
   <!-- KPI DASHBOARD -->
   <section id="v-kpidash" hidden>
     <h2>แดชบอร์ด KPI</h2>
@@ -1441,7 +1447,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','dealerlabor','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','dealerlabor','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','kpisat','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1485,7 +1491,7 @@ function errText(e){
 /* ---------- team members: nickname, role, menus, edit/delete rights ---------- */
 // Share level stays the hard boundary (db rules); these per-person settings shape menus and buttons on top of it.
 const ROLES={admin:'ผู้ดูแล',callcenter:'Call Center',viewer:'ดูอย่างเดียว'};
-const ADMIN_ONLY=['import','users','kpirep','kpidash'];
+const ADMIN_ONLY=['import','users','kpirep','kpidash','kpisat'];
 const MENU_ALL=VIEWS.filter(v=>v!=='users'&&v!=='kpi'); // admin-only pages, never handed out per user
 const RIGHTS={any:'ทุกเคส',own:'เฉพาะเคสที่ตัวเองรับ',none:'ไม่ได้'};
 const PRESET={
@@ -4869,6 +4875,66 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     apply(h);
   }
   setInterval(mount,1000);mount();
+})();
+/*KPISAT*/
+(function(){
+  const MN=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const C1=['ความรวดเร็วในการนัดหมายและให้บริการ','คุณภาพของงานซ่อม (แก้ปัญหาตรงจุด)','มารยาทและความเป็นมืออาชีพ','ความสะอาดเรียบร้อยหลังเสร็จงาน','ความคุ้มค่าของราคา'];
+  const C2=['การรับแจ้งและประสานงาน','การให้ข้อมูลเกี่ยวกับการซ่อม','การนัดหมายเข้าบริการ','การเข้าบริการตามเวลานัดหมาย','ความสุภาพและความรู้ของช่าง','คำแนะนำหลังการซ่อม'];
+  const CH={O:'Onsite (ช่างไปหน้างาน)',H:'HomePro / Siamchai',L:'LINE',S:'Showroom',D:'Dealer',X:'อื่นๆ'};
+  let rows=null,loading=false,loadedAt=0,month='all',cmt='low',err='';
+  const $=id=>document.getElementById(id);
+  const avg=a=>{a=a.filter(x=>typeof x==='number');return a.length?a.reduce((p,c)=>p+c,0)/a.length:null};
+  const f1=x=>x==null?'-':x.toFixed(2);
+  const pc=(a,b)=>b?(a*100/b).toFixed(1)+'%':'-';
+  function ov(r){return r[3]!=null?r[3]:avg(r[2])}
+  function col(v){return v==null?'#98a2b3':v>=4.5?'#0f9145':v>=4?'#2e9e5b':v>=3?'#f59e0b':'#d92d20'}
+  function bar(v,max){const w=v==null?0:Math.max(2,v/max*100);return '<div style="background:#eef2f6;border-radius:6px;height:14px;min-width:90px"><div style="width:'+w+'%;height:14px;border-radius:6px;background:'+col(v)+'"></div></div>'}
+  function esc2(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+  async function load(force){
+    if(loading||(!force&&rows&&Date.now()-loadedAt<60000))return;
+    loading=true;
+    try{const d=await S.db.doc('audit/_csat/onsite').get();const x=d&&d.data?d.data():d;rows=(x&&x.rows)||[];loadedAt=Date.now();err=''}
+    catch(e){err=(typeof errText==='function'?errText(e):String(e))}
+    loading=false;render();
+  }
+  function render(){
+    const b=$('ks-body');if(!b)return;
+    if(err){b.innerHTML='<div class="card">โหลดข้อมูลไม่สำเร็จ: '+esc2(err)+'</div>';return}
+    if(!rows){b.innerHTML='<div class="card">กำลังโหลด…</div>';return}
+    if(!rows.length){b.innerHTML='<div class="card">ยังไม่มีข้อมูลแบบประเมิน</div>';return}
+    const months=[...new Set(rows.map(r=>r[0]))].sort((a,c)=>a-c);
+    const R=month==='all'?rows:rows.filter(r=>String(r[0])===month);
+    const O=R.map(ov).filter(x=>x!=null);
+    const sat=O.filter(x=>x>=4).length,bad=O.filter(x=>x<3).length;
+    const F2=R.filter(r=>r[1]===2),okn=F2.filter(r=>!r[4]).length;
+    let h='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0">'+
+      '<label>เดือนที่ซ่อม <select id="ks-m" style="padding:6px 10px;border-radius:8px;border:1px solid #d0d5dd"><option value="all">ทุกเดือน</option>'+
+      months.map(m=>'<option value="'+m+'"'+(String(m)===month?' selected':'')+'>'+MN[m]+' 2569</option>').join('')+'</select></label>'+
+      '<button class="btn" id="ks-r" type="button">รีเฟรชข้อมูล</button></div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px">'+
+      [['จำนวนแบบประเมิน',R.length+' ฉบับ','#1d2939'],['คะแนนเฉลี่ยรวม (เต็ม 5)',f1(avg(O)),col(avg(O))],['พอใจ (4–5 คะแนน)',pc(sat,O.length),'#0f9145'],['ไม่พอใจ (ต่ำกว่า 3)',pc(bad,O.length),bad?'#d92d20':'#0f9145'],['ใช้งานได้ปกติหลังซ่อม',F2.length?pc(okn,F2.length):'-','#1d2939']].map(t=>
+      '<div style="background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:12px 14px"><div style="font-size:12px;color:#667085">'+t[0]+'</div><div style="font-size:26px;font-weight:700;color:'+t[2]+'">'+t[1]+'</div></div>').join('')+'</div>';
+    h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px">คะแนนรายเดือน (ตามเดือนที่เข้าซ่อม)</h3><table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#667085;font-size:13px"><th>เดือน</th><th>จำนวน</th><th>คะแนนเฉลี่ย</th><th style="width:40%"></th><th>พอใจ ≥4</th></tr>'+
+      months.map(m=>{const rr=rows.filter(r=>r[0]===m).map(ov).filter(x=>x!=null);const a=avg(rr);return '<tr style="border-top:1px solid #eef2f6"><td>'+MN[m]+'</td><td>'+rr.length+'</td><td style="font-weight:600;color:'+col(a)+'">'+f1(a)+'</td><td>'+bar(a,5)+'</td><td>'+pc(rr.filter(x=>x>=4).length,rr.length)+'</td></tr>'}).join('')+'</table></div>';
+    function crit(list,title,rs){
+      if(!rs.length)return '';
+      return '<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 4px">'+title+'</h3><div style="font-size:12px;color:#667085;margin-bottom:8px">'+rs.length+' ฉบับ</div><table style="width:100%;border-collapse:collapse">'+
+        list.map((l,i)=>{const a=avg(rs.map(r=>r[2][i]));return '<tr style="border-top:1px solid #eef2f6"><td style="padding:5px 0">'+l+'</td><td style="font-weight:600;color:'+col(a)+';width:60px">'+f1(a)+'</td><td style="width:40%">'+bar(a,5)+'</td></tr>'}).join('')+'</table></div>'}
+    h+=crit(C2,'คะแนนรายหัวข้อ — แบบประเมินใหม่',F2)+crit(C1,'คะแนนรายหัวข้อ — แบบประเมินเดิม',R.filter(r=>r[1]===1));
+    const chs=Object.keys(CH).map(k=>({k:k,rs:F2.filter(r=>r[5]===k).map(ov).filter(x=>x!=null)})).filter(c=>c.rs.length);
+    if(chs.length)h+='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px">แยกตามช่องทางที่ใช้บริการ</h3><table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#667085;font-size:13px"><th>ช่องทาง</th><th>จำนวน</th><th>คะแนนเฉลี่ย</th><th style="width:40%"></th></tr>'+
+      chs.map(c=>{const a=avg(c.rs);return '<tr style="border-top:1px solid #eef2f6"><td>'+CH[c.k]+'</td><td>'+c.rs.length+'</td><td style="font-weight:600;color:'+col(a)+'">'+f1(a)+'</td><td>'+bar(a,5)+'</td></tr>'}).join('')+'</table></div>';
+    const CM=R.map(r=>({m:r[0],o:ov(r),low:(ov(r)!=null&&ov(r)<3)||r[2].some(x=>typeof x==='number'&&x<=2),t:[['ข้อเสนอแนะ/ความเห็น',r[6]],['สิ่งที่ประทับใจ',r[7]],['สิ่งที่อยากให้ปรับปรุง',r[8]]].filter(x=>x[1])})).filter(c=>c.t.length&&(cmt==='all'||c.low));
+    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">ความคิดเห็นจากลูกค้า ('+CM.length+')</h3><select id="ks-c" style="padding:6px 10px;border-radius:8px;border:1px solid #d0d5dd"><option value="low"'+(cmt==='low'?' selected':'')+'>เฉพาะเคสที่มีคะแนนต่ำ (มีข้อใดข้อหนึ่ง ≤2)</option><option value="all"'+(cmt==='all'?' selected':'')+'>ทั้งหมด</option></select></div>'+
+      (CM.length?CM.sort((a,c)=>c.m-a.m).map(c=>'<div style="border-top:1px solid #eef2f6;margin-top:8px;padding-top:8px"><div style="font-size:12px;color:#667085;margin-bottom:3px">'+MN[c.m]+' · คะแนนรวม <b style="color:'+col(c.o)+'">'+f1(c.o)+'</b></div>'+c.t.map(x=>'<div><span style="color:#667085">'+x[0]+':</span> '+esc2(x[1])+'</div>').join('')+'</div>').join(''):'<div style="margin-top:8px;color:#667085">ไม่มีรายการ</div>')+'</div>';
+    h+='<p style="font-size:12px;color:#667085;margin-top:10px">หมายเหตุ: ข้อมูลจากแบบประเมิน Onsite (Google Sheet) ไม่เก็บชื่อลูกค้า · แบบเดิมไม่มีข้อ "ภาพรวม" จึงใช้ค่าเฉลี่ยของ 5 หัวข้อแทน · จัดกลุ่มตามเดือนที่เข้าซ่อม</p>';
+    b.innerHTML=h;
+    $('ks-m').onchange=e=>{month=e.target.value;render()};
+    $('ks-c').onchange=e=>{cmt=e.target.value;render()};
+    $('ks-r').onclick=()=>load(true);
+  }
+  setInterval(()=>{const v=$('v-kpisat');if(v&&!v.hidden&&S.uid)load(false)},1500);
 })();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
