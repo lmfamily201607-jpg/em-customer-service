@@ -4840,6 +4840,36 @@ let last=0;try{last=+localStorage.getItem(K)||0}catch(e){}
 if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){}},2500);
 })();
 
+/*MENUHIDE*/
+(function(){
+  const K='em_menu_hidden';
+  const css=document.createElement('style');
+  css.textContent='body.menu-hidden #tabs,body.menu-hidden #emg-fav,body.menu-hidden #wtabs{display:none!important}'+
+  '#menu-hide-btn{margin-left:8px;padding:6px 12px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;cursor:pointer;font:inherit;font-size:13px;white-space:nowrap}'+
+  '#menu-hide-btn:hover{background:#f2f4f7}';
+  document.head.appendChild(css);
+  function apply(h){
+    document.body.classList.toggle('menu-hidden',h);
+    const b=document.getElementById('menu-hide-btn');
+    if(b)b.textContent=h?'☰ แสดงเมนู':'▲ ซ่อนเมนู';
+  }
+  function mount(){
+    if(document.getElementById('menu-hide-btn'))return;
+    const bar=document.querySelector('header.top .bar');
+    if(!bar)return;
+    const b=document.createElement('button');
+    b.id='menu-hide-btn';b.type='button';
+    b.onclick=function(){
+      const h=!document.body.classList.contains('menu-hidden');
+      try{localStorage.setItem(K,h?'1':'0')}catch(e){}
+      apply(h);
+    };
+    bar.appendChild(b);
+    let h=false;try{h=localStorage.getItem(K)==='1'}catch(e){}
+    apply(h);
+  }
+  setInterval(mount,1000);mount();
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
