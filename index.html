@@ -5100,6 +5100,69 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
   }
   setInterval(()=>{load();mountBtn();if(done)patchTable()},1000);
 })();
+/*DLDOC*/
+(function(){
+  const P='audit/_dlabor/';let sbf=null;
+  const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmt=n=>(Math.round(n*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const th=d=>{const m=/^(\d{4})-(\d\d)-(\d\d)/.exec(d||'');return m?m[3]+'/'+m[2]+'/'+(+m[1]+543):(d||'-')};
+  async function fetchAll(){
+    if(!sbf)sbf=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey);
+    const q=await sbf.from('em_docs').select('path,data').like('path',P+'%').range(0,1999);
+    if(q.error)throw q.error;
+    return (q.data||[]).map(x=>x.data).filter(o=>o&&o.dealer);
+  }
+  function groups(rows,names){
+    const G={};rows.forEach(r=>{if(!names||names.includes(r.dealer))(G[r.dealer]=G[r.dealer]||[]).push(r)});
+    return Object.keys(G).sort().map(n=>({n:n,L:G[n].sort((a,b)=>(a.repDate||'').localeCompare(b.repDate||''))}));
+  }
+  const TD='style="border:1px solid #444;padding:4px 5px;vertical-align:top"';
+  const TH='style="border:1px solid #444;padding:5px;background:#efe4cc;font-weight:600"';
+  function page(g){
+    const L=g.L,r0=L.find(r=>r.company)||L[0],ph=(L.find(r=>r.phone)||{}).phone,sd=(L.find(r=>r.sendDate)||{}).sendDate;
+    const sum=L.reduce((s,r)=>s+(+r.amt||0),0),vat=Math.round(sum*7)/100;
+    const old=L.some(r=>/^2026-0[1-8]/.test(r.repDate||''));
+    const heads=['ลำดับ','หมายเลขเคส','สินค้า (รุ่น)','เลขตัวถัง / เลขมอเตอร์ / เลขแบตเตอรี่','วันที่ซื้อ','วันที่แจ้งซ่อม (DMS)','วันที่ซ่อม','อาการเสีย','รายงานการซ่อม','อะไหล่','รวม / ค่าแรง (บาท)','เคลมก่อนขาย','เคลมหลังขาย','รูปก่อนเปลี่ยน','รูปหลังเปลี่ยน'];
+    const ck=b=>b?'✓':'';
+    const body=L.map((r,i)=>'<tr><td '+TD+' align="center">'+(i+1)+'</td><td '+TD+'>'+E(r.caseNo||'-')+'</td><td '+TD+'>'+E(r.model||'-')+'</td><td '+TD+'>'+E(r.vin||'-')+'</td><td '+TD+' align="center">'+th(r.buyDate)+'</td><td '+TD+' align="center">'+th(r.repDate)+(/^2026-0[1-8]/.test(r.repDate||'')?' *':'')+'</td><td '+TD+' align="center">'+th(r.fixDate)+'</td><td '+TD+'>'+E(r.sym||'-')+'</td><td '+TD+'>'+E(r.report||'-')+'</td><td '+TD+' align="center">'+E(r.part||'-')+'</td><td '+TD+' align="right">'+fmt(+r.amt||0)+'</td><td '+TD+' align="center">'+ck(r.type==='เคลมก่อนขาย')+'</td><td '+TD+' align="center">'+ck(r.type!=='เคลมก่อนขาย')+'</td><td '+TD+' align="center">'+ck(r.pb)+'</td><td '+TD+' align="center">'+ck(r.pa)+'</td></tr>').join('');
+    const sig=['ผู้จัดทำ (ร้านค้า)','ตรวจสอบโดย (เจ้าหน้าที่ EM)','อนุมัติโดย (ฝ่ายบริการ)'].map(s=>'<div style="flex:1;text-align:center"><div style="border-bottom:1px solid #444;height:46px"></div><div style="margin-top:4px">'+s+'</div><div style="margin-top:2px;color:#555">วันที่ ____ / ____ / ________</div></div>').join('<div style="width:30px"></div>');
+    return '<section class="dd-page"><div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f9145;padding-bottom:8px"><div><div style="font-size:22px;font-weight:800;letter-spacing:.5px">EM MOTOR</div><div style="font-size:12px;color:#555">Partner of your life</div></div><div style="text-align:center"><div style="font-size:20px;font-weight:700">ใบสรุปค่าแรงเคลม</div><div style="font-size:12px;color:#555">เบิกค่าแรง Dealer</div></div><div style="text-align:right;font-size:12px;color:#555">วันที่พิมพ์ '+th(new Date().toISOString())+'</div></div>'+
+      '<table style="width:100%;margin:10px 0;font-size:13px;border-collapse:collapse"><tr><td style="padding:3px 0;width:50%"><b>ร้านค้า / หน่วยงาน:</b> '+E(g.n)+'</td><td><b>บริษัท:</b> '+E((r0&&r0.company)||'-')+'</td></tr><tr><td style="padding:3px 0"><b>เบอร์โทรศัพท์ร้าน:</b> '+E(ph||'-')+'</td><td><b>วันที่ส่ง:</b> '+th(sd)+'</td></tr></table>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr>'+heads.map(h=>'<th '+TH+'>'+h+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody><tfoot><tr><td colspan="10" '+TD+' align="right"><b>ราคารวม</b></td><td '+TD+' align="right">'+fmt(sum)+'</td><td colspan="4" '+TD+'></td></tr><tr><td colspan="10" '+TD+' align="right"><b>7%</b></td><td '+TD+' align="right">'+fmt(vat)+'</td><td colspan="4" '+TD+' style="font-size:10.5px">หมายเหตุ: ค่าแรงจะถูกหักภาษี ณ ที่จ่าย 3%</td></tr><tr><td colspan="10" '+TD+' align="right"><b>รวมทั้งสิ้น</b></td><td '+TD+' align="right"><b>'+fmt(sum+vat)+'</b></td><td colspan="4" '+TD+'></td></tr></tfoot></table>'+
+      (old?'<div style="font-size:11px;color:#8a5a00;margin-top:4px">* แจ้งซ่อมก่อนเดือน 9: พิจารณารายเคส</div>':'')+
+      '<div style="font-size:11px;color:#444;margin-top:8px;line-height:1.7">ส่งสรุปภายในวันที่ 25 ของเดือน · โปรดส่งบิลตั้งเบิกเงินภายในวันที่ 30 ของทุกเดือน · ทางบัญชีจะโอนเงินค่าแรงเคลมและค่าส่งของเคลมคืนภายในวันที่ 10 ของเดือนถัดไป</div>'+
+      '<div style="display:flex;margin-top:22px;font-size:12px">'+sig+'</div></section>';
+  }
+  function csvOf(G){
+    const H=['ร้านค้า','บริษัท','เบอร์โทร','วันที่ส่ง','หมายเลขเคส','รุ่น','เลขตัวถัง/มอเตอร์/แบตเตอรี่','วันที่ซื้อ','วันที่แจ้งซ่อม','วันที่ซ่อม','อาการเสีย','รายงานการซ่อม','อะไหล่','ค่าแรง','ประเภท','รูปก่อนเปลี่ยน','รูปหลังเปลี่ยน','สถานะ'];
+    const q=x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"';
+    const rows=[];G.forEach(g=>g.L.forEach(r=>rows.push([r.dealer,r.company,r.phone,r.sendDate,r.caseNo,r.model,r.vin,r.buyDate,r.repDate,r.fixDate,r.sym,r.report,r.part,r.amt,r.type,r.pb?'✓':'',r.pa?'✓':'',r.st])));
+    return '﻿'+[H].concat(rows).map(a=>a.map(q).join(',')).join('\n');
+  }
+  function close(){const o=document.getElementById('dd-ov');if(o)o.remove()}
+  async function open(names){
+    let rows;try{rows=await fetchAll()}catch(e){toast('โหลดข้อมูลไม่สำเร็จ');return}
+    const G=groups(rows,names);if(!G.length){toast('ยังไม่มีรายการ');return}
+    close();
+    if(!document.getElementById('dd-css')){const s=document.createElement('style');s.id='dd-css';s.textContent='#dd-ov{position:fixed;inset:0;z-index:99999;background:#e9edf0;overflow:auto}#dd-bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid #d0d5dd;z-index:2}.dd-page{background:#fff;width:1120px;max-width:96%;margin:16px auto;padding:22px 26px;box-shadow:0 2px 14px rgba(0,0,0,.15);font-family:inherit;color:#111}@media print{body>*:not(#dd-ov){display:none!important}#dd-ov{position:static!important;overflow:visible!important;background:#fff!important}#dd-bar{display:none!important}.dd-page{width:auto!important;max-width:none!important;margin:0!important;padding:0!important;box-shadow:none!important;page-break-after:always}.dd-page:last-child{page-break-after:auto}@page{size:A4 landscape;margin:10mm}}';document.head.appendChild(s)}
+    const ov=document.createElement('div');ov.id='dd-ov';
+    ov.innerHTML='<div id="dd-bar"><b style="flex:1">ใบสรุปค่าแรงเคลม · '+G.length+' ร้าน</b><button type="button" id="dd-print" class="primary">🖨 พิมพ์ / บันทึกเป็น PDF</button><button type="button" id="dd-csv">ส่งออก Excel (CSV)</button><button type="button" id="dd-x">ปิด</button></div>'+G.map(page).join('');
+    document.body.appendChild(ov);
+    document.getElementById('dd-x').onclick=close;
+    document.getElementById('dd-print').onclick=()=>window.print();
+    document.getElementById('dd-csv').onclick=()=>{const u=URL.createObjectURL(new Blob([csvOf(G)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='เบิกค่าแรง-'+(G.length===1?G[0].n:'ทุกร้าน')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)};
+  }
+  setInterval(()=>{
+    try{
+      if(S.view!=='dealerlabor')return;
+      const csvb=document.getElementById('dl-csv');
+      if(csvb&&!document.getElementById('dl-docall')){const b=document.createElement('button');b.id='dl-docall';b.type='button';b.textContent='📄 ใบเอกสารทุกร้าน / พิมพ์';b.onclick=()=>open(null);csvb.insertAdjacentElement('afterend',b)}
+      document.querySelectorAll('#dl-list h4').forEach(h=>{if(h.dataset.dd)return;h.dataset.dd='1';
+        const name=(h.firstChild&&h.firstChild.textContent||'').trim();
+        const b=document.createElement('button');b.type='button';b.textContent='📄 ใบเอกสาร / พิมพ์';b.style.cssText='margin-left:10px;font-size:.8rem;padding:3px 10px';b.onclick=()=>open([name]);h.appendChild(b)});
+    }catch(e){}
+  },1000);
+})();
 function kdGroup(c){if(/^Grab/.test(c))return 'Grab (แจ้งรถมีปัญหา / นัดซ่อม / เช่า / สอบถาม)';if(/ตามงานซ่อม|ติดตามนัด|ติดตามปัญหา|ติดตามเอกสาร|เลื่อนนัด|ยกเลิกนัด/.test(c))return 'ติดตามงานซ่อม / นัดหมาย';if(/แจ้งซ่อม|เคลม|น้ำท่วม|ซ่อมแบต/.test(c))return 'แจ้งซ่อม-เคลม';if(/อะไหล่|ค่าขนส่ง/.test(c))return 'อะไหล่ (สั่งซื้อ / สอบถาม / ติดตาม)';if(/สินค้า|สนใจซื้อ|ต้องการแบตสำรอง|^เช่า/.test(c))return 'สอบถามข้อมูลสินค้า';if(/ผู้จำหน่าย/.test(c))return 'ข้อมูลผู้จำหน่าย';if(/แจ้งปัญหาการใช้งาน/.test(c))return 'แจ้งปัญหาการใช้งาน';if(/สอบถามทั่วไป/.test(c))return 'สอบถามทั่วไป';return 'อื่นๆ / ไม่ระบุ'}
 function kdCmp(a,b){
 ensureKpi();
