@@ -430,7 +430,6 @@ progress{width:100%;accent-color:var(--accent)}
       <a href="#kb" data-v="kb">คลังข้อมูลอ้างอิง</a>
       <a href="#replyguide" data-v="replyguide">วิธีตอบคำถามลูกค้า</a>
       <a href="#dealerlabor" data-v="dealerlabor">ทำเบิกค่าแรง Dealer</a>
-      <a href="#dlclaim" data-v="dlclaim">Dealer เบิกคืนค่าแรง</a>
       <a href="#problems" data-v="problems">ปัญหา</a>
       <a href="#manual" data-v="manual">คู่มือการใช้งาน</a>
       <a href="#import" data-v="import">นำเข้าข้อมูล</a>
@@ -477,7 +476,7 @@ progress{width:100%;accent-color:var(--accent)}
     // Grouped top menu. Links keep their data-v/href; only their place on screen changes.
     (function(){
       const nav=document.getElementById('tabs');if(!nav||nav.dataset.grouped)return;nav.dataset.grouped='1';
-      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','dealerlabor','dlclaim','extfollow','chat']],
+      const GROUPS=[['dash','📊','Dashboard',['dashboard','notices']],['cust','👥','งานลูกค้า',['intake','forms','search','notes','dto','dealer','dealerlabor','extfollow','chat']],
         ['tools','🧰','เครื่องมือช่วยงาน',['product','warranty','parts','onsite','repair','advice']],['know','📚','ฐานความรู้',['assistant','teamdata','kb','replyguide','problems','manual','links']],
         ['rep','📈','รายงาน',['kpi','kpidash','activity','followup','export']],['set','⚙️','ตั้งค่าระบบ',['import','users','__pw']]];
       const links=[...nav.querySelectorAll('a[data-v]')],byV=Object.fromEntries(links.map(a=>[a.dataset.v,a]));
@@ -1105,14 +1104,6 @@ a{transition:color .12s}
     <div id="rg-body"></div>
   </section>
 
-  <!-- Dealer labor reimbursement (pick dealer, fill in, auto totals, print) -->
-  <section id="v-dlclaim" hidden>
-    <h2>Dealer เบิกคืนค่าแรง</h2>
-    <p class="sub">เลือกร้าน/ดีลเลอร์ → ระบบดึงเคส "รอคืนค่าบริการเคลม" พร้อมอัตราค่าแรงจากตารางอะไหล่ → กรอกข้อมูลที่ขาด → ระบบคำนวณยอด VAT และยอดสุทธิ → บันทึกและพิมพ์ใบเบิกค่าแรง ข้อมูลเดิมไม่ถูกลบ</p>
-    <div id="dlc-anchor"></div>
-    <p class="meta" style="margin-top:10px">บันทึกแล้วดูสถานะการโอน ออกใบเอกสารทุกร้าน และไฟล์ Excel ได้ที่เมนู <a href="#dealerlabor">ทำเบิกค่าแรง Dealer</a></p>
-  </section>
-
   <!-- Dealer labor claim -->
   <section id="v-dealerlabor" hidden>
     <h2>ทำเบิกค่าแรง Dealer</h2>
@@ -1469,7 +1460,7 @@ const LABEL={remark:'Remark',ticketNo:'เลขรับเรื่อง',con
   vehicleType:'ประเภทรถ',model:'รุ่นรถ',vin:'VIN/Serial',category:'การติดต่อเรื่อง',refTicket:'TICKET (เลขเคสซ่อม/DMS)',detail:'รายละเอียดของปัญหา',
   answer:'สิ่งที่แจ้งกลับลูกค้า',receiverId:'ดูแลโดย',note:'หมายเหตุ',status:'สถานะ',callback:'ติดต่อกลับลูกค้าเพื่อปิดงาน',closedAt:'ปิดเคสเมื่อ'};
 const EDITABLE=['contactAt','name','phone','channel','urgency','vehicleType','model','vin','category','refTicket','detail','answer','note','status','callback'];
-const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','dealerlabor','dlclaim','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
+const VIEWS=['dashboard','notices','product','intake','notes','dto','forms','search','warranty','parts','dealer','dealerlabor','extfollow','links','assistant','teamdata','onsite','repair','advice','chat','followup','export','kb','replyguide','problems','manual','import','kpi','kpirep','kpidash','activity','users'];
 
 const S={db:null,user:null,sample:null,downloads:null,uid:null,isAdmin:false,canWrite:false,
   tickets:[],legacy:[],removals:{},dms:[],dmsMeta:null,dmsLoaded:false,ncr:[],ncrMeta:null,ncrLoaded:false,repSrc:null,dealers:[],dealerMeta:null,parts:[],partsMeta:null,partsLoaded:false,ppUse:null,bom:[],bomMeta:null,links:[],linksMeta:null,lkEditing:null,topics:[],topic:null,legacySets:[],tpFilters:{},asMode:'ask',openTabs:[],scrollY:{},legacyMeta:null,repairs:[],repairMeta:null,all:[],kb:[],names:{},view:'dashboard',editing:null,kbEditing:null,wb:null,me:null,members:{},seen:{},permReady:false,dAgent:null};
@@ -1593,7 +1584,6 @@ function go(v){
   VIEWS.forEach(n=>{$('#v-'+n).hidden=n!==v});
   document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   if(['repair','search','intake','import','parts'].includes(v)){ensureDms();ensureNcr()}
-  if(v==='dlclaim')ensureDms();
   if(['parts','import','product'].includes(v))ensureParts();
   if(v==='assistant')setAsMode('ask');if(v==='teamdata')renderTopics();if(v==='onsite'){ensureOnsite();renderOnsite()}if(v==='kpirep'){ensureKrep();renderKrep()}if(v==='replyguide'&&window.__rgOpen)window.__rgOpen();if(v==='problems'&&window.__pbOpen)window.__pbOpen();if(v==='manual'&&window.__mnOpen)window.__mnOpen();if(v==='extfollow'&&window.__efOpen)window.__efOpen();if(v==='kpidash'){ensureKd();renderKd()}
   renderTabs();
@@ -5050,7 +5040,7 @@ async function save(){
   busy=false;render();
 }
 function mount(v){
-  const track=v.querySelector('#dlc-anchor');if(!track)return;
+  const track=v.querySelector('#dl-track');if(!track)return;
   const d=document.createElement('div');d.id='dl-check';d.className='panel';d.style.marginBottom='14px';
   d.innerHTML='<h3>ตรวจเคสค้างค่าแรง — เลือกร้าน กรอกข้อมูล ระบบคำนวณยอดให้</h3><p class="meta">ดึงเคสสถานะ "รอคืนค่าบริการเคลม" จากข้อมูลเคส DMS ในแอป จัดกลุ่มตามร้านค้า เติมค่าแรงจากตารางอะไหล่ให้อัตโนมัติ (แก้ไขได้) แล้วคำนวณราคารวม VAT 7% และรวมทั้งสิ้น บันทึกแล้วจะเข้ารายการเบิกด้านล่างและพิมพ์เป็นใบสรุปค่าแรงเคลมได้</p><div id="dc-body"></div>';
   track.before(d);css();if(!ui.send)ui.send=isoDate(new Date().toISOString());
@@ -5082,7 +5072,7 @@ function mount(v){
 window.DLC={bahtText,symOf,setRates,lookup,parseRates,calc:()=>calc(ui.dealer),state:()=>({ui,cs,existing}),pendingAll,dealerList,caseState,casesOf,render,ui};
 let tick=0;
 setInterval(function(){try{
-  if(S.view!=='dlclaim')return;const v=document.getElementById('v-dlclaim');if(!v)return;
+  if(S.view!=='dealerlabor')return;const v=document.getElementById('v-dealerlabor');if(!v)return;
   if(!S.dmsLoaded&&typeof ensureDms==='function')ensureDms();
   if(!v.querySelector('#dl-check')){mount(v);return}
   const s=(FEED?FEED.length:(S.dms||[]).length)+':'+(RATES?RATES.size:0);if(s!==sig){sig=s;render()}
