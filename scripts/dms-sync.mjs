@@ -52,10 +52,10 @@ const rx = /รอคืนค่า(บริการ|แรง)เคลม/;
 const day = (x) => String(x || '').slice(0, 10);
 TOKEN = await idToken();
 const me = await api('/v1/me'); console.log('แผนก:', me.department);
+const canMedia = (me.datasets || []).some((d) => d.name === 'service.claim_media');
 const claims = (await all('service.claims', {})).filter((c) => rx.test(String(c.current_status || '')));
 console.log('เคสสถานะ 10 / รอคืนค่า:', claims.length, '· รูป DMS:', canMedia ? 'มีสิทธิ์' : 'ไม่มีสิทธิ์ service.claim_media');
 const ids = claims.map((c) => c.claim_id), parts = {}, hist = {}, media = {};
-const canMedia = (me.datasets || []).some((d) => d.name === 'service.claim_media');
 for (let i = 0; i < ids.length; i += 300) {
   const q = { claim_id: ids.slice(i, i + 300).join(',') };
   (await all('service.claim_parts', q)).forEach((p) => (parts[p.claim_id] = parts[p.claim_id] || []).push({ s: String(p.good_code || ''), n: String(p.good_name || ''), q: Number(p.qty) || 1, p: Number(p.price) || 0 }));
