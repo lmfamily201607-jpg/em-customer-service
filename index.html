@@ -151,7 +151,8 @@ table.heat td:first-child,table.heat th:first-child{text-align:left}
 .kb{background:var(--accent-soft);display:flex;flex-direction:column;min-width:0}
 .kb span{background:var(--ink);color:var(--bg);font-weight:600;font-size:14px;padding:6px 12px}
 .kb b{font-family:var(--display);font-size:clamp(28px,5vw,46px);color:var(--accent);text-align:center;padding:10px 8px 14px;font-variant-numeric:tabular-nums}
-@media (max-width:640px){.kband{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kband:has(#k-closed){grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:640px){.kband{grid-template-columns:repeat(2,minmax(0,1fr))}.kband:has(#k-closed){grid-template-columns:repeat(2,minmax(0,1fr))}}
 .rtable{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0;align-self:start}
 .rt-h{background:var(--ink);color:var(--bg);font-weight:600;padding:7px 12px;font-size:14px}
 .rtable table{font-size:14px}
@@ -620,6 +621,7 @@ a{transition:color .12s}
       <div class="kb"><span>จบ / ปิดเคส</span><b id="k-done">0</b></div>
       <div class="kb"><span>ติดตาม / ตรวจสอบ</span><b id="k-follow">0</b></div>
       <div class="kb"><span>สัดส่วนสถานะจบ</span><b id="k-rate">-</b></div>
+      <div class="kb"><span>ปิดจริงในช่วงนี้ (รวมเคสเก่า)</span><b id="k-closed">0</b></div>
     </div>
     <div class="grid2" style="margin-bottom:16px;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)">
       <div class="rtable"><div class="rt-h">หัวข้อที่ลูกค้าติดต่อมา</div><table id="t-topic"></table></div>
@@ -635,14 +637,14 @@ a{transition:color .12s}
     <div class="rtable" style="margin-bottom:24px">
       <div class="rt-h">สรุปตามเจ้าหน้าที่</div>
       <div style="overflow-x:auto"><table>
-        <thead><tr><th>เจ้าหน้าที่</th><th>เคสทั้งหมด</th><th>จบ</th><th>ติดตามเคส</th><th>รอซ่อม</th><th>Grab</th><th>ร้องเรียน/ด่วน</th><th>สัดส่วนจบ</th></tr></thead>
+        <thead><tr><th>เจ้าหน้าที่</th><th>เคสทั้งหมด</th><th>จบ</th><th>ติดตามเคส</th><th>รอ (ซ่อม/โอนเงิน/ข้อมูล)</th><th>บันทึกไม่ครบ</th><th>Grab</th><th>ร้องเรียน/ด่วน</th><th>สัดส่วนจบ</th></tr></thead>
         <tbody id="daily"></tbody>
       </table></div>
     </div>
     <h3>เรื่องที่ต้องติดตาม (ทุกช่วงเวลา) <span class="meta" id="k-incomplete"></span></h3>
     <div class="rsearch" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="f"><label for="pf-q">ค้นหา</label><input id="pf-q" type="search" placeholder="ชื่อ เบอร์ เลขรับเรื่อง VIN" autocomplete="off"></div>
-      <div class="f"><label for="pf-st">สถานะ</label><select id="pf-st"><option value="">ทั้งหมด</option><option value="ติดตามเคส">ติดตามเคส</option><option value="รอซ่อม">รอซ่อม</option><option value="incomplete">บันทึกไม่ครบ</option></select></div>
+      <div class="f"><label for="pf-st">สถานะ</label><select id="pf-st"><option value="">ทั้งหมด</option><option value="ติดตามเคส">ติดตามเคส</option><option value="รอซ่อม">รอซ่อม</option><option value="รอโอนเงิน">รอโอนเงิน</option><option value="รอข้อมูล">รอข้อมูล</option><option value="incomplete">บันทึกไม่ครบ</option></select></div>
       <div class="f"><label for="pf-cat">เรื่อง</label><select id="pf-cat"></select></div>
       <div class="f"><label for="pf-ch">ช่องทาง</label><select id="pf-ch"></select></div>
       <div class="f"><label for="pf-who">เจ้าหน้าที่</label><select id="pf-who"></select></div>
@@ -692,7 +694,7 @@ a{transition:color .12s}
         <div class="seg" id="sc-when" role="group" aria-label="ช่วงเวลา"><button type="button" data-w="today" aria-pressed="true">วันนี้</button><button type="button" data-w="7" aria-pressed="false">7 วัน</button><button type="button" data-w="30" aria-pressed="false">30 วัน</button><button type="button" data-w="all" aria-pressed="false">ทั้งหมด</button></div></div>
       <div class="sc-filters">
         <input id="sc-q" type="search" placeholder="ค้นชื่อ เบอร์ เลขรับเรื่อง VIN หรือรายละเอียด" aria-label="ค้นหาเรื่องที่บันทึกแล้ว" autocomplete="off">
-        <select id="sc-status" aria-label="สถานะ"><option value="">ทุกสถานะ</option><option value="open">ยังไม่จบ (ติดตาม/รอซ่อม)</option><option value="incomplete">บันทึกไม่ครบ</option><option value="จบ">จบ</option></select>
+        <select id="sc-status" aria-label="สถานะ"><option value="">ทุกสถานะ</option><option value="open">ยังไม่จบ (ติดตาม/รอ)</option><option value="incomplete">บันทึกไม่ครบ</option><option value="จบ">จบ</option></select>
         <select id="sc-channel" aria-label="ช่องทาง"></select>
         <select id="sc-who" aria-label="ผู้รับเรื่อง"><option value="">ทุกคน</option><option value="me">เฉพาะของฉัน</option></select>
         <label class="f chk" style="font-size:13px"><input type="checkbox" id="sc-app" checked> เฉพาะที่บันทึกในแอป</label>
@@ -711,7 +713,7 @@ a{transition:color .12s}
     <div class="rsearch">
       <div class="f"><label for="q">คำค้นหา</label><input id="q" type="search" placeholder="เช่น 0812345678, สมชาย, LMENXA36C0300635, 14593" autocomplete="off"></div>
       <div class="f"><label for="q-cat">การติดต่อเรื่อง</label><select id="q-cat"></select></div>
-      <div class="f"><label for="q-st">สถานะ</label><select id="q-st"><option value="">ทั้งหมด</option><option>จบ</option><option>ติดตามเคส</option><option>รอซ่อม</option></select></div>
+      <div class="f"><label for="q-st">สถานะ</label><select id="q-st"><option value="">ทั้งหมด</option><option>จบ</option><option>ติดตามเคส</option><option>รอซ่อม</option><option>รอโอนเงิน</option><option>รอข้อมูล</option></select></div>
     </div>
     <div class="list" id="results"></div>
   </section>
@@ -951,7 +953,7 @@ a{transition:color .12s}
       <h3>อะไหล่ที่ใช้กับอาการนี้ <span class="meta" id="r-parts-note"></span></h3>
       <div id="r-part-chip"></div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>อะไหล่</th><th>SKU</th><th>จำนวนเคส</th><th>% ของเคส</th><th>จำนวนชิ้นรวม</th><th>รุ่นที่ใช้</th></tr></thead>
+        <thead><tr><th>อะไหล่</th><th>SKU</th><th>ราคา</th><th>จำนวนเคส</th><th>% ของเคส</th><th>จำนวนชิ้นรวม</th><th>รุ่นที่ใช้</th></tr></thead>
         <tbody id="r-parts"></tbody>
       </table></div>
     </div>
@@ -1221,7 +1223,7 @@ const VEHICLES=['มอเตอร์ไซค์','จักรยาน','Gra
 const CATEGORIES=['แจ้งซ่อม-เคลม','สั่งซื้ออะไหล่','Grab แจ้งรถมีปัญหา/ นัดคิวซ่อม','สอบถามทั่วไป','แจ้งปัญหาการใช้งาน','ตามงานซ่อม-เคลม','ไม่แจ้งข้อมูล',
   'Grab สอบถามข้อมูลการบริการ','ถามข้อมูลสินค้า','ถามข้อมูลผู้จำหน่าย','เลื่อนนัดหมาย','ตามอะไหล่','น้ำท่วม','สนใจซื้อสินค้า','Grab แจ้งเช่ารถ','ยกเลิกนัดหมาย',
   'ขอข้อมูลลูกค้าเพิ่มเติม','ติดตามเอกสารการซ่อม','ต้องการแบตสำรอง','อะไหล่ผิด','ส่งอะไหล่คืน','ซ่อมแบต','ร้องเรียน','อื่นๆ'];
-const CASE_STATUS=['จบ','ติดตามเคส','รอซ่อม'];
+const CASE_STATUS=['จบ','ติดตามเคส','รอซ่อม','รอโอนเงิน','รอข้อมูล'];
 // Official model names supplied by the team (shown as suggestions in the รุ่นรถ field)
 const MODEL_LIST=`รถจักรยานยนต์ไฟฟ้า EM ARENA 4000W สีแดง-ดำ Lithium Battery 1*72V55Ah
 รถจักรยานยนต์ไฟฟ้า EM ARENA 4000W สีขาว-น้ำเงิน Lithium Battery 1*72V55Ah
@@ -1475,10 +1477,10 @@ function isoDateTime(iso){if(!iso)return '';const d=new Date(iso);if(isNaN(d))re
 function toLocalInput(iso){const d=iso?new Date(iso):new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
 function caseStatus(t){const s=t.status;if(s==='waiting')return 'ติดตามเคส';if(!s||s==='open')return 'จบ';return s}
 function statusOf(t){
-  if(t.source!=='legacy'&&REQUIRED.some(k=>!String(t[k]||'').trim()))return 'incomplete';
+  if(t.source!=='legacy'&&(REQUIRED.some(k=>!String(t[k]||'').trim())||t.status===''))return 'incomplete';
   return caseStatus(t)==='จบ'?'done':'follow';
 }
-function missing(t){return t.source==='legacy'?[]:REQUIRED.filter(k=>!String(t[k]||'').trim()).map(k=>LABEL[k])}
+function missing(t){return t.source==='legacy'?[]:[...REQUIRED.filter(k=>!String(t[k]||'').trim()).map(k=>LABEL[k]),...(t.status===''?[LABEL.status]:[])]}
 function pill(t){const s=statusOf(t);return `<span class="pill ${s}">${s==='incomplete'?'บันทึกไม่ครบ':esc(caseStatus(t))}</span>`}
 function personName(id){return S.members[id]?.nick||S.names[id]||(id===S.uid?'คุณ':(((S.emails&&S.emails[id])||'').split('@')[0]||'เจ้าหน้าที่'))}
 // the log sheets add a team or role after the name; only the name is shown
@@ -1609,7 +1611,7 @@ function formFields(p,t={}){
     <div class="f full"><label for="${p}-detail">รายละเอียดของปัญหา${r('detail')}</label><textarea id="${p}-detail" rows="4">${esc(t.detail)}</textarea></div>
     <div class="f full"><label for="${p}-answer">สิ่งที่แจ้งกลับลูกค้า${r('answer')}</label><textarea id="${p}-answer" rows="4">${esc(t.answer)}</textarea></div>
     <div class="f"><label for="${p}-refTicket">TICKET</label><input id="${p}-refTicket" value="${esc(t.refTicket)}" maxlength="40" class="mono" autocomplete="off"></div>
-    <div class="f"><label for="${p}-status">สถานะ</label><select id="${p}-status">${opts(CASE_STATUS,caseStatus(t))}</select></div>
+    <div class="f"><label for="${p}-status">สถานะ <span class="req">*</span></label><select id="${p}-status">${t.ticketNo||t.status?opts(CASE_STATUS,caseStatus(t)):opts(CASE_STATUS,'','เลือกสถานะ')}</select></div>
     <div class="f full"><label for="${p}-note">หมายเหตุ</label><textarea id="${p}-note" rows="2">${esc(t.note)}</textarea></div>
     <div class="f chk" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="${p}-callback"${t.callback?' checked':''}><label for="${p}-callback">ติดต่อกลับลูกค้าเพื่อปิดงานแล้ว</label></div>
   </div>`;
@@ -1619,7 +1621,7 @@ function readForm(p){
   const ca=v('contactAt');const d=ca?new Date(ca):new Date();
   return {name:v('name'),phone:v('phone'),channel:v('channel'),urgency:v('urgency'),contactAt:(isNaN(d)?new Date():d).toISOString(),
     vehicleType:v('vehicleType'),model:v('model'),vin:v('vin').toUpperCase(),category:v('category'),refTicket:v('refTicket'),
-    detail:v('detail'),answer:v('answer'),note:v('note'),status:v('status')||'จบ',callback:$('#'+p+'-callback').checked};
+    detail:v('detail'),answer:v('answer'),note:v('note'),status:v('status'),callback:$('#'+p+'-callback').checked};
 }
 
 /* saved cases list (intake tab) */
@@ -1835,9 +1837,9 @@ function shareTable(el,counts,total,head){
     :'<tr><td colspan="3" class="empty">ไม่มีข้อมูลในช่วงนี้</td></tr>')+'</tbody>';
 }
 function summarize(R){
-  const done=R.filter(t=>caseStatus(t)==='จบ').length;
+  const done=R.filter(t=>statusOf(t)==='done').length;
   return {total:R.length,done,follow:R.length-done,rate:R.length?pct(done,R.length):'-',
-    topic:countBy(R,t=>t.category),agent:countBy(R,who),status:countBy(R,caseStatus),vehicle:countBy(R,t=>t.vehicleType),channel:countBy(R,t=>t.channel)};
+    topic:countBy(R,t=>t.category),agent:countBy(R,who),status:countBy(R,t=>statusOf(t)==='incomplete'?'บันทึกไม่ครบ':caseStatus(t)),vehicle:countBy(R,t=>t.vehicleType),channel:countBy(R,t=>t.channel)};
 }
 function periodLabel(){
   if(D.mode==='day')return new Date(D.day+'T12:00:00').toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -1861,6 +1863,7 @@ function renderDashboard(){
   $('#dash-date').textContent=`ข้อมูลรวม ${T.length.toLocaleString()} เรื่อง (บันทึกในแอป ${S.tickets.length.toLocaleString()} · Log Case ที่นำเข้า ${S.legacy.length.toLocaleString()})`;
   $('#k-total').textContent=s.total.toLocaleString();$('#k-done').textContent=s.done.toLocaleString();
   $('#k-follow').textContent=s.follow.toLocaleString();$('#k-rate').textContent=s.rate;
+  $('#k-closed').textContent=T.filter(t=>t.closedAt&&(D.mode==='day'?isoDate(t.closedAt)===D.day:isoDate(t.closedAt).slice(0,7)===D.month)).length.toLocaleString();
   shareTable($('#t-topic'),s.topic,s.total,'หัวข้อ');
   shareTable($('#t-agent'),s.agent,s.total,'ผู้ดูแล');
   shareTable($('#t-status'),s.status,s.total,'สถานะ');
@@ -1876,13 +1879,13 @@ function renderDashboard(){
     :'<div class="empty">ไม่มีเคสในช่วงนี้</div>';
   // per-agent breakdown
   const g={};
-  R.forEach(t=>{const k=who(t);const o=g[k]||(g[k]={n:0,done:0,follow:0,wait:0,grab:0,hot:0});o.n++;const st=caseStatus(t);
-    if(st==='จบ')o.done++;else if(st==='รอซ่อม')o.wait++;else o.follow++;
+  R.forEach(t=>{const k=who(t);const o=g[k]||(g[k]={n:0,done:0,follow:0,wait:0,inc:0,grab:0,hot:0});o.n++;const st=caseStatus(t),so=statusOf(t);
+    if(so==='done')o.done++;else if(so==='incomplete')o.inc++;else if(/^รอ/.test(st))o.wait++;else o.follow++;
     if(String(t.vehicleType).includes('Grab')||String(t.category).startsWith('Grab'))o.grab++;
     if(t.category==='ร้องเรียน'||(t.urgency&&t.urgency!=='ปกติ'))o.hot++});
   const ent=Object.entries(g).sort((a,b)=>b[1].n-a[1].n);
-  $('#daily').innerHTML=ent.length?ent.map(([k,o])=>`<tr data-agent="${esc(k)}" tabindex="0" title="ดูเรื่องค้างของ ${esc(k)}" aria-current="${k===S.dAgent}"><td>${esc(k)}</td><td class="num">${o.n}</td><td class="num">${o.done}</td><td class="num">${o.follow}</td><td class="num">${o.wait}</td><td class="num">${o.grab}</td><td class="num">${o.hot}</td><td class="num">${pct(o.done,o.n)}</td></tr>`).join('')
-    :'<tr><td colspan="8" class="empty">ไม่มีเคสในช่วงนี้</td></tr>';
+  $('#daily').innerHTML=ent.length?ent.map(([k,o])=>`<tr data-agent="${esc(k)}" tabindex="0" title="ดูเรื่องค้างของ ${esc(k)}" aria-current="${k===S.dAgent}"><td>${esc(k)}</td><td class="num">${o.n}</td><td class="num">${o.done}</td><td class="num">${o.follow}</td><td class="num">${o.wait}</td><td class="num">${o.inc}</td><td class="num">${o.grab}</td><td class="num">${o.hot}</td><td class="num">${pct(o.done,o.n)}</td></tr>`).join('')
+    :'<tr><td colspan="9" class="empty">ไม่มีเคสในช่วงนี้</td></tr>';
   // click a staff row to narrow "เรื่องที่ต้องติดตาม" to that person's open cases
   $('#daily').querySelectorAll('tr[data-agent]').forEach(r=>{const pick=()=>{S.dAgent=S.dAgent===r.dataset.agent?null:r.dataset.agent;renderDashboard()};r.onclick=pick;r.onkeydown=e=>{if(e.key==='Enter')pick()}});
   S.pf=S.pf||{q:'',st:'',cat:'',ch:'',who:'',from:'',to:''};
@@ -2238,7 +2241,12 @@ function renderParts2Raw(){
     <td class="num">${model?(p.n?p.n.toLocaleString()+' ครั้ง':'-'):(p.total?p.total.toLocaleString()+' ครั้ง':'-')}</td>
     <td class="meta">${esc(p.models.map(([m,c])=>`${m} (${c})`).join(', '))}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">ไม่พบอะไหล่ที่ตรงกับเงื่อนไข</td></tr>'}</tbody>`;
 }
-document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sku]');if(!b)return;const v=b.dataset.sku;try{await navigator.clipboard.writeText(v)}catch(_){const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(__){}t.remove()}toast('คัดลอก SKU แล้ว: '+v);const o=b.textContent;b.textContent='คัดลอกแล้ว';setTimeout(()=>{b.textContent=o},1200)});
+/* ข้อความสำหรับปุ่มคัดลอกอะไหล่: 1.รหัส 2.ชื่อ 3.ราคา (คั่นด้วย TAB วางลง Excel/แชทได้) */
+window.ppCopyText=function(sku,fallbackName){const e=(window.__ppEdit||{})[sku]||{},p=(S.parts||[]).find(x=>String(x.s)===String(sku))||{};
+  const pr=(e.p!==undefined&&e.p!==null&&e.p!=='')?e.p:p.p,name=e.name||p.name||fallbackName||'';
+  const price=Number(pr)>0?Number(pr).toLocaleString('en-US')+' บาท':'ไม่มีราคา';
+  return {text:[sku,name,price].join('\t'),name:name,price:price}};
+document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sku]');if(!b)return;const c=window.ppCopyText(b.dataset.sku),v=c.text;try{await navigator.clipboard.writeText(v)}catch(_){const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(__){}t.remove()}toast('คัดลอกแล้ว: '+b.dataset.sku+' · '+c.name+' · '+c.price);const o=b.textContent;b.textContent='คัดลอกแล้ว';setTimeout(()=>{b.textContent=o},1200)});
 function hlq(s,q){let h=esc(s);if(q){const e=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');h=h.replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`)}return h}
 let ppT;['pp-q','pp-model'].forEach(id=>$('#'+id).addEventListener('input',()=>{clearTimeout(ppT);ppT=setTimeout(renderParts2,200)}));
 $('#pp-sort').addEventListener('change',renderParts2);
@@ -2677,9 +2685,9 @@ function renderParts(base){
   $('#r-part-chip').innerHTML=S.repPart?`<div class="banner info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">กำลังดูเฉพาะเคสที่ใช้ <b>${esc((agg.get(S.repPart)||{}).n||S.repPart.split('|')[1])}</b><button class="link" id="r-part-clear">แสดงทุกเคส</button></div>`:'';
   if($('#r-part-clear'))$('#r-part-clear').onclick=()=>{S.repPart=null;renderRepair()};
   $('#r-parts').innerHTML=rows.length?rows.slice(0,40).map(([k,o])=>{const ms=Object.entries(o.models).sort((a,b)=>b[1]-a[1]).map(([mm,n])=>`${mm} (${n})`).join(', ');
-    return `<tr class="click${k===S.repPart?' sel':''}" data-part="${esc(k)}" tabindex="0"><td>${hl(o.n||'-')}</td><td class="mono">${esc(o.s||'-')}</td><td class="num">${o.cases}</td>
+    return `<tr class="click${k===S.repPart?' sel':''}" data-part="${esc(k)}" tabindex="0"><td>${hl(o.n||'-')}</td><td class="mono">${esc(o.s||'-')}</td><td class="num">${esc(window.ppCopyText(o.s,o.n).price)}</td><td class="num">${o.cases}</td>
     <td class="num">${base.length?Math.round(o.cases/base.length*100):0}%</td><td class="num">${o.qty}</td><td class="meta">${esc(ms)}</td></tr>`}).join('')
-    :`<tr><td colspan="6" class="empty">${base.length?'เคสที่พบไม่มีการเบิกอะไหล่':'ไม่พบเคสที่ตรงกับอาการนี้ ลองคำที่สั้นลง หรือเลือกทุกรุ่น'}</td></tr>`;
+    :`<tr><td colspan="7" class="empty">${base.length?'เคสที่พบไม่มีการเบิกอะไหล่':'ไม่พบเคสที่ตรงกับอาการนี้ ลองคำที่สั้นลง หรือเลือกทุกรุ่น'}</td></tr>`;
   $('#r-parts').querySelectorAll('tr[data-part]').forEach(tr=>{const go=()=>{S.repPart=S.repPart===tr.dataset.part?null:tr.dataset.part;renderRepair()};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter')go()}});
 }
 function fillRepSelects(){
@@ -3960,10 +3968,10 @@ const st=document.createElement('style');st.textContent='.cp-sku{margin-left:6px
 function enhance(){document.querySelectorAll('table').forEach(tb=>{const ths=[...tb.querySelectorAll('thead th')];if(!ths.length)return;const idx=ths.map((th,i)=>RE.test(th.textContent)?i:-1).filter(i=>i>=0);if(!idx.length)return;
 tb.querySelectorAll('tbody tr').forEach(tr=>{idx.forEach(i=>{const td=tr.children[i];if(!td||td.tagName!=='TD'||td.colSpan>1||td.querySelector('[data-sku],[data-csku]'))return;
 const v=td.textContent.trim().split(/\s+/)[0];if(!v||v==='-'||v==='—'||v.length<3||!/[A-Za-z0-9]/.test(v))return;
-const b=document.createElement('button');b.type='button';b.className='cp-sku';b.dataset.csku=v;b.title='คัดลอกรหัส '+v;b.textContent='คัดลอก';td.appendChild(b)})})})}
+const b=document.createElement('button');b.type='button';b.className='cp-sku';b.dataset.csku=v;b.title='คัดลอกรหัส ชื่อ ราคา';b.textContent='คัดลอก';td.appendChild(b)})})})}
 let q=0;const sched=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{enhance()}catch(e){}})};
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-csku]');if(!b)return;e.stopPropagation();e.preventDefault();const v=b.dataset.csku;
-const done=()=>{if(typeof toast==='function')toast('คัดลอกรหัสแล้ว: '+v);const o=b.textContent;b.textContent='คัดลอกแล้ว';setTimeout(()=>{b.textContent=o},1200)};
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-csku]');if(!b)return;e.stopPropagation();e.preventDefault();const sku=b.dataset.csku,tr=b.closest('tr'),fn=tr&&tr.children[0]&&tr.children[0]!==b.closest('td')?tr.children[0].textContent.trim():'',c=window.ppCopyText?window.ppCopyText(sku,fn):{text:sku,name:'',price:''},v=c.text;
+const done=()=>{if(typeof toast==='function')toast('คัดลอกแล้ว: '+sku+(c.name?' · '+c.name:'')+(c.price?' · '+c.price:''));const o=b.textContent;b.textContent='คัดลอกแล้ว';setTimeout(()=>{b.textContent=o},1200)};
 const fb=()=>{const x=document.createElement('textarea');x.value=v;x.style.position='fixed';x.style.opacity='0';document.body.appendChild(x);x.select();try{document.execCommand('copy')}catch(_){}x.remove();done()};
 if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(v).then(done,fb);else fb()},true);
 const start=()=>{new MutationObserver(sched).observe(document.body,{childList:true,subtree:true});sched()};
@@ -5619,7 +5627,7 @@ document.addEventListener('input',e=>{
 
 /* ---------- data + identity ---------- */
 // older sheets used free-text statuses ("ปิดเคส มอเตอร์ไซค์", "รอลูกค้าแจ้งกลับ"); fold them into the app's three
-function normStatus(s){s=String(s||'').trim();if(!s||/ปิด|จบ|รับทราบ/.test(s))return 'จบ';if(/รอซ่อม/.test(s))return 'รอซ่อม';return CASE_STATUS.includes(s)?s:'ติดตามเคส'}
+function normStatus(s){s=String(s||'').trim();if(!s||/ปิด|จบ|รับทราบ/.test(s))return 'จบ';if(/รอซ่อม/.test(s))return 'รอซ่อม';if(/รอโอน/.test(s))return 'รอโอนเงิน';if(/รอข้อมูล/.test(s))return 'รอข้อมูล';return CASE_STATUS.includes(s)?s:'ติดตามเคส'}
 function legacyToTicket(r){
   const st=normStatus(r.st);
   return {ticketNo:'LOG-'+r.r+(r.sh&&r.sh!=='Log Case'?'-'+r.sh:''),contactAt:r.d,agentName:r.ag,channel:r.ch,urgency:r.ur,name:r.nm,phone:r.ph,vehicleType:r.vt,
