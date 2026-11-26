@@ -4853,7 +4853,7 @@ let tick=0;setInterval(function(){try{if(S.view!=='dealerlabor')return;const v=d
 
 /*DLCHECK*/(function(){
 const P='audit/_dlabor/',RP='audit/_laborrates/all',CUT='2026-09-01';
-let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:''},cs={},rr={},FEED=null,FST={t:0,msg:'',busy:false},sig='',busy=false,ratesTried=false;
+let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:'',onlyOk:false},cs={},rr={},FEED=null,FST={t:0,msg:'',busy:false},sig='',busy=false,ratesTried=false;
 const fmt=n=>(Math.round((+n||0)*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const norm=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
 const PII=/0\d[\d\- ]{7,10}\d|https?:\/\/|maps\.google|ต\.\s?\S+\s+อ\.|จ\.\s?\S+|ม\.\d+|\d+\/\d+/;
@@ -5010,7 +5010,10 @@ function render(){
   if(ui.dealer){
     const L=casesOf(ui.dealer);
     h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0"><button type="button" id="dc-ok" class="primary">เลือกเฉพาะเคสที่ข้อมูลครบ</button><button type="button" id="dc-all">เลือกทุกเคส</button><button type="button" id="dc-none">ไม่เลือกเลย</button><span class="meta" style="align-self:center"><b id="dc-sum">${sumHtml(L)}</b> · ${L.length} เคสค้างค่าแรงของร้านนี้ · เคสที่ทำเบิกแล้วจะถูกล็อก</span></div>`;
-    h+=L.map(r=>{const c=caseState(r),done=prepared(r.tk),tk=esc(r.tk);
+    const okN=L.filter(r=>!prepared(r.tk)&&!issues(r,caseState(r)).length).length;
+    h=h.replace(/(<button type="button" id="dc-none">ไม่เลือกเลย<\/button>)/,`$1<label style="display:flex;align-items:center;gap:6px;font-size:.85rem;background:#eef7f1;border:1px solid #b9dcc6;border-radius:8px;padding:4px 10px"><input type="checkbox" id="dc-onlyok"${ui.onlyOk?' checked':''}> แสดงเฉพาะเคสที่ข้อมูลครบ (${okN} เคส)</label><button type="button" id="dc-okprint" class="primary"${okN?'':' disabled'}>✔ เลือกเคสที่ครบ → บันทึก + ทำเอกสารพิมพ์ (${okN})</button>`);
+    h+=(ui.onlyOk&&!okN?'<p class="meta">ยังไม่มีเคสที่ข้อมูลครบ — กรอกวันที่ซื้อ/วันที่ซ่อม/อาการเสีย ให้ครบก่อน</p>':'');
+    h+=L.filter(r=>!ui.onlyOk||prepared(r.tk)||!issues(r,caseState(r)).length).map(r=>{const c=caseState(r),done=prepared(r.tk),tk=esc(r.tk);
       const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
       return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><input type="checkbox" data-k="inc"${c.inc&&!done?' checked':''}${done?' disabled':''}> <b>เคส #${tk}</b></label><span class="dc-chk">${done?'':chkHtml(r,c)}</span><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">แจ้งซ่อม ${esc(r.d||'-')}</span>${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
       <div class="dc-grid"><label><span class="meta">วันที่ซื้อ (ลูกค้าซื้อรถ)</span><input type="date" data-k="buy" value="${esc(c.buy)}"></label><label><span class="meta">วันที่ซ่อม</span><input type="date" data-k="fix" value="${esc(c.fix)}"></label>
@@ -5033,11 +5036,11 @@ async function save(){
     const s=parseFloat(c.ship);if(isFinite(s)&&s>0)recs.push(['dms-'+r.tk+'-ship',{...base,report:'ค่าส่งของเคลม',part:'',sku:'',amt:s,img:c.shipImg||''}])});
   if(!recs.length){toast('ยังไม่มีรายการที่มีค่าแรงให้บันทึก');return}
   if(!confirm('บันทึก '+recs.length+' รายการ ของร้าน '+d+' เป็นรายการเบิกค่าแรง (สถานะ รอค่าแรง)?'+(skipped?'\n\nไม่นำ '+skipped+' รายการที่ไม่มีค่าแรง (ไม่จ่าย) มาบันทึก':'')))return;
-  busy=true;render();let n=0;
+  busy=true;render();let n=0,ok=false;
   try{for(const [id,o] of recs){const now=new Date().toISOString();await S.db.doc(P+id).set({...o,createdAt:now,updatedAt:now});existing[id]=o;n++}
-    toast('บันทึกแล้ว '+n+' รายการ');if(window.dlReload)window.dlReload()}
+    toast('บันทึกแล้ว '+n+' รายการ');if(window.dlReload)window.dlReload();ok=true}
   catch(e){toast('บันทึกไม่สำเร็จ (บันทึกไปแล้ว '+n+' รายการ): '+errText(e))}
-  busy=false;render();
+  busy=false;render();return ok;
 }
 function mount(v){
   const track=v.querySelector('#dl-track');if(!track)return;
@@ -5053,6 +5056,7 @@ function mount(v){
     const tot=document.getElementById('dc-tot');if(tot)tot.innerHTML=totHtml()});
   d.addEventListener('change',e=>{const t=e.target;
     if(t.id==='dc-dealer'){ui.dealer=t.value;render();return}
+    if(t.id==='dc-onlyok'){ui.onlyOk=t.checked;render();return}
     if(t.id==='dc-old'){ui.old=t.checked;ui.dealer='';render();return}
     if(t.id==='dc-send'){ui.send=t.value;return}
     if(t.id==='dc-rfile'){if(t.files&&t.files[0])importRates(t.files[0]);t.value='';return}
@@ -5063,6 +5067,8 @@ function mount(v){
   d.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
     if(t.id==='dc-save')save();
     else if(t.dataset&&t.dataset.shipdel){const cEl=t.closest('[data-tk]');if(cEl){const c=cs[cEl.dataset.tk],r0=rr[cEl.dataset.tk];c.shipImg='';if(r0&&!c.manual)c.inc=!issues(r0,c).length;render()}}
+    else if(t.id==='dc-okprint'){const d=ui.dealer;casesOf(d).forEach(r=>{const c=caseState(r);c.manual=true;c.inc=!prepared(r.tk)&&!issues(r,c).length});
+      save().then(ok=>{if(ok&&window.ddOpen)setTimeout(()=>window.ddOpen([d]),600)})}
     else if(t.id==='dc-feed-go'){FST.at='';refreshFeed()}
     else if(t.id==='dc-print'){if(window.ddOpen)window.ddOpen([ui.dealer]);else toast('บันทึกรายการก่อน แล้วกดปุ่มใบเอกสารในรายการด้านล่าง')}
     else if(t.id==='dc-all'||t.id==='dc-none'){casesOf(ui.dealer).forEach(r=>{const c=caseState(r);c.inc=t.id==='dc-all';c.manual=true});render()}
