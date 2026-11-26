@@ -1200,16 +1200,34 @@ a{transition:color .12s}
 
   <!-- Users -->
   <section id="v-users" hidden>
-    <h2>จัดการผู้ใช้</h2>
-    <p class="sub">คนที่สมัครใหม่จะขึ้นในกล่อง "รออนุมัติ" ด้านบน กดปุ่มอนุมัติได้เลย จากนั้นปรับบทบาทและสิทธิ์ของแต่ละคนในรายการด้านล่าง</p>
-    <div class="banner info" style="margin-bottom:14px">สิทธิ์หลักบังคับจากการแชร์ของหน้านี้: <b>Editor</b> = ผู้ดูแล (นำเข้าข้อมูล แก้คลังข้อมูล กู้คืน จัดการผู้ใช้) · <b>Contributor</b> = Call Center (รับเรื่อง แก้ไข) · <b>Viewer</b> = ดูอย่างเดียว การตั้งค่าในหน้านี้ใช้จัดเมนูและปุ่มของแต่ละคนภายในแอปเพิ่มจากนั้น</div>
+    <div class="u-tabs"><a class="on" href="#users">👥 ผู้ใช้</a><a href="#activity">🕘 ประวัติการทำงาน</a><a href="#import">🗂 นำเข้า / สำรองข้อมูล</a><button type="button" class="u-tab-sets" onclick="var b=document.getElementById('rp-box');if(b)b.scrollIntoView({behavior:'smooth'})">🛡 ชุดสิทธิ์</button></div>
+    <h2 style="margin-top:6px">จัดการผู้ใช้</h2>
+    <div class="banner info" style="margin-bottom:14px;display:none">สิทธิ์หลักบังคับจากการแชร์ของหน้านี้: <b>Editor</b> = ผู้ดูแล (นำเข้าข้อมูล แก้คลังข้อมูล กู้คืน จัดการผู้ใช้) · <b>Contributor</b> = Call Center (รับเรื่อง แก้ไข) · <b>Viewer</b> = ดูอย่างเดียว การตั้งค่าในหน้านี้ใช้จัดเมนูและปุ่มของแต่ละคนภายในแอปเพิ่มจากนั้น</div>
     <div id="u-gate"></div>
     <div class="panel" id="u-pend" style="margin-bottom:14px" hidden></div>
-    <div class="panel" id="u-add" style="margin-bottom:14px"><div class="f"><label for="u-q">เพิ่มผู้ใช้ (ค้นชื่อ/อีเมล หรือพิมพ์อีเมลเพื่อเพิ่มล่วงหน้า)</label><div style="display:flex;gap:8px"><input id="u-q" type="search" autocomplete="off" placeholder="ชื่อหรืออีเมล เช่น แนน หรือ name@gmail.com" style="flex:1"><button type="button" class="primary" id="u-add-btn">+ เพิ่มผู้ใช้</button></div></div><div id="u-res" class="mini" style="margin-top:8px"></div></div>
+    <div class="panel" id="u-add" style="margin-bottom:14px"><div class="f"><label for="u-q">เพิ่มผู้ใช้ (ค้นชื่อ/อีเมล หรือพิมพ์อีเมลเพื่อเพิ่มล่วงหน้า)</label><div style="display:flex;gap:8px"><input id="u-q" type="search" autocomplete="off" placeholder="ชื่อหรืออีเมล เช่น แนน หรือ name@gmail.com" style="flex:1"><button type="button" class="primary" id="u-add-btn">+ เพิ่มผู้ใช้</button></div></div><div id="u-res" class="mini" style="margin-top:8px"></div><div class="u-legend"><b>ผู้ดูแล</b>: ทุกอย่าง + นำเข้าไฟล์ ลบข้อมูล จัดการผู้ใช้<br><b>Call Center</b>: รับเรื่อง แก้ไขเคส ตามเมนูที่ตั้ง<br><b>ดูอย่างเดียว</b>: ดูข้อมูลได้ แก้ไขไม่ได้<br><span class="meta">คนที่สมัครใหม่จะขึ้นในกล่อง "รออนุมัติ" · ตั้งเมนูรายคนได้ที่ "ตั้งเมนูเอง ›" ท้ายแถว</span></div></div>
     <div id="u-list"></div>
   </section>
 </main>
 
+<style>
+#v-users{display:flex;flex-direction:column}#v-users>*{order:1}#v-users #rp-box{order:5}#v-users #u-list{order:3}
+.u-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line,#dfe5e1);padding-bottom:8px}
+.u-tabs a,.u-tabs button{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;text-decoration:none;color:inherit;font-weight:600;border:0;background:none;cursor:pointer;font-size:.92rem}
+.u-tabs a.on{background:#2563eb;color:#fff}.u-tabs a:not(.on):hover,.u-tabs button:hover{background:#eef2f7}
+#u-add{background:#f2f7ff;border:1px solid #cfe0fb}
+.u-legend{margin-top:10px;font-size:.84rem;line-height:1.7;color:#374151}
+#u-list{background:#fff;border:1px solid var(--line,#e2e8e4);border-radius:14px;padding:4px 14px;margin-bottom:14px;overflow-x:auto}
+.u-thead,.u-card>.u-head{display:grid;grid-template-columns:minmax(170px,1.4fr) minmax(110px,1fr) 150px 150px 110px 200px 100px;gap:10px;align-items:center}
+.u-thead{font-weight:700;font-size:.85rem;padding:10px 0;border-bottom:1px solid #e5e7eb}
+.u-card{border:0!important;border-bottom:1px solid #eef0f2!important;border-radius:0!important;box-shadow:none!important;padding:10px 0!important;margin:0!important;background:none!important}
+.u-card>.u-head{min-width:860px}.u-thead{min-width:860px}
+.u-card .u-c1{font-size:.86rem;word-break:break-all}.u-card select[data-u-role]{padding:5px 8px;border-radius:8px;width:100%}
+.u-st{display:inline-block;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:7px;border:1px solid}
+.u-st.on{color:#0b7a3b;background:#e8f7ee;border-color:#a7dfbd}.u-st.wait{color:#9a6200;background:#fff6e0;border-color:#f1d08a}
+.u-c6{display:flex;gap:10px;justify-content:flex-end;white-space:nowrap}.u-c6 .link{font-size:.82rem}.u-blue{color:#2563eb!important}
+.u-card.u-open{background:#fafcfb!important}.u-card.u-open>.meta,.u-card.u-open .u-grid,.u-card.u-open .u-menus,.u-card.u-open .actions{margin-left:4px}
+</style>
 <div id="modal-root"></div>
 <div id="toast" class="toast" hidden role="status"></div>
 
@@ -5847,10 +5865,11 @@ function renderUsers(){
   if(!S.isAdmin){$('#u-list').innerHTML='';return}
   const ids=knownIds().sort((a,b)=>personStats(b).month-personStats(a).month||personName(a).localeCompare(personName(b),'th'));
   if(document.activeElement?.closest?.('#u-list'))return; // live updates wait until the admin leaves the form
-  $('#u-list').innerHTML=ids.length?ids.map(id=>{
+  $('#u-list').innerHTML=(ids.length?'<div class="u-thead"><span>ชื่อผู้ใช้ / อีเมล</span><span>ชื่อที่แสดง</span><span>สิทธิ์</span><span>เข้าระบบล่าสุด</span><span>สถานะ</span><span></span></div>':'')+(ids.length?ids.map(id=>{
     const m=S.members[id]||{},p=memberPerm(id),st=personStats(id),real=S.names[id]||'';
-    return `<div class="panel u-card" data-uid="${esc(id)}">
-      <div class="u-head"><b>${esc(m.nick||real||'ผู้ใช้')}</b>${m.nick&&real?`<span class="meta">${esc(real)}</span>`:''}${(S.emails||{})[id]?`<span class="meta">${esc(S.emails[id])}</span>`:''}<span class="pill ${p.role==='admin'?'done':p.role==='viewer'?'incomplete':'follow'}">${esc(ROLES[p.role])}</span>${id===S.uid?'<span class="meta">(คุณ)</span>':''}${S.members[id]?'':'<span class="pill incomplete">รอลงทะเบียน · ยังเข้าใช้ไม่ได้ กดบันทึกเพื่ออนุมัติ</span>'}</div>
+    const em=(S.emails||{})[id]||'';
+    return `<div class="u-card" data-uid="${esc(id)}">
+      <div class="u-head"><span class="u-c1 mono">${esc(em||real||id.slice(0,8))}${id===S.uid?' <span class="meta">(คุณ)</span>':''}</span><span class="u-c2">${esc(m.nick||real||'-')}</span><span class="u-c3"><select data-u-role aria-label="สิทธิ์">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===p.role?' selected':''}>${v}</option>`).join('')}</select>${m.preset?`<span class="meta" style="display:block;font-size:.72rem">ชุด: ${esc(m.preset)}</span>`:''}</span><span class="u-c4 meta">${esc(st.seen?fmt(st.seen):'-')}</span><span class="u-c5">${S.members[id]?'<span class="u-st on">ใช้งานอยู่</span>':'<span class="u-st wait">รอลงทะเบียน</span>'}</span><span class="u-c6"><button type="button" class="link" data-u-nick>แก้ไขชื่อ</button>${em?'<button type="button" class="link u-blue" data-u-pw>ตั้งรหัสผ่านใหม่</button>':''}</span></div>
       <div class="meta">วันนี้ ${st.today} เคส · เดือนนี้ ${st.month} เคส · ค้างติดตาม ${st.open} เคส · รับเรื่องล่าสุด ${esc(fmt(st.last))}${st.seen?` · เปิดแอปล่าสุด ${esc(fmt(st.seen))}`:''} <button type="button" class="link" data-u-work="${esc(id)}">ดูงาน ›</button></div>
       <div class="u-grid">
         <div class="f"><label>ชื่อเล่นที่แสดงในแอป</label><input data-k="nick" value="${esc(m.nick||'')}" placeholder="${esc(real||'เช่น แนน')}"></div>
@@ -5862,7 +5881,7 @@ function renderUsers(){
       <div class="u-menus">${MENU_ALL.map(v=>`<label><input type="checkbox" data-menu="${v}"${p.menus.includes(v)?' checked':''}>${esc(VIEW_NAME(v))}${ADMIN_ONLY.includes(v)?' <span class="meta">(Editor)</span>':''}</label>`).join('')}
         <label><input type="checkbox" data-k="exp"${p.exp?' checked':''}>ส่งออก Excel/CSV</label></div>
       <div class="actions" style="margin-top:10px"><button type="button" class="primary" data-u-save>บันทึก</button><span class="meta" data-u-msg></span></div></div>`}).join('')
-    :'<div class="empty">ยังไม่มีผู้ใช้ เมื่อทีมเปิดแอปครั้งแรก ชื่อจะขึ้นที่นี่</div>';
+    :'<div class="empty">ยังไม่มีผู้ใช้ เมื่อทีมเปิดแอปครั้งแรก ชื่อจะขึ้นที่นี่</div>');
   $('#u-list').querySelectorAll('.u-card').forEach(card=>{
     const id=card.dataset.uid;
     // changing the role resets menus and rights to that role's defaults
@@ -5870,6 +5889,11 @@ function renderUsers(){
       card.querySelectorAll('[data-menu]').forEach(c=>c.checked=p.menus.includes(c.dataset.menu));
       card.querySelector('[data-k="edit"]').value=p.edit;card.querySelector('[data-k="del"]').value=p.del;card.querySelector('[data-k="exp"]').checked=p.exp};
     card.querySelector('[data-u-work]').onclick=()=>{S.dAgent=personName(id);location.hash='dashboard'};
+    const save1=async(patch,ok)=>{const old=S.members[id]||{};const data={...PRESET.callcenter,role:'callcenter',...old,...patch,updatedAt:new Date().toISOString(),updatedBy:S.uid};try{await S.db.doc('members/'+id).set(data);S.members[id]=data;toast(ok);renderUsers()}catch(err){toast('บันทึกไม่สำเร็จ: '+errText(err))}};
+    card.querySelector('[data-u-role]').onchange=e=>{const r=e.target.value,old=memberPerm(id).role;if(!confirm('เปลี่ยนสิทธิ์ของ '+personName(id)+' เป็น "'+ROLES[r]+'"? เมนูและสิทธิ์จะตั้งตามบทบาทนี้ (ปรับรายคนต่อได้ที่ ตั้งเมนูเอง)')){e.target.value=old;return}const P=PRESET[r];save1({role:r,menus:[...P.menus],edit:P.edit,del:P.del,exp:P.exp,preset:''},'เปลี่ยนสิทธิ์ของ '+personName(id)+' เป็น '+ROLES[r]+' แล้ว')};
+    card.querySelector('[data-u-nick]').onclick=()=>{const cur=(S.members[id]||{}).nick||'';const v=prompt('ชื่อที่แสดงในแอปของ '+personName(id),cur);if(v==null)return;save1({nick:v.trim().slice(0,40)},'แก้ไขชื่อแล้ว')};
+    const pw=card.querySelector('[data-u-pw]');if(pw)pw.onclick=async()=>{const em=(S.emails||{})[id];if(!em)return;if(!confirm('ส่งอีเมลลิงก์ตั้งรหัสผ่านใหม่ไปที่ '+em+'?\nผู้ใช้กดลิงก์ในอีเมลแล้วจะเข้าแอปได้ จากนั้นกด "เปลี่ยนรหัสผ่าน" มุมขวาบนเพื่อตั้งรหัสใหม่'))return;
+      try{const c=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey,{auth:{persistSession:false,autoRefreshToken:false,storageKey:'em-pwreset'}});const r=await c.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});if(r.error)throw r.error;toast('ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่ '+em+' แล้ว')}catch(err){toast('ส่งไม่สำเร็จ: '+errText(err))}};
     card.querySelector('[data-u-save]').onclick=async e=>{
       const msg=card.querySelector('[data-u-msg]'),v=k=>card.querySelector(`[data-k="${k}"]`);
       const data={nick:v('nick').value.trim().slice(0,40),role:v('role').value,edit:v('edit').value,del:v('del').value,exp:v('exp').checked,
