@@ -4842,9 +4842,9 @@ const jobSel=function(r){const j=jobOf(r),pn=String(r.report||'').replace(/^ค�
 const card=function(id,r,n){return '<div class="dl-ec" data-id="'+id+'" style="border:1px solid #d5ddd8;border-radius:10px;padding:8px 10px;margin:8px 0;background:#fff"><b>รายการที่ '+n+'</b> <span class="meta">เคส '+esc(r.caseNo||'-')+'</span><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin-top:6px">'+
 inp('caseNo','หมายเลขเคส',r.caseNo)+inp('model','สินค้า (รุ่น)',r.model)+inp('vin','เลขตัวถัง / มอเตอร์ / แบตเตอรี่',r.vin,'text',2)+inp('buyDate','วันที่ซื้อ',ce(r.buyDate),'date')+inp('repDate','วันที่แจ้งซ่อม',ce(r.repDate),'date')+inp('fixDate','วันที่ซ่อม (ได้รับอะไหล่จาก EM และซ่อม)',ce(r.fixDate),'date')+inp('sym','อาการเสีย',r.sym,'text',2)+jobSel(r)+inp('amt','รวม / ค่าแรง (บาท)',r.amt,'number')+sel('type','ประเภทเคลม',r.type||'เคลมหลังขาย',['เคลมหลังขาย','เคลมก่อนขาย'])+
 '<label style="display:flex;align-items:center;gap:4px;font-size:.8rem"><input type="checkbox" data-f="pb"'+(r.pb?' checked':'')+'> รูปก่อนเปลี่ยน</label><label style="display:flex;align-items:center;gap:4px;font-size:.8rem"><input type="checkbox" data-f="pa"'+(r.pa?' checked':'')+'> รูปหลังเปลี่ยน</label></div></div>'};
-ov.innerHTML='<div style="max-width:1100px;margin:0 auto;background:#f6f8f7;border-radius:14px;padding:14px 16px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h3 style="margin:0;flex:1">แก้ไขเอกสาร '+(b.no?esc(b.no):'ฉบับร่าง')+' · '+esc(b.dealer)+'</h3><button type="button" class="primary" id="dl-ed-save">💾 บันทึกการแก้ไข</button><button type="button" id="dl-ed-x">ปิด</button></div>'+
-'<p class="meta">แก้ไขได้ทุกช่อง เลขที่เอกสารไม่เปลี่ยน บันทึกแล้วใบที่พิมพ์ใหม่จะใช้ข้อมูลล่าสุด</p><div id="dl-ed-hd" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px">'+inp('company','บริษัท',r0.company)+inp('phone','เบอร์โทรศัพท์',r0.phone)+inp('sendDate','วันที่ส่ง',ce(r0.sendDate),'date')+inp('whtAmt','ยอดหัก ณ ที่จ่าย 3% (บาท) — กรอกเอง',r0.whtAmt||'','number')+'</div><div id="dl-ed-rows">'+ids.map(function(id,k){return card(id,rows[id],k+1)}).join('')+'</div><button type="button" id="dl-ed-add">+ เพิ่มรายการในเอกสารนี้</button></div>';
-document.body.appendChild(ov);let nn=ids.length;
+ov.innerHTML='<div style="max-width:1100px;margin:0 auto;background:#f6f8f7;border-radius:14px;padding:14px 16px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h3 style="margin:0;flex:1">'+(b.isNew?'📄 สร้างเอกสารใหม่ — กรอกเลขเคส':'แก้ไขเอกสาร '+(b.no?esc(b.no):'ฉบับร่าง')+' · '+esc(b.dealer))+'</h3><button type="button" class="primary" id="dl-ed-save">'+(b.isNew?'💾 สร้างเอกสาร + ออกเลขที่':'💾 บันทึกการแก้ไข')+'</button><button type="button" id="dl-ed-x">ปิด</button></div>'+
+'<p class="meta">'+(b.isNew?'พิมพ์เลขเคสในช่อง "หมายเลขเคส" แล้วกด Enter/ออกจากช่อง ระบบดึงร้าน รุ่น เลขตัวถัง อาการ และค่าแรงจาก DMS ให้ · ข้อมูลที่ยังไม่มีเว้นว่างไว้ แก้ไขภายหลังได้':'แก้ไขได้ทุกช่อง เลขที่เอกสารไม่เปลี่ยน บันทึกแล้วใบที่พิมพ์ใหม่จะใช้ข้อมูลล่าสุด')+'</p><div id="dl-ed-hd" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px">'+(b.isNew?'<label style="display:flex;flex-direction:column;gap:2px;font-size:.76rem;grid-column:span 2"><span class="meta">ร้านค้า / ตัวแทนจำหน่าย *</span><input data-f="dealer" list="dl-ed-dl" value="'+esc(b.dealer||'')+'" style="padding:5px 7px;min-width:0"><datalist id="dl-ed-dl">'+(b.dealers||[]).map(function(n){return '<option value="'+esc(n)+'">'}).join('')+'</datalist></label>':'')+inp('company','บริษัท',r0.company)+inp('phone','เบอร์โทรศัพท์',r0.phone)+inp('sendDate','วันที่ส่ง',ce(r0.sendDate),'date')+inp('whtAmt','ยอดหัก ณ ที่จ่าย 3% (บาท) — กรอกเอง',r0.whtAmt||'','number')+'</div><div id="dl-ed-rows">'+(b.isNew?card('new'+Date.now().toString(36)+'a',{type:'เคลมหลังขาย',part:'ใช้'},1):ids.map(function(id,k){return card(id,rows[id],k+1)}).join(''))+'</div><button type="button" id="dl-ed-add">+ เพิ่มเคส / รายการในเอกสารนี้</button></div>';
+document.body.appendChild(ov);let nn=b.isNew?1:ids.length;if(b.isNew){const f=ov.querySelector('.dl-ec [data-f="caseNo"]');if(f)f.focus()}
 ov.querySelector('#dl-ed-x').onclick=function(){ov.remove()};
 ov.addEventListener('change',function(e){const t=e.target;
 if(t.dataset&&t.dataset.f==='caseNo'){const c=t.closest('.dl-ec'),tk=t.value.trim();if(!c||!c.isConnected||!tk||!window.DLC||!window.DLC.lookupCase||ov.__fill)return;const d=window.DLC.lookupCase(tk);if(!d){toast('ไม่พบเคส '+tk+' ในข้อมูล DMS ของแอพ — กรอกเองได้');return}
@@ -4853,17 +4853,19 @@ const mk=function(l){const batt=d.job==='batt';return Object.assign({},cur,{case
 const L=d.lines.length?d.lines:[null];ov.__fill=1;try{c.replaceWith(htmlNode(card(c.dataset.id,mk(L[0]),0)))}finally{ov.__fill=0}
 let last=ov.querySelector('.dl-ec[data-id="'+c.dataset.id+'"]');L.slice(1).forEach(function(l){const id='new'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);nn++;last.insertAdjacentHTML('afterend',card(id,mk(l),nn));last=last.nextElementSibling});
 ov.querySelectorAll('.dl-ec > b').forEach(function(x,k){x.textContent='รายการที่ '+(k+1)});
-toast('ดึงข้อมูลเคส '+tk+' จาก DMS แล้ว'+(L.length>1?' ('+L.length+' รายการอะไหล่)':'')+(d.br&&d.br!==b.dealer?' · ⚠ เคสนี้เป็นของร้าน '+d.br:''));return}
+toast('ดึงข้อมูลเคส '+tk+' จาก DMS แล้ว'+(L.length>1?' ('+L.length+' รายการอะไหล่)':'')+(b.isNew?'':(d.br&&d.br!==b.dealer?' · ⚠ เคสนี้เป็นของร้าน '+d.br:'')));if(b.isNew){const de=ov.querySelector('#dl-ed-hd [data-f="dealer"]');if(de&&!de.value&&d.br)de.value=d.br}return}
 if(t.dataset&&t.dataset.job){const c=t.closest('.dl-ec'),pn=c.querySelector('[data-pn]'),a=c.querySelector('[data-f="amt"]');pn.disabled=t.value!==JB[0];if(t.value===JB[1]&&(!a.value||a.value==='0'))a.value='75'}});
 ov.querySelector('#dl-ed-add').onclick=function(){const id='new'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);nn++;ov.querySelector('#dl-ed-rows').insertAdjacentHTML('beforeend',card(id,{type:'เคลมหลังขาย',part:'ใช้'},nn))};
 ov.querySelector('#dl-ed-save').onclick=async function(){const btn=this;btn.disabled=true;const hd={};ov.querySelectorAll('#dl-ed-hd [data-f]').forEach(function(e){hd[e.dataset.f]=e.type==='date'?ce(e.value):e.type==='number'?(e.value===''?'':parseFloat(e.value)):e.value.trim()});
-let n=0;try{for(const c of ov.querySelectorAll('.dl-ec')){const id=c.dataset.id,o=Object.assign({},rows[id]||{dealer:b.dealer,docNo:b.no||'',st:r0.st||ST[0],createdAt:new Date().toISOString()},hd);
+if(b.isNew){if(!hd.dealer){toast('กรอกชื่อร้านค้าก่อน');btn.disabled=false;return}b.dealer=hd.dealer}
+let n=0;try{if(b.isNew){b.no=await window.ddIssueNo()}for(const c of ov.querySelectorAll('.dl-ec')){if(b.isNew&&!c.querySelector('[data-f="caseNo"]').value.trim()&&!c.querySelector('[data-f="amt"]').value)continue;const id=c.dataset.id,o=Object.assign({},rows[id]||{dealer:b.dealer,docNo:b.no||'',st:r0.st||ST[0],createdAt:new Date().toISOString()},hd);
 c.querySelectorAll('[data-f]').forEach(function(e){const k=e.dataset.f;o[k]=e.type==='checkbox'?e.checked:e.type==='date'?ce(e.value):e.type==='number'?(e.value===''?0:parseFloat(e.value)):e.value.trim()});
 const jv=c.querySelector('[data-job]').value,pn=c.querySelector('[data-pn]').value.trim();
 if(jv===JB[1]){o.report='ค่าแรงงานแบตเตอรี่';o.part='ไม่ใช้'}else if(jv===JB[2]){o.report='ค่าส่งของเคลม';o.part=''}else{o.report='ค่าแรงเปลี่ยน '+(pn||'อะไหล่');o.part='ใช้'}
-if(!b.no)delete o.docNo;o.updatedAt=new Date().toISOString();await S.db.doc(P+id).set(o);rows[id]=o;n++}
-toast('บันทึกการแก้ไขแล้ว '+n+' รายการ');ov.remove();draw()}catch(e){toast('บันทึกไม่สำเร็จ: '+errText(e));btn.disabled=false}};
+if(b.isNew){o.docNo=b.no;o.src='dms';o.tk=o.caseNo;o.st=ST[0]}if(!b.no)delete o.docNo;o.updatedAt=new Date().toISOString();await S.db.doc(P+id).set(o);rows[id]=o;n++}
+toast((b.isNew?'สร้างเอกสาร '+b.no+' แล้ว ':'บันทึกการแก้ไขแล้ว ')+n+' รายการ');ov.remove();draw();if(b.isNew&&window.ddOpen)setTimeout(function(){window.ddOpen([b.dealer],b.no)},400)}catch(e){toast('บันทึกไม่สำเร็จ: '+errText(e));btn.disabled=false}};
 }
+window.dlNewDoc=function(pre){const D=new Set(Object.values(rows).map(function(r){return r.dealer}));try{(window.DLC.dealerList()||[]).forEach(function(x){D.add(x[0])})}catch(e){}editDoc({isNew:true,ids:[],dealer:pre||'',no:'',dealers:[...D].sort()})};
 function docsPanel(){const c=document.getElementById('dl-docs');if(!c)return;const f=flt,q=(f.q||'').toLowerCase();const B={};
 Object.keys(rows).forEach(function(i){const r=rows[i];if(f.st&&r.st!==f.st)return;if(q&&!((r.dealer||'')+' '+(r.caseNo||'')+' '+(r.docNo||'')).toLowerCase().includes(q))return;
 const k=(r.docNo||'')+'\u0001'+r.dealer;const b=B[k]=B[k]||{no:r.docNo||'',dealer:r.dealer,ids:[],n:0,sum:0,st:{},sent:'',send:''};b.n++;b.ids.push(i);b.sum+=(+r.amt||0);const t=r.st||ST[0];b.st[t]=(b.st[t]||0)+1;if(r.sentAcc&&r.sentAcc>b.sent)b.sent=r.sentAcc;if(r.sendDate&&r.sendDate>b.send)b.send=r.sendDate});
@@ -5110,7 +5112,7 @@ async function save(all){
 function mount(v){
   const track=v.querySelector('#dl-track');if(!track)return;
   const d=document.createElement('div');d.id='dl-check';d.className='panel';d.style.marginBottom='14px';
-  d.innerHTML='<h3>ทำเบิกค่าแรง Dealer</h3><div class="dc-steps"><span><b>①</b> เลือกร้าน</span><span><b>②</b> กรอกข้อมูลแต่ละเคส</span><span><b>③</b> บันทึกเคสที่ครบ</span><span><b>④</b> พิมพ์เอกสารรายร้าน</span><span><b>⑤</b> เคสไม่ครบ = ค้างไว้ก่อน</span></div><div id="dc-body"></div>';
+  d.innerHTML='<h3>ทำเบิกค่าแรง Dealer</h3><div class="dc-steps"><span><b>①</b> สร้างเอกสาร กรอกเลขเคส</span><span><b>②</b> ตรวจ/กรอกข้อมูลแต่ละเคส</span><span><b>③</b> พิมพ์เอกสาร</span><span><b>④</b> ส่งบัญชี</span></div><div style="margin:8px 0"><button type="button" class="primary" id="dc-newdoc" style="font-size:1rem;padding:8px 18px">① 📄 สร้างเอกสาร (กรอกเลขเคส)</button> <span class="meta">หรือเลือกจากเคสค้างตามร้านด้านล่าง</span></div><div id="dc-body"></div>';
   track.before(d);css();if(!ui.send)ui.send=isoDate(new Date().toISOString());
   d.addEventListener('input',e=>{const t=e.target,k=t.dataset&&t.dataset.k;if(!k)return;const cEl=t.closest('[data-tk]');if(!cEl)return;const c=cs[cEl.dataset.tk];if(!c)return;
     const li=t.closest('tr[data-li]');if(li&&(k==='labor'||k==='used')){c.lines[+li.dataset.li][k]=t.value;
@@ -5133,6 +5135,7 @@ function mount(v){
     if(t.dataset&&t.dataset.k==='inc'){const cEl=t.closest('[data-tk]');cs[cEl.dataset.tk].inc=t.checked;cs[cEl.dataset.tk].manual=true;const tot=document.getElementById('dc-tot');if(tot)tot.innerHTML=totHtml()}
     else if(t.dataset&&t.dataset.k==='used'){const li=t.closest('tr[data-li]'),cEl=t.closest('[data-tk]');if(li&&cEl)cs[cEl.dataset.tk].lines[+li.dataset.li].used=t.value}});
   d.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+    if(t.id==='dc-newdoc'){if(window.dlNewDoc)window.dlNewDoc(ui.dealer);return}
     if(t.dataset&&t.dataset.dcedit){const q=document.getElementById('dl-fq');if(q){q.value=t.dataset.dcedit;q.dispatchEvent(new Event('input',{bubbles:true}));const tr=document.getElementById('dl-track');if(tr)tr.scrollIntoView({behavior:'smooth',block:'start'})}return}
     if(t.dataset&&t.dataset.dccat){ui.cat=t.dataset.dccat;ui.dealer='';render();return}
     if(t.id==='dc-save')save();
@@ -5518,6 +5521,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
       for(const r of g.L){if((r.st||'รอค่าแรง')!=='รอค่าแรง'||!r.__p)continue;const o=Object.assign({},r);const pth=o.__p;delete o.__p;o.st='ส่งบัญชีแล้ว';o.sentAcc=d;o.docNo=no;await S.db.doc(pth).set(o)}}
       toast('เปลี่ยนสถานะแล้ว '+T.length+' ฉบับ');if(window.dlReload)window.dlReload();return true}catch(e){toast('บันทึกไม่สำเร็จ');return false}
   }
+  window.ddIssueNo=issueNo;
   window.ddCreate=async function(pre){
     let rows;try{rows=await fetchAll()}catch(e){toast('โหลดข้อมูลไม่สำเร็จ');return}
     const dr=rows.filter(r=>!r.docNo&&r.__p&&(r.st||'รอค่าแรง')==='รอค่าแรง');
@@ -5557,7 +5561,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     try{
       if(S.view!=='dealerlabor')return;
       const csvb=document.getElementById('dl-csv');
-      if(csvb&&!document.getElementById('dl-newdoc')){const nb=document.createElement('button');nb.id='dl-newdoc';nb.type='button';nb.className='primary';nb.textContent='📄 สร้างเอกสาร';nb.onclick=()=>window.ddCreate();csvb.insertAdjacentElement('beforebegin',nb)}
+      if(csvb&&!document.getElementById('dl-newdoc')){const nb=document.createElement('button');nb.id='dl-newdoc';nb.type='button';nb.className='primary';nb.textContent='📄 สร้างเอกสาร';nb.onclick=()=>window.dlNewDoc();csvb.insertAdjacentElement('beforebegin',nb)}
       if(csvb&&!document.getElementById('dl-docall')){const b=document.createElement('button');b.id='dl-docall';b.type='button';b.textContent='📄 ใบเอกสารทุกร้าน / พิมพ์';b.onclick=()=>open(null);csvb.insertAdjacentElement('afterend',b)}
       document.querySelectorAll('#dl-list h4').forEach(h=>{if(h.dataset.dd)return;h.dataset.dd='1';
         const name=(h.firstChild&&h.firstChild.textContent||'').trim();
