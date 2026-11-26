@@ -4863,7 +4863,7 @@ let tick=0;setInterval(function(){try{if(S.view!=='dealerlabor')return;const v=d
 
 /*DLCHECK*/(function(){
 const P='audit/_dlabor/',RP='audit/_laborrates/all',CUT='2026-09-01';
-let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:''},cs={},rr={},sig='',busy=false,ratesTried=false;
+let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:''},cs={},rr={},FEED=null,FCFG=null,FST={t:0,msg:'',busy:false},sig='',busy=false,ratesTried=false;
 const fmt=n=>(Math.round((+n||0)*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const norm=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
 const PII=/0\d[\d\- ]{7,10}\d|https?:\/\/|maps\.google|ต\.\s?\S+\s+อ\.|จ\.\s?\S+|ม\.\d+|\d+\/\d+/;
@@ -4911,9 +4911,29 @@ function parseRates(X,buf){
   });
   return out;
 }
+const FP='audit/_dmsfeed/config';
+function srcRows(){return FEED&&FEED.length?FEED:(S.dms||[])}
+async function loadFeedCfg(){try{const c=await client();if(!c)return;const q=await c.from('em_docs').select('data').eq('path',FP).limit(1);const d=q.data&&q.data[0]&&q.data[0].data;if(d&&d.url){FCFG={url:d.url,token:d.token||''};if(!FST.t&&!FST.busy)refreshFeed()}}catch(e){}}
+async function refreshFeed(){
+  if(!FCFG||FST.busy)return;FST.busy=true;FST.msg='กำลังดึงจาก API…';render();
+  try{
+    const u=FCFG.url+(FCFG.url.indexOf('?')<0?'?':'&')+'token='+encodeURIComponent(FCFG.token||'');
+    const r=await fetch(u,{redirect:'follow'});const j=await r.json();
+    if(j.error)throw new Error(j.error==='unauthorized'?'รหัส token ไม่ถูกต้อง':j.error);
+    if(!Array.isArray(j.cases))throw new Error('รูปแบบข้อมูลไม่ถูกต้อง');
+    FEED=j.cases.map(x=>({...x,tk:String(x.tk),parts:x.parts||[]}));FST.t=Date.now();FST.at=j.at||'';FST.msg='';cs={};rr={};
+  }catch(e){FST.msg='ดึงจาก API ไม่สำเร็จ: '+errText(e)+' (ใช้ข้อมูลที่นำเข้าไว้แทน)'}
+  FST.busy=false;render();
+}
+async function saveFeedCfg(url,token){
+  if(!S.isAdmin){toast('เฉพาะผู้ดูแลระบบตั้งค่าได้');return}
+  url=String(url||'').trim();token=String(token||'').trim();
+  if(!/^https:\/\/script\.google\.com\//.test(url)){toast('ลิงก์ต้องขึ้นต้นด้วย https://script.google.com/');return}
+  try{await S.db.doc(FP).set({url,token,savedAt:new Date().toISOString()});FCFG={url,token};FST.t=0;toast('บันทึกการเชื่อมต่อแล้ว');refreshFeed()}catch(e){toast('บันทึกไม่สำเร็จ: '+errText(e))}
+}
 function pendingAll(){
   const rx=/รอคืนค่า(บริการ|แรง)เคลม/;
-  return (S.dms||[]).filter(r=>rx.test(r.st||'')&&(ui.old||(r.d||'')>=CUT));
+  return srcRows().filter(r=>rx.test(r.st||'')&&(ui.old||(r.d||'')>=CUT));
 }
 function dealerList(){
   const m=new Map();pendingAll().forEach(r=>{const b=norm(r.br)||'(ไม่ระบุร้าน)';m.set(b,(m.get(b)||0)+1)});
@@ -4977,8 +4997,10 @@ function totHtml(){
 function render(){
   const root=document.getElementById('dl-check');if(!root)return;
   const body=root.querySelector('#dc-body');if(!body)return;
-  const hasDms=(S.dms||[]).length>0,dl=dealerList();
+  const hasDms=srcRows().length>0,dl=dealerList();
   let h='';
+  h+='<p class="meta" id="dc-src">แหล่งข้อมูลเคส: '+(FEED?'<b>API DMS (Apps Script)</b>'+(FST.at?' · อัปเดตจากต้นทาง '+esc(String(FST.at).slice(0,16).replace('T',' ')):'')+' · '+FEED.length.toLocaleString()+' เคสค้าง':'ข้อมูลที่นำเข้าในแอป (DMS)')+(FCFG?' <button type="button" id="dc-feed-go"'+(FST.busy?' disabled':'')+'>ดึงข้อมูลล่าสุดจาก API</button>':'')+(FST.msg?' <span style="color:#842029">'+esc(FST.msg)+'</span>':'')+'</p>';
+  if(S.isAdmin)h+='<details style="margin:4px 0 8px"><summary class="meta" style="cursor:pointer">ตั้งค่าการเชื่อมต่อ API (ผู้ดูแล)</summary><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><input id="dc-feed-url" placeholder="ลิงก์ Web app ของ Apps Script (https://script.google.com/macros/s/…/exec)" style="flex:2;min-width:260px" value="'+esc(FCFG?FCFG.url:'')+'"><input id="dc-feed-tok" placeholder="รหัส token (FEED_TOKEN)" style="flex:1;min-width:160px" value="'+esc(FCFG?FCFG.token:'')+'"><button type="button" id="dc-feed-save" class="primary">บันทึก</button></div></details>';
   if(!hasDms)h+='<div class="banner warn">ยังไม่มีข้อมูลเคส DMS ในแอป ให้ผู้ดูแลระบบนำเข้าไฟล์เคลมที่เมนู "นำเข้าข้อมูล" (ไฟล์เดียวกับที่ใช้ทำค่าแรง) ระบบจะแสดงเคสสถานะ "รอคืนค่าบริการเคลม" ให้ตรวจที่นี่</div>';
   h+=`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:6px 0"><label style="display:flex;flex-direction:column;gap:2px;font-size:.78rem;flex:1;min-width:260px"><span class="meta">เลือกร้านค้า (ร้านที่มีเคสค้างค่าแรง ${dl.length} ร้าน)</span><select id="dc-dealer"><option value="">— เลือกร้านค้า —</option>${dl.map(([n,c])=>`<option value="${esc(n)}"${n===ui.dealer?' selected':''}>${esc(n)} (${c} เคส)</option>`).join('')}</select></label>
   <label style="display:flex;flex-direction:column;gap:2px;font-size:.78rem"><span class="meta">วันที่ส่งเอกสาร</span><input id="dc-send" type="date" value="${esc(ui.send)}"></label>
@@ -5037,10 +5059,12 @@ function mount(v){
     else if(t.dataset&&t.dataset.k==='used'){const li=t.closest('tr[data-li]'),cEl=t.closest('[data-tk]');if(li&&cEl)cs[cEl.dataset.tk].lines[+li.dataset.li].used=t.value}});
   d.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
     if(t.id==='dc-save')save();
+    else if(t.id==='dc-feed-go')refreshFeed();
+    else if(t.id==='dc-feed-save')saveFeedCfg((document.getElementById('dc-feed-url')||{}).value,(document.getElementById('dc-feed-tok')||{}).value);
     else if(t.id==='dc-print'){if(window.ddOpen)window.ddOpen([ui.dealer]);else toast('บันทึกรายการก่อน แล้วกดปุ่มใบเอกสารในรายการด้านล่าง')}
     else if(t.id==='dc-all'||t.id==='dc-none'){casesOf(ui.dealer).forEach(r=>{const c=caseState(r);c.inc=t.id==='dc-all';c.manual=true});render()}
     else if(t.id==='dc-ok'){casesOf(ui.dealer).forEach(r=>{const c=caseState(r);c.manual=false;c.inc=!issues(r,c).length});render()}});
-  render();loadExisting();if(!ratesTried){ratesTried=true;loadRates()}
+  render();loadExisting();loadFeedCfg();if(!ratesTried){ratesTried=true;loadRates()}
 }
 window.DLC={bahtText,symOf,setRates,lookup,parseRates,calc:()=>calc(ui.dealer),state:()=>({ui,cs,existing}),pendingAll,dealerList,caseState,casesOf,render,ui};
 let tick=0;
@@ -5048,8 +5072,9 @@ setInterval(function(){try{
   if(S.view!=='dlclaim')return;const v=document.getElementById('v-dlclaim');if(!v)return;
   if(!S.dmsLoaded&&typeof ensureDms==='function')ensureDms();
   if(!v.querySelector('#dl-check')){mount(v);return}
-  const s=(S.dms||[]).length+':'+(RATES?RATES.size:0);if(s!==sig){sig=s;render()}
+  const s=(FEED?FEED.length:(S.dms||[]).length)+':'+(RATES?RATES.size:0);if(s!==sig){sig=s;render()}
   if(++tick%30===0)loadExisting();
+  if(FCFG&&!FST.busy&&Date.now()-FST.t>5*60*1000)refreshFeed();
 }catch(e){}},1000);
 })();
 
