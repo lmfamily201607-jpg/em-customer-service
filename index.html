@@ -4899,9 +4899,9 @@ function parseRates(X,buf){
   const wb=X.read(buf,{type:'array',cellFormula:false,cellHTML:false,cellText:false,cellStyles:false}),out=[];
   wb.SheetNames.forEach(n=>{
     const a=X.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''});let hi=-1;
-    for(let i=0;i<Math.min(a.length,8);i++){const h=a[i].map(x=>String(x).trim());if(h.some(x=>x.indexOf('SKU NO')===0)&&h.indexOf('ค่าแรง')>=0){hi=i;break}}
+    for(let i=0;i<Math.min(a.length,8);i++){const h=a[i].map(x=>String(x).trim());if(h.some(x=>x.indexOf('SKU NO')===0||x==='SKU')&&h.indexOf('ค่าแรง')>=0){hi=i;break}}
     if(hi<0)return;
-    const h=a[hi].map(x=>String(x).trim()),sk=[];h.forEach((x,i)=>{if(x.indexOf('SKU NO')===0||x.indexOf('NEW SKU')===0)sk.push(i)});
+    const h=a[hi].map(x=>String(x).trim()),sk=[];h.forEach((x,i)=>{if(x.indexOf('SKU NO')===0||x.indexOf('NEW SKU')===0||x==='SKU')sk.push(i)});
     const li=h.indexOf('ค่าแรง'),fi=h.indexOf('F.R.T');let ni=h.findIndex(x=>/NAME/i.test(x)&&/TH/i.test(x));if(ni<0){const e=h.findIndex(x=>/PART NAME \(EN\)/i.test(x));ni=e>=0?e+1:-1}
     a.slice(hi+1).forEach(r=>{
       const lv=r[li]===''||r[li]==null?null:Number(String(r[li]).replace(/,/g,''));const l=lv!=null&&isFinite(lv)?lv:null;
@@ -4943,8 +4943,13 @@ async function importRates(file){
   if(!S.isAdmin){toast('เฉพาะผู้ดูแลระบบนำเข้าได้');return}
   try{toast('กำลังอ่านตารางค่าแรง…');const rows=parseRates(XLSX,await file.arrayBuffer());
     if(!rows.length){toast('ไม่พบคอลัมน์ SKU NO. และ ค่าแรง ในไฟล์นี้');return}
-    await S.db.doc(RP).set({rows:rows.map(r=>({s:r.s,l:r.l,t:r.t,n:r.n})),importedAt:new Date().toISOString(),file:file.name,count:rows.length});
-    setRates(rows,{importedAt:new Date().toISOString(),file:file.name,count:rows.length});cs={};render();toast('นำเข้าตารางค่าแรง '+rows.length.toLocaleString()+' รหัสแล้ว')}
+    // merge with what is already stored (never drop old rates): new file adds codes and updates matching ones
+    let oldRows=[];try{const c=await client();const q=c&&await c.from('em_docs').select('data').eq('path',RP).limit(1);const d=q&&q.data&&q.data[0]&&q.data[0].data;if(d&&Array.isArray(d.rows))oldRows=d.rows}catch(e){}
+    const mm=new Map();oldRows.forEach(r=>{if(r&&r.s)mm.set(String(r.s),{s:String(r.s),l:r.l,t:r.t,n:r.n})});
+    rows.forEach(r=>{const o=mm.get(r.s);if(!o||r.l!=null||o.l==null)mm.set(r.s,{s:r.s,l:r.l,t:r.t,n:r.n||(o&&o.n)||''})});
+    const all=[...mm.values()],meta={importedAt:new Date().toISOString(),file:file.name,count:all.length};
+    await S.db.doc(RP).set({rows:all,importedAt:meta.importedAt,file:file.name,count:all.length});
+    setRates(all,meta);cs={};render();toast('นำเข้า '+rows.length.toLocaleString()+' รหัสจากไฟล์นี้ · ตารางรวมตอนนี้ '+all.length.toLocaleString()+' รหัส (ของเดิมยังอยู่)')}
   catch(e){toast('นำเข้าไม่สำเร็จ: '+errText(e))}
 }
 function css(){if(document.getElementById('dc-css'))return;const s=document.createElement('style');s.id='dc-css';
