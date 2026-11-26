@@ -8,10 +8,8 @@ create table if not exists public.dms_feed_secret (
 );
 alter table public.dms_feed_secret enable row level security;   -- ไม่มี policy = อ่านจากภายนอกไม่ได้
 
--- ไม่ต้องแก้อะไร: ระบบสุ่มรหัสลับให้เอง แล้วแสดงในผลลัพธ์ด้านล่างหลังกด Run
-insert into public.dms_feed_secret (id, secret)
-values (1, replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-',''))
-on conflict (id) do update set secret = excluded.secret;
+-- ไม่ต้องใส่รหัส: ครั้งแรกที่ GitHub Actions ส่งข้อมูลมา ระบบจะจำค่า APP_PUSH_SECRET นั้นไว้เอง
+-- (อยากเปลี่ยนรหัส: delete from public.dms_feed_secret; แล้วรัน DMS sync ใหม่)
 
 create or replace function public.push_dms_feed(p_secret text, p_path text, p_data jsonb)
 returns void
@@ -23,6 +21,12 @@ begin
   if p_path not like 'audit/_dmsfeed/%' then
     raise exception 'bad path';
   end if;
+  if coalesce(length(p_secret),0) < 1 then
+    raise exception 'unauthorized';
+  end if;
+  if not exists (select 1 from public.dms_feed_secret) then
+    insert into public.dms_feed_secret (id, secret) values (1, p_secret) on conflict (id) do nothing;
+  end if;
   if not exists (select 1 from public.dms_feed_secret where secret = p_secret) then
     raise exception 'unauthorized';
   end if;
@@ -33,6 +37,3 @@ $$;
 
 revoke all on function public.push_dms_feed(text, text, jsonb) from public;
 grant execute on function public.push_dms_feed(text, text, jsonb) to anon;
-
--- ก๊อปค่าในช่อง secret ด้านล่าง ไปใส่ใน GitHub → Settings → Secrets → Actions → APP_PUSH_SECRET (กดดินสอ → วาง → Update secret)
-select secret from public.dms_feed_secret where id = 1;
