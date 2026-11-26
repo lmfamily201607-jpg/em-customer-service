@@ -5052,7 +5052,7 @@ function totHtml(){
   return `<div class="dc-tot"><div style="display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline"><span>เคสที่เลือก <b>${t.cases}</b> · รายการค่าแรง <b>${t.lines}</b>${t.miss?` · <span class="meta">ไม่มีค่าแรง (ไม่จ่าย) ${t.miss} รายการ — ไม่นำมาคิด</span>`:''}</span></div>
   <div style="display:flex;flex-wrap:wrap;gap:4px 26px;margin-top:6px"><span>ราคารวม <b>${fmt(t.sum)}</b>${t.ship?` <span class="meta">(ค่าแรง ${fmt(t.labor)} + ค่าส่ง ${fmt(t.ship)})</span>`:''}</span><span>ภาษีมูลค่าเพิ่ม 7% <b>${fmt(t.vat)}</b></span><span>รวมทั้งสิ้น <b class="big">${fmt(t.tot)}</b></span></div>
   <div class="meta" style="margin-top:3px">(${esc(bahtText(t.tot))})</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="primary" id="dc-save"${busy||!t.lines&&!t.ship?' disabled':''}>③ บันทึกเคสที่ครบ (${t.cases} เคส)</button><button type="button" id="dc-print">④ 📄 พิมพ์เอกสารร้านนี้</button><button type="button" id="dc-printall">④ 📄 พิมพ์ทุกร้านที่บันทึกแล้ว</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="primary" id="dc-save"${busy||!t.lines&&!t.ship?' disabled':''}>③ บันทึกเคสที่ครบ (${t.cases} เคส)</button><button type="button" id="dc-print">④ 📄 สร้างเอกสารร้านนี้</button><button type="button" id="dc-printall">④ 📄 พิมพ์ทุกร้านที่บันทึกแล้ว</button></div>
   ${(()=>{if(t.cases)return '';const m=casesOf(d).filter(r=>!prepared(r.tk)).map(r=>[r.tk,issues(r,caseState(r))]).filter(x=>x[1].length).slice(0,6);return m.length?'<div class="dc-tag miss" style="white-space:normal;margin-top:6px;display:block">ยังบันทึกไม่ได้ เพราะเคสยังข้อมูลไม่ครบ: '+m.map(x=>'#'+esc(x[0])+' ขาด '+esc(x[1].join(', '))).join(' | ')+'</div>':''})()}
   <div class="meta" style="margin-top:4px">⑤ เคสที่ข้อมูลไม่ครบจะไม่ถูกบันทึก ค้างไว้ในรายการจนกว่าจะกรอกครบ</div></div>`;
 }
@@ -5141,7 +5141,7 @@ function mount(v){
       save().then(ok=>{if(ok&&window.ddOpen)setTimeout(()=>window.ddOpen([d]),600)})}
     else if(t.id==='dc-feed-go'){FST.at='';refreshFeed()}
     else if(t.id==='dc-printall'){if(window.ddOpen)window.ddOpen(null)}
-    else if(t.id==='dc-print'){if(window.ddOpen)window.ddOpen([ui.dealer]);else toast('บันทึกรายการก่อน แล้วกดปุ่มใบเอกสารในรายการด้านล่าง')}
+    else if(t.id==='dc-print'){if(window.ddCreate)window.ddCreate(ui.dealer);else toast('บันทึกรายการก่อน แล้วกดปุ่มใบเอกสารในรายการด้านล่าง')}
     else if(t.id==='dc-all'||t.id==='dc-none'){casesOf(ui.dealer).forEach(r=>{const c=caseState(r);c.inc=t.id==='dc-all';c.manual=true});render()}
     else if(t.id==='dc-ok'){casesOf(ui.dealer).forEach(r=>{const c=caseState(r);c.manual=false;c.inc=!issues(r,c).length});render()}});
   render();loadExisting();refreshFeed();if(!ratesTried){ratesTried=true;loadRates()}
@@ -5508,15 +5508,36 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
   function close(){const o=document.getElementById('dd-ov');if(o)o.remove()}
   window.ddOpen=function(n,no){return open(n,no)};
   async function sendAcc(G){
-    const T=G.filter(g=>g.L.some(r=>(r.st||'รอค่าแรง')==='รอค่าแรง'&&r.__p&&!r.docNo));
-    if(!T.length){toast('ทุกร้านออกเลขที่แล้ว หรือไม่มีรายการที่อยู่ระหว่างดำเนินการ');return false}
-    if(!confirm('ออกเลขที่เอกสารและเปลี่ยนสถานะเป็น "ส่งเอกสารบัญชี" '+T.length+' ร้าน ('+T.reduce((s,g)=>s+g.L.length,0)+' รายการ)?\nเลขที่จะรันต่อเนื่องและแก้ภายหลังไม่ได้ · ข้อมูลเดิมไม่ถูกลบ'))return false;
+    const T=G.filter(g=>g.L.some(r=>(r.st||'รอค่าแรง')==='รอค่าแรง'&&r.__p));
+    if(!T.length){toast('ไม่มีรายการที่อยู่ระหว่างดำเนินการ');return false}
+    const nNo=T.filter(g=>!g.no).length;
+    if(!confirm('เปลี่ยนสถานะเป็น "ส่งเอกสารบัญชี" '+T.length+' ฉบับ ('+T.reduce((s,g)=>s+g.L.filter(r=>(r.st||'รอค่าแรง')==='รอค่าแรง').length,0)+' รายการ)?'+(nNo?'\nฉบับร่าง '+nNo+' ฉบับจะถูกออกเลขที่เอกสารให้ (รันต่อเนื่อง แก้ภายหลังไม่ได้)':'')+'\nข้อมูลเดิมไม่ถูกลบ'))return false;
     const d=new Date().toISOString().slice(0,10);
-    try{for(const g of T){const no=await issueNo();
-      for(const r of g.L){if((r.st||'รอค่าแรง')!=='รอค่าแรง'||!r.__p||r.docNo)continue;const o=Object.assign({},r);const pth=o.__p;delete o.__p;o.st='ส่งบัญชีแล้ว';o.sentAcc=d;o.docNo=no;await S.db.doc(pth).set(o)}}
-      toast('ออกเลขที่แล้ว '+T.length+' ร้าน');if(window.dlReload)window.dlReload();return true}catch(e){toast('บันทึกไม่สำเร็จ');return false}
+    try{for(const g of T){const no=g.no||await issueNo();
+      for(const r of g.L){if((r.st||'รอค่าแรง')!=='รอค่าแรง'||!r.__p)continue;const o=Object.assign({},r);const pth=o.__p;delete o.__p;o.st='ส่งบัญชีแล้ว';o.sentAcc=d;o.docNo=no;await S.db.doc(pth).set(o)}}
+      toast('เปลี่ยนสถานะแล้ว '+T.length+' ฉบับ');if(window.dlReload)window.dlReload();return true}catch(e){toast('บันทึกไม่สำเร็จ');return false}
   }
-  window.ddFmt={repTxt:repTxt,partTxt:partTxt,th:function(d){return d?th(d):''}};
+  window.ddCreate=async function(pre){
+    let rows;try{rows=await fetchAll()}catch(e){toast('โหลดข้อมูลไม่สำเร็จ');return}
+    const dr=rows.filter(r=>!r.docNo&&r.__p&&(r.st||'รอค่าแรง')==='รอค่าแรง');
+    if(!dr.length){toast('ยังไม่มีรายการที่บันทึกไว้ รอออกเอกสาร — ไปทำที่ขั้น ③ บันทึกเคสที่ครบก่อน');return}
+    const D={};dr.forEach(r=>{(D[r.dealer]=D[r.dealer]||[]).push(r)});const names=Object.keys(D).sort((a,b)=>a.localeCompare(b,'th'));
+    const old=document.getElementById('dd-new');if(old)old.remove();
+    const ov=document.createElement('div');ov.id='dd-new';ov.style.cssText='position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.45);overflow:auto;padding:16px';
+    const cases=n=>{const m={};D[n].forEach(r=>{(m[r.caseNo||'-']=m[r.caseNo||'-']||[]).push(r)});return Object.keys(m).sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})).map(k=>[k,m[k]])};
+    ov.innerHTML='<div style="max-width:760px;margin:0 auto;background:#fff;border-radius:14px;padding:16px 18px"><div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0;flex:1">📄 สร้างเอกสารใบสรุปค่าแรงเคลม</h3><button type="button" id="dn-x">ปิด</button></div>'+
+    '<label style="display:block;margin:10px 0 4px"><b>เลือกร้าน</b></label><select id="dn-d" style="width:100%;padding:6px 8px">'+names.map(n=>'<option value="'+E(n)+'"'+(n===pre?' selected':'')+'>'+E(n)+' ('+cases(n).length+' เคส)</option>').join('')+'</select>'+
+    '<div id="dn-l" style="margin-top:10px"></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px"><b id="dn-c" style="flex:1"></b><button type="button" class="primary" id="dn-go">📄 สร้างเอกสาร</button></div><p class="meta">สร้างแล้วระบบออกเลขที่เอกสารรันต่อเนื่องและเปิดใบให้พิมพ์ · เคสที่ไม่เลือกจะค้างไว้เป็นฉบับร่าง</p></div>';
+    document.body.appendChild(ov);
+    const draw=()=>{const n=ov.querySelector('#dn-d').value;ov.querySelector('#dn-l').innerHTML='<label style="display:block;margin-bottom:4px"><input type="checkbox" id="dn-all" checked> เลือกทุกเคส</label><div style="max-height:46vh;overflow:auto;border:1px solid #d5ddd8;border-radius:8px;padding:6px 10px">'+cases(n).map(([k,L])=>'<label style="display:flex;gap:8px;padding:3px 0;border-bottom:1px solid #eef2ef"><input type="checkbox" class="dn-k" value="'+E(k)+'" checked> <b>#'+E(k)+'</b> <span class="meta">'+E(L[0].model||'')+' · '+L.length+' รายการ · '+fmt(L.reduce((s,r)=>s+(+r.amt||0),0))+' บาท</span></label>').join('')+'</div>';upd()};
+    const upd=()=>{const n=ov.querySelector('#dn-d').value,k=[...ov.querySelectorAll('.dn-k:checked')].length;ov.querySelector('#dn-c').textContent='เลือก '+k+' จาก '+cases(n).length+' เคส';ov.querySelector('#dn-go').disabled=!k};
+    ov.addEventListener('change',e=>{const t=e.target;if(t.id==='dn-d')draw();else if(t.id==='dn-all'){ov.querySelectorAll('.dn-k').forEach(x=>x.checked=t.checked);upd()}else if(t.classList.contains('dn-k'))upd()});
+    ov.querySelector('#dn-x').onclick=()=>ov.remove();
+    ov.querySelector('#dn-go').onclick=async function(){const btn=this,n=ov.querySelector('#dn-d').value,sel=new Set([...ov.querySelectorAll('.dn-k:checked')].map(x=>x.value));btn.disabled=true;
+      try{const no=await issueNo();for(const [k,L] of cases(n)){if(!sel.has(k))continue;for(const r of L){const o=Object.assign({},r);const pth=o.__p;delete o.__p;o.docNo=no;o.updatedAt=new Date().toISOString();await S.db.doc(pth).set(o)}}
+        toast('สร้างเอกสาร '+no+' แล้ว');ov.remove();if(window.dlReload)window.dlReload();await open([n],no)}catch(e){toast('สร้างเอกสารไม่สำเร็จ');btn.disabled=false}};
+    draw();
+  };
   window.ddSend=async function(names){let rows;try{rows=await fetchAll()}catch(e){toast('โหลดข้อมูลไม่สำเร็จ');return}return sendAcc(groups(rows,names))};
   async function open(names,no){
     let rows;try{rows=await fetchAll()}catch(e){toast('โหลดข้อมูลไม่สำเร็จ');return}
@@ -5524,7 +5545,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     close();
     if(!document.getElementById('dd-css')){const s=document.createElement('style');s.id='dd-css';s.textContent='#dd-ov{position:fixed;inset:0;z-index:99999;background:#e9edf0;overflow:auto}#dd-bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid #d0d5dd;z-index:2}.dd-page{background:#fff;width:1120px;max-width:96%;margin:16px auto;padding:22px 26px;box-shadow:0 2px 14px rgba(0,0,0,.15);font-family:inherit;color:#111}@media print{html,body{background:#fff!important}body{padding-left:0!important}body>*:not(#dd-ov){display:none!important}#dd-ov,#dd-ov *{visibility:visible!important}#dd-ov{position:static!important;overflow:visible!important;background:#fff!important}#dd-bar{display:none!important}.dd-page{width:auto!important;max-width:none!important;margin:0!important;padding:0!important;box-shadow:none!important;page-break-after:always}.dd-page:last-child{page-break-after:auto}@page{size:A4 landscape;margin:10mm;@bottom-right{content:"หน้า " counter(page) " / " counter(pages);font-size:9pt;color:#666}}.dd-tbl thead{display:table-header-group}.dd-tbl tr,.dd-foot{page-break-inside:avoid}.dd-page{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';document.head.appendChild(s)}
     const ov=document.createElement('div');ov.id='dd-ov';
-    ov.innerHTML='<div id="dd-bar"><b style="flex:1">ใบสรุปค่าแรงเคลม · '+G.length+' ร้าน</b><button type="button" id="dd-print" class="primary">🖨 พิมพ์ / บันทึกเป็น PDF</button><button type="button" id="dd-csv">ส่งออก Excel (.xls)</button><button type="button" id="dd-acc">✅ ออกเลขที่ + บันทึกส่งบัญชี</button><button type="button" id="dd-x">ปิด</button></div>'+G.map(page).join('');
+    ov.innerHTML='<div id="dd-bar"><b style="flex:1">ใบสรุปค่าแรงเคลม · '+G.length+' ร้าน</b><button type="button" id="dd-print" class="primary">🖨 พิมพ์ / บันทึกเป็น PDF</button><button type="button" id="dd-csv">ส่งออก Excel (.xls)</button><button type="button" id="dd-acc">✅ ส่งบัญชี (เปลี่ยนสถานะ)</button><button type="button" id="dd-x">ปิด</button></div>'+G.map(page).join('');
     document.body.appendChild(ov);
     document.getElementById('dd-x').onclick=close;
     document.getElementById('dd-print').onclick=()=>window.print();
@@ -5535,6 +5556,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     try{
       if(S.view!=='dealerlabor')return;
       const csvb=document.getElementById('dl-csv');
+      if(csvb&&!document.getElementById('dl-newdoc')){const nb=document.createElement('button');nb.id='dl-newdoc';nb.type='button';nb.className='primary';nb.textContent='📄 สร้างเอกสาร';nb.onclick=()=>window.ddCreate();csvb.insertAdjacentElement('beforebegin',nb)}
       if(csvb&&!document.getElementById('dl-docall')){const b=document.createElement('button');b.id='dl-docall';b.type='button';b.textContent='📄 ใบเอกสารทุกร้าน / พิมพ์';b.onclick=()=>open(null);csvb.insertAdjacentElement('afterend',b)}
       document.querySelectorAll('#dl-list h4').forEach(h=>{if(h.dataset.dd)return;h.dataset.dd='1';
         const name=(h.firstChild&&h.firstChild.textContent||'').trim();
