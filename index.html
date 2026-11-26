@@ -5065,6 +5065,27 @@ function totHtml(){
   ${(()=>{if(t.cases)return '';const m=casesOf(d).filter(r=>!prepared(r.tk)).map(r=>[r.tk,issues(r,caseState(r))]).filter(x=>x[1].length).slice(0,6);return m.length?'<div class="dc-tag miss" style="white-space:normal;margin-top:6px;display:block">ยังบันทึกไม่ได้ เพราะเคสยังข้อมูลไม่ครบ: '+m.map(x=>'#'+esc(x[0])+' ขาด '+esc(x[1].join(', '))).join(' | ')+'</div>':''})()}
   <div class="meta" style="margin-top:4px">⑤ เคสที่ข้อมูลไม่ครบจะไม่ถูกบันทึก ค้างไว้ในรายการจนกว่าจะกรอกครบ</div></div>`;
 }
+function estAmt(c){if(c.job==='batt')return BATT_LABOR;return c.lines.reduce((a,l)=>a+(l.labor!==''&&isFinite(parseFloat(l.labor))?parseFloat(l.labor):0),0)}
+function dash(){
+  const P=pendingAll(),E=Object.values(existing),nf=n=>Number(n||0).toLocaleString('th-TH');
+  const todo=P.filter(r=>!prepared(r.tk)),wait=E.filter(r=>(r.st||'รอค่าแรง')==='รอค่าแรง'),sent=E.filter(r=>r.st==='ส่งบัญชีแล้ว');
+  let amt=0;const B=[0,0,0,0],D={};
+  todo.forEach(r=>{const c=caseState(r),a=estAmt(c),g=ageOf(r.d);amt+=a;B[g==null||g<=30?0:g<=60?1:g<=90?2:3]++;const n=norm(r.br)||'(ไม่ระบุร้าน)',x=D[n]=D[n]||{n,c:0,a:0,old:0};x.c++;x.a+=a;if(g!=null&&g>x.old)x.old=g});
+  const sum=L=>L.reduce((a,r)=>a+(+r.amt||0),0);
+  const tile=(t,v,sub,col)=>'<div style="flex:1;min-width:150px;border:1px solid #d5ddd8;border-radius:12px;padding:10px 12px;background:#fff;border-left:5px solid '+col+'"><div class="meta" style="font-size:.78rem">'+t+'</div><div style="font-size:1.5rem;font-weight:700;line-height:1.3">'+v+'</div><div class="meta" style="font-size:.76rem">'+sub+'</div></div>';
+  const top=Object.values(D).sort((a,b)=>b.old-a.old||b.c-a.c).slice(0,10);
+  const bl=['≤ 30 วัน','31–60 วัน','61–90 วัน','> 90 วัน'],bc=['#2e7d32','#f9a825','#ef6c00','#c62828'],mx=Math.max(1,...B);
+  return '<div id="dc-dash" style="margin:8px 0 14px"><h4 style="margin:0 0 6px">📊 แดชบอร์ดค่าแรงค้าง</h4><div style="display:flex;flex-wrap:wrap;gap:8px">'+
+    tile('เคสสถานะ 10 ค้างทั้งหมด',nf(P.length),Object.keys(D).length+' ร้านยังไม่ทำเอกสาร','#455a64')+
+    tile('ยังไม่ทำเอกสาร',nf(todo.length),'ประมาณการค่าแรง '+nf(amt)+' บาท','#c62828')+
+    tile('ทำเอกสารแล้ว รอส่งบัญชี',nf(wait.length),nf(sum(wait))+' บาท (ก่อน VAT)','#ef6c00')+
+    tile('ส่งเอกสารบัญชีแล้ว',nf(sent.length),nf(sum(sent))+' บาท (ก่อน VAT)','#2e7d32')+
+    '</div><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px"><div style="flex:1;min-width:240px;border:1px solid #d5ddd8;border-radius:12px;padding:10px 12px;background:#fff"><b style="font-size:.88rem">อายุเคสที่ยังไม่ทำเอกสาร (นับจากวันเปิดเคส)</b>'+
+    B.map((v,i)=>'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:.82rem"><span style="width:70px">'+bl[i]+'</span><div style="flex:1;background:#eef2ef;border-radius:6px;height:14px"><div style="width:'+Math.round(v/mx*100)+'%;background:'+bc[i]+';height:14px;border-radius:6px"></div></div><b style="width:40px;text-align:right">'+v+'</b></div>').join('')+
+    '</div><div style="flex:2;min-width:300px;border:1px solid #d5ddd8;border-radius:12px;padding:10px 12px;background:#fff;overflow-x:auto"><b style="font-size:.88rem">ร้านที่ค้างนานสุด (กดชื่อร้านเพื่อเลือก)</b><table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-top:4px"><thead><tr><th style="text-align:left;padding:3px 4px">ร้าน</th><th style="padding:3px 4px">เคส</th><th style="padding:3px 4px">ค้างนานสุด</th><th style="text-align:right;padding:3px 4px">ประมาณการ (บาท)</th></tr></thead><tbody>'+
+    (top.length?top.map(x=>'<tr style="border-top:1px solid #eee"><td style="padding:3px 4px"><button type="button" data-dcpick="'+esc(x.n)+'" style="border:0;background:none;color:#0b5d2d;text-align:left;padding:0;cursor:pointer;text-decoration:underline">'+esc(x.n)+'</button></td><td align="center">'+x.c+'</td><td align="center" style="color:'+(x.old>90?'#c62828':x.old>60?'#ef6c00':'inherit')+'">'+x.old+' วัน</td><td align="right">'+nf(x.a)+'</td></tr>').join(''):'<tr><td colspan="4" class="meta" style="padding:6px">ไม่มีเคสค้าง 🎉</td></tr>')+
+    '</tbody></table></div></div><p class="meta" style="font-size:.74rem;margin:4px 0 0">ประมาณการคิดจากตารางค่าแรงตามรหัสอะไหล่ (แบตเตอรี่ 75 บาท/เคส) ยอดจริงดูในเอกสาร · ข้อมูล "ทำเอกสารแล้ว/ส่งบัญชี" มาจากรายการในแอพ</p></div>';
+}
 function render(){
   const root=document.getElementById('dl-check');if(!root)return;
   const body=root.querySelector('#dc-body');if(!body)return;
@@ -5073,6 +5094,7 @@ function render(){
   const lastU=(S.dms||[]).reduce((m,r)=>(r.u||'')>m?(r.u||''):m,'');
   h+='<p class="meta" id="dc-src">'+(!FEED&&lastU?'ข้อมูล DMS ในแอพอัพเดทถึงวันที่ <b>'+esc(lastU)+'</b> (นำเข้าไฟล์ใหม่ที่เมนู ตั้งค่าระบบ → นำเข้าข้อมูล ถ้าสถานะไม่ตรง DMS) · ':'')+'แหล่งข้อมูลเคส: '+(FEED?'<b>API DMS (ส่งเข้าแอปอัตโนมัติ)</b>'+(FST.at?' · ข้อมูลล่าสุด '+esc(String(FST.at).slice(0,16).replace('T',' ')):'')+' · '+FEED.length.toLocaleString()+' เคสค้าง':'ข้อมูลที่นำเข้าในแอป (DMS) — ยังไม่ได้รับข้อมูลจาก API')+' <button type="button" id="dc-feed-go"'+(FST.busy?' disabled':'')+'>โหลดข้อมูลล่าสุด</button>'+(FST.msg?' <span style="color:#842029">'+esc(FST.msg)+'</span>':'')+'</p>';
   if(!hasDms)h+='<div class="banner warn">ยังไม่มีข้อมูลเคส DMS ในแอป ให้ผู้ดูแลระบบนำเข้าไฟล์เคลมที่เมนู "นำเข้าข้อมูล" (ไฟล์เดียวกับที่ใช้ทำค่าแรง) ระบบจะแสดงเคสสถานะ "รอคืนค่าบริการเคลม" ให้ตรวจที่นี่</div>';
+  if(hasDms)h+=dash();
   const ST2=dl.map(([n,c])=>[n,c,dealerStat(n)]),nOk=ST2.filter(x=>x[2].full).length,nMiss=ST2.filter(x=>!x[2].full&&x[2].tot>0).length;
   const shown=ST2.filter(x=>ui.cat==='ok'?x[2].full:ui.cat==='miss'?(!x[2].full&&x[2].tot>0):true);
   const chip=(k,t)=>`<button type="button" data-dccat="${k}" style="margin:0 6px 4px 0;border-radius:99px;padding:4px 12px${ui.cat===k?';background:#0b5d2d;color:#fff':''}">${t}</button>`;
@@ -5144,6 +5166,7 @@ function mount(v){
   d.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
     if(t.id==='dc-newdoc'){if(window.dlNewDoc)window.dlNewDoc(ui.dealer);return}
     if(t.dataset&&t.dataset.dcedit){const q=document.getElementById('dl-fq');if(q){q.value=t.dataset.dcedit;q.dispatchEvent(new Event('input',{bubbles:true}));const tr=document.getElementById('dl-track');if(tr)tr.scrollIntoView({behavior:'smooth',block:'start'})}return}
+    if(t.dataset&&t.dataset.dcpick){ui.cat='all';ui.dealer=t.dataset.dcpick;render();const s=document.getElementById('dc-dealer');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});return}
     if(t.dataset&&t.dataset.dccat){ui.cat=t.dataset.dccat;ui.dealer='';render();return}
     if(t.id==='dc-save')save();
     else if(t.dataset&&t.dataset.shipdel){const cEl=t.closest('[data-tk]');if(cEl){const c=cs[cEl.dataset.tk],r0=rr[cEl.dataset.tk];c.shipImg='';if(r0&&!c.manual)c.inc=!issues(r0,c).length;render()}}
