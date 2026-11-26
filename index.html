@@ -1881,7 +1881,7 @@ function initPeriod(){
   if(D.day&&(D.fixed||!S.all.length))return;
   D.fixed=!!S.all.length;
   const today=isoDate(new Date().toISOString());
-  D.day=S.all.some(t=>isoDate(t.contactAt)===today)?today:(S.all.length?isoDate(S.all[0].contactAt):today);
+  D.day=today; // always open on today's date
   D.month=D.day.slice(0,7);
 }
 // executive report (format requested by management): complaints + follow-up cases listed with channel, cause, aging, ETA; everything else = normal case
