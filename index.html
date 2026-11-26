@@ -4970,7 +4970,16 @@ function calc(dealer){
   return {labor,ship,sum,vat,tot,wht,net:Math.round((tot-wht)*100)/100,cases,lines,miss};
 }
 async function client(){if(!sbf&&window.supabase&&window.EM_CONFIG)sbf=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey);return sbf}
-async function loadRates(){try{const c=await client();if(!c)return;const q=await c.from('em_docs').select('data').eq('path',RP).limit(1);if(q.error)return;const d=q.data&&q.data[0]&&q.data[0].data;if(d&&d.rows){setRates(d.rows,{importedAt:d.importedAt,file:d.file,count:d.rows.length});cs={};render()}}catch(e){}}
+let BASEROWS=[];
+async function loadRates(){
+  // standard table ships with the app (labor-rates.json); anything an admin imported overrides it
+  let base=[],bv='';try{const r=await fetch('labor-rates.json',{cache:'no-cache'});if(r.ok){const j=await r.json();base=j.rows||[];bv=j.v||''}}catch(e){}
+  BASEROWS=base;let st=null;
+  try{const c=await client();if(c){const q=await c.from('em_docs').select('data').eq('path',RP).limit(1);const d=q&&!q.error&&q.data&&q.data[0]&&q.data[0].data;if(d&&d.rows)st=d}}catch(e){}
+  if(!base.length&&!st)return;
+  const rows=[...(st?st.rows:[]),...base];
+  setRates(rows,{importedAt:st?st.importedAt:'',file:(st?st.file+' + ':'')+'ตารางค่าแรงมาตรฐานในแอป '+bv,count:RATES?RATES.size:rows.length});cs={};rr={};render();
+}
 async function loadExisting(){try{const c=await client();if(!c)return;const R={};for(let i=0;i<10;i++){const q=await c.from('em_docs').select('path,data').like('path',P+'%').range(i*1000,i*1000+999);if(q.error||!q.data)break;q.data.forEach(x=>{if(x.data&&x.data.dealer)R[x.path.slice(P.length)]=x.data});if(q.data.length<1000)break}
   if(JSON.stringify(R)!==JSON.stringify(existing)){existing=R;render()}}catch(e){}}
 async function importRates(file){
@@ -4983,7 +4992,7 @@ async function importRates(file){
     rows.forEach(r=>{const o=mm.get(r.s);if(!o||r.l!=null||o.l==null)mm.set(r.s,{s:r.s,l:r.l,t:r.t,n:r.n||(o&&o.n)||''})});
     const all=[...mm.values()],meta={importedAt:new Date().toISOString(),file:file.name,count:all.length};
     await S.db.doc(RP).set({rows:all,importedAt:meta.importedAt,file:file.name,count:all.length});
-    setRates(all,meta);cs={};render();toast('นำเข้า '+rows.length.toLocaleString()+' รหัสจากไฟล์นี้ · ตารางรวมตอนนี้ '+all.length.toLocaleString()+' รหัส (ของเดิมยังอยู่)')}
+    setRates([...all,...BASEROWS],meta);cs={};rr={};render();toast('นำเข้า '+rows.length.toLocaleString()+' รหัสจากไฟล์นี้ · ตารางรวมตอนนี้ '+all.length.toLocaleString()+' รหัส (ของเดิมยังอยู่)')}
   catch(e){toast('นำเข้าไม่สำเร็จ: '+errText(e))}
 }
 function css(){if(document.getElementById('dc-css'))return;const s=document.createElement('style');s.id='dc-css';
