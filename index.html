@@ -6225,4 +6225,76 @@ function applyGate(){
 })();
 </script>
 
+<style id="em-theme-v3">
+/* Theme v3 — left sidebar menu, soft tinted KPI tiles, rounded white cards (desktop ≥1100px; mobile keeps the top menu) */
+:root{--sb-w:252px}
+@media (min-width:1100px){
+  body{padding-left:var(--sb-w)}
+  header.top{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;position:sticky;background:rgba(255,255,255,.92)!important}
+  header.top::after{display:none}
+  header.top .wrap{max-width:none;padding-inline:28px}
+  header.top .bar{padding-block:10px;justify-content:space-between}
+  header.top .brand{position:fixed;left:16px;top:12px;z-index:40;margin:0}
+  header.top .brand small{display:none}
+  header.top .brand .logo-em{height:38px;width:auto}
+  nav#tabs.em-grouped{position:fixed;left:0;top:0;bottom:0;width:var(--sb-w);z-index:30;display:flex;flex-direction:column;gap:2px;padding:14px 12px 24px;overflow-y:auto;background:#fff;border-right:1px solid #e6eee9;box-shadow:6px 0 24px -20px rgba(16,24,20,.4)}
+  nav#tabs.em-grouped{padding-top:76px}
+  #tabs .emg-toggle{display:none!important}
+  #tabs .emg{position:static;display:block}
+  #tabs .emg[hidden]{display:none}
+  #tabs .emg-btn{width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:10px 12px;border:0!important;border-radius:12px!important;background:transparent!important;box-shadow:none!important;color:#33413a;font-weight:600;text-align:left}
+  #tabs .emg-btn .car{margin-left:auto;font-size:11px;opacity:.55;transition:transform .15s}
+  #tabs .emg-btn[aria-expanded="true"] .car{transform:rotate(180deg)}
+  #tabs .emg-btn:hover{background:#f1f8f4!important}
+  #tabs .emg.on>.emg-btn{background:#e6f5ec!important;color:#0b6b30}
+  #tabs .emg-panel{position:static!important;display:block;min-width:0;width:auto;max-height:none;overflow:visible;box-shadow:none!important;border:0!important;background:transparent!important;padding:2px 0 6px 20px;margin-left:16px;border-left:2px solid #e3eee7!important;border-radius:0!important}
+  #tabs .emg-panel[hidden]{display:none!important}
+  #tabs.em-grouped .emg-panel a,#tabs.em-grouped .emg-panel .emg-item{min-height:36px;padding:7px 12px;font-size:14px;font-weight:500;color:#4a5852;border-radius:10px!important}
+  #tabs.em-grouped .emg-panel a:hover{background:#f1f8f4;color:#0b6b30}
+  #tabs.em-grouped .emg-panel a[aria-current="page"]{background:#0f9145;color:#fff!important;box-shadow:0 6px 14px -8px rgba(15,145,69,.7)}
+  #emg-fav{order:-1;display:flex!important;flex-wrap:wrap;gap:6px;padding:4px 8px 10px;font-size:12px;color:#7a8780}
+  #emg-fav a{padding:3px 10px;font-size:12px;border:1px solid #e1ece6;border-radius:99px;background:#f6faf7;color:#33413a;text-decoration:none;border-bottom:1px solid #e1ece6}
+  #emg-fav a[aria-current="page"]{background:#0f9145;color:#fff;border-color:#0f9145}
+  main.wrap{max-width:1480px;padding-inline:28px}
+  .wtabs{padding-top:0}
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+}}
+:root:not([data-theme="dark"]) body{background:#f3f6f9}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background:#0f1512}}
+/* soft pastel KPI tiles */
+:root:not([data-theme="dark"]) .kpis .kpi,:root:not([data-theme="dark"]) .kband>div{border:0!important}
+:root:not([data-theme="dark"]) .kpis .kpi{border-radius:18px!important;padding:16px 18px!important;box-shadow:0 1px 2px rgba(16,24,20,.04)!important}
+:root:not([data-theme="dark"]) .kpis .kpi:nth-child(5n+1){background:#e4f6ec!important}
+:root:not([data-theme="dark"]) .kpis .kpi:nth-child(5n+2){background:#e5f0ff!important}
+:root:not([data-theme="dark"]) .kpis .kpi:nth-child(5n+3){background:#fff3d6!important}
+:root:not([data-theme="dark"]) .kpis .kpi:nth-child(5n+4){background:#fde7ea!important}
+:root:not([data-theme="dark"]) .kpis .kpi:nth-child(5n+5){background:#efe8ff!important}
+:root:not([data-theme="dark"]) .kpis .kpi.bad{background:#fde7ea!important}
+.kpis .kpi b{font-weight:800;color:#12261b}
+.kpis .kpi span{color:#51615a;font-size:13px}
+/* dashboard summary band: light tiles instead of a dark strip */
+:root:not([data-theme="dark"]) .kband{background:transparent!important;border:0!important;box-shadow:none!important;gap:12px;overflow:visible}
+:root:not([data-theme="dark"]) .kband>div{border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(16,24,20,.04),0 14px 30px -22px rgba(16,24,20,.28);overflow:hidden}
+:root:not([data-theme="dark"]) .kband>div:nth-child(5n+1){background:#e4f6ec}
+:root:not([data-theme="dark"]) .kband>div:nth-child(5n+2){background:#e5f0ff}
+:root:not([data-theme="dark"]) .kband>div:nth-child(5n+3){background:#fff3d6}
+:root:not([data-theme="dark"]) .kband>div:nth-child(5n+4){background:#efe8ff}
+:root:not([data-theme="dark"]) .kband>div:nth-child(5n+5){background:#fde7ea}
+:root:not([data-theme="dark"]) .kband>div *{background-color:transparent!important;color:#12261b}
+/* table title bars: white with accent rather than black */
+:root:not([data-theme="dark"]) .rtable>.rt-h{background:#fff!important;color:#12261b!important;border-bottom:1px solid #edf3ef;box-shadow:inset 4px 0 0 #0f9145}
+:root:not([data-theme="dark"]) .rtable>h3,:root:not([data-theme="dark"]) .rtable>.hd,:root:not([data-theme="dark"]) .rtable>header,:root:not([data-theme="dark"]) .rtable caption{background:#fff!important;color:#12261b!important;border-bottom:1px solid #edf3ef;box-shadow:inset 4px 0 0 #0f9145}
+:root:not([data-theme="dark"]) .rtable,.panel,.tbl-wrap{border:1px solid #e8eef2!important;border-radius:18px!important}
+h2{font-size:1.35rem;font-weight:800}
+.sub,.meta{color:#66756e}
+</style>
+<script>
+/* sidebar: keep the group of the current page open (the dropdown logic closes panels on outside clicks) */
+(function(){const nav=document.getElementById('tabs');if(!nav)return;const mq=window.matchMedia('(min-width:1100px)');
+function keep(){if(!mq.matches)return;const a=nav.querySelector('.emg-panel a[aria-current="page"]');if(!a)return;const p=a.closest('.emg-panel');if(p&&p.hidden){p.hidden=false;const b=p.previousElementSibling;if(b)b.setAttribute('aria-expanded','true')}}
+new MutationObserver(keep).observe(nav,{subtree:true,attributes:true,attributeFilter:['hidden','aria-current']});
+window.addEventListener('hashchange',()=>setTimeout(keep,0));window.addEventListener('resize',keep);setTimeout(keep,300);setTimeout(keep,1200)})();
+</script>
+
 </body></html>
