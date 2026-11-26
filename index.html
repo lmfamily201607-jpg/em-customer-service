@@ -4992,7 +4992,7 @@ function totHtml(){
   const d=ui.dealer;if(!d)return '';const t=calc(d);
   return `<div class="dc-tot"><div style="display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline"><span>เคสที่เลือก <b>${t.cases}</b> · รายการค่าแรง <b>${t.lines}</b>${t.miss?` · <span class="meta">ไม่มีค่าแรง (ไม่จ่าย) ${t.miss} รายการ — ไม่นำมาคิด</span>`:''}</span></div>
   <div style="display:flex;flex-wrap:wrap;gap:4px 26px;margin-top:6px"><span>ราคารวม <b>${fmt(t.sum)}</b>${t.ship?` <span class="meta">(ค่าแรง ${fmt(t.labor)} + ค่าส่ง ${fmt(t.ship)})</span>`:''}</span><span>ภาษีมูลค่าเพิ่ม 7% <b>${fmt(t.vat)}</b></span><span>รวมทั้งสิ้น <b class="big">${fmt(t.tot)}</b></span></div>
-  <div class="meta" style="margin-top:3px">(${esc(bahtText(t.tot))}) · ประมาณการหัก ณ ที่จ่าย 3% ของค่าแรง ${fmt(t.wht)} → ยอดโอนสุทธิโดยประมาณ ${fmt(t.net)}</div>
+  <div class="meta" style="margin-top:3px">(${esc(bahtText(t.tot))})</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="primary" id="dc-save"${busy||!t.lines&&!t.ship?' disabled':''}>บันทึกเป็นรายการเบิก (${t.cases} เคส)</button><button type="button" id="dc-print">📄 ใบเอกสาร / พิมพ์ของร้านนี้</button></div></div>`;
 }
 function render(){
@@ -5410,7 +5410,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
   }
   function foot(g){
     const t=totals(g),S2='style="border:1px solid #555;padding:5px 10px;font-size:13px"';
-    const sums='<table style="width:100%;border-collapse:collapse"><tr><td '+S2+'><b>ราคารวม</b></td><td '+S2+' align="right">'+fmt(t.sum)+'</td></tr><tr><td '+S2+'><b>ภาษีมูลค่าเพิ่ม 7%</b></td><td '+S2+' align="right">'+fmt(t.vat)+'</td></tr><tr><td '+S2+' style="background:#e4efe8"><b>รวมทั้งสิ้น</b></td><td '+S2+' align="right" style="background:#e4efe8"><b>'+fmt(t.tot)+'</b></td></tr><tr><td '+S2+'>หัก ณ ที่จ่าย 3% (ค่าแรง '+fmt(t.labor)+')</td><td '+S2+' align="right">'+fmt(t.wht)+'</td></tr><tr><td '+S2+'><b>ยอดโอนสุทธิ</b></td><td '+S2+' align="right"><b>'+fmt(t.net)+'</b></td></tr></table><div style="font-size:11px;color:#333;margin-top:4px;text-align:right">('+bahtText(t.tot)+')</div>';
+    const sums='<table style="width:100%;border-collapse:collapse"><tr><td '+S2+'><b>ราคารวม</b></td><td '+S2+' align="right">'+fmt(t.sum)+'</td></tr><tr><td '+S2+'><b>ภาษีมูลค่าเพิ่ม 7%</b></td><td '+S2+' align="right">'+fmt(t.vat)+'</td></tr><tr><td '+S2+' style="background:#e4efe8"><b>รวมทั้งสิ้น</b></td><td '+S2+' align="right" style="background:#e4efe8"><b>'+fmt(t.tot)+'</b></td></tr></table><div style="font-size:11px;color:#333;margin-top:4px;text-align:right">('+bahtText(t.tot)+')</div>';
     const notes='<div style="font-size:12px;line-height:1.85"><b>หมายเหตุ</b><br>1. ส่งสรุปภายในวันที่ 25 ของเดือน<br>2. โปรดส่งบิลของท่านตั้งเบิกเงิน ภายในวันที่ 30 ของทุกเดือน<br>3. ทางบัญชีจะโอนเงินค่าแรงเคลมและค่าส่งของเคลมคืนภายในวันที่ 15 ของเดือนถัดไป<br>4. ค่าแรงจะถูกหักภาษี ณ ที่จ่าย 3 %</div>';
     const sg=n=>'<td style="text-align:center;padding-top:34px;font-size:12px;width:50%">ลงชื่อ ................................................<br>('+n+')<br>วันที่ ......../......../............</td>';
     return '<table class="dd-foot" style="width:100%;border-collapse:collapse;margin-top:10px"><tr><td style="vertical-align:top;width:58%;padding-right:18px">'+notes+'</td><td style="vertical-align:top">'+sums+'</td></tr><tr><td colspan="2"><table style="width:100%;border-collapse:collapse"><tr>'+sg('ผู้ส่ง / ตัวแทนจำหน่าย')+sg('ผู้ตรวจสอบ (EM MOTOR)')+'</tr></table></td></tr></table>';
