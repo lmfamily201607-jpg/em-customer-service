@@ -1,5 +1,5 @@
 -- รันครั้งเดียวใน Supabase (โปรเจกต์ของแอพ) → SQL Editor
--- ทำให้ Apps Script ส่งข้อมูลเคส DMS เข้าแอพได้ โดยเขียนได้เฉพาะ path 'audit/_dmsfeed/%' และต้องมีรหัสลับถูกต้อง
+-- ทำให้ GitHub Actions ส่งข้อมูลเคส DMS เข้าแอพได้ โดยเขียนได้เฉพาะ path 'audit/_dmsfeed/%' และต้องมีรหัสลับถูกต้อง
 -- (ไม่ต้องใช้ service_role key และไม่ลบ/แก้ข้อมูลอื่นของแอพ)
 
 create table if not exists public.dms_feed_secret (
@@ -8,8 +8,9 @@ create table if not exists public.dms_feed_secret (
 );
 alter table public.dms_feed_secret enable row level security;   -- ไม่มี policy = อ่านจากภายนอกไม่ได้
 
--- 1) เปลี่ยนข้อความในเครื่องหมายคำพูดเป็นรหัสลับยาวๆ ที่คุณตั้งเอง (จดไว้ใช้ในขั้นตอน Apps Script)
-insert into public.dms_feed_secret (id, secret) values (1, 'เปลี่ยนเป็นรหัสลับยาวๆของคุณ')
+-- ไม่ต้องแก้อะไร: ระบบสุ่มรหัสลับให้เอง แล้วแสดงในผลลัพธ์ด้านล่างหลังกด Run
+insert into public.dms_feed_secret (id, secret)
+values (1, replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-',''))
 on conflict (id) do update set secret = excluded.secret;
 
 create or replace function public.push_dms_feed(p_secret text, p_path text, p_data jsonb)
@@ -32,3 +33,6 @@ $$;
 
 revoke all on function public.push_dms_feed(text, text, jsonb) from public;
 grant execute on function public.push_dms_feed(text, text, jsonb) to anon;
+
+-- ก๊อปค่าในช่อง secret ด้านล่าง ไปใส่ใน GitHub → Settings → Secrets → Actions → APP_PUSH_SECRET (กดดินสอ → วาง → Update secret)
+select secret from public.dms_feed_secret where id = 1;
