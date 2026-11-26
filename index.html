@@ -4850,6 +4850,7 @@ ov.addEventListener('click',async function(e){const x=e.target.closest&&e.target
 if(rows[id]){if(!confirm('ลบเคส '+(rows[id].caseNo||'-')+' ออกจากเอกสารนี้? (ลบจริง ไม่สามารถกู้คืนได้)'))return;try{await S.db.doc(P+id).delete();delete rows[id];toast('ลบรายการแล้ว')}catch(er){toast('ลบไม่สำเร็จ: '+errText(er));return}}
 else if(!confirm('เอารายการนี้ออก?'))return;
 c.remove();ov.querySelectorAll('.dl-ec > b').forEach(function(y,k){y.textContent='รายการที่ '+(k+1)});draw()});
+ov.addEventListener('keydown',function(e){const t=e.target;if(e.key==='Enter'&&t.dataset&&t.dataset.f==='caseNo'){e.preventDefault();t.dispatchEvent(new Event('change',{bubbles:true}))}});
 ov.addEventListener('change',function(e){const t=e.target;
 if(t.dataset&&t.dataset.f==='dealer'){const co=ov.querySelector('#dl-ed-hd [data-f="company"]');if(co&&t.value)co.value=String(t.value).replace(/\s+/g,' ').split(/\s+สาขา\s+/)[0];return}
 if(t.dataset&&t.dataset.f==='caseNo'){const c=t.closest('.dl-ec'),tk=t.value.trim();if(!c||!c.isConnected||!tk||!window.DLC||!window.DLC.lookupCase||ov.__fill)return;const d=window.DLC.lookupCase(tk);if(!d){toast('ไม่พบเคส '+tk+' ในข้อมูล DMS ของแอพ — กรอกเองได้');return}
