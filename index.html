@@ -4847,10 +4847,10 @@ ov.innerHTML='<div style="max-width:1100px;margin:0 auto;background:#f6f8f7;bord
 document.body.appendChild(ov);let nn=ids.length;
 ov.querySelector('#dl-ed-x').onclick=function(){ov.remove()};
 ov.addEventListener('change',function(e){const t=e.target;
-if(t.dataset&&t.dataset.f==='caseNo'){const c=t.closest('.dl-ec'),tk=t.value.trim();if(!c||!c.isConnected||!tk||!window.DLC||!window.DLC.lookupCase)return;const d=window.DLC.lookupCase(tk);if(!d){toast('ไม่พบเคส '+tk+' ในข้อมูล DMS ของแอพ — กรอกเองได้');return}
+if(t.dataset&&t.dataset.f==='caseNo'){const c=t.closest('.dl-ec'),tk=t.value.trim();if(!c||!c.isConnected||!tk||!window.DLC||!window.DLC.lookupCase||ov.__fill)return;const d=window.DLC.lookupCase(tk);if(!d){toast('ไม่พบเคส '+tk+' ในข้อมูล DMS ของแอพ — กรอกเองได้');return}
 const cur={};c.querySelectorAll('[data-f]').forEach(function(e2){cur[e2.dataset.f]=e2.type==='checkbox'?e2.checked:e2.value});
 const mk=function(l){const batt=d.job==='batt';return Object.assign({},cur,{caseNo:tk,model:d.model,vin:d.vin,repDate:d.repDate,sym:d.sym,type:d.type,report:batt?'ค่าแรงงานแบตเตอรี่':(l&&l.part?'ค่าแรงเปลี่ยน '+l.part:''),part:batt?'ไม่ใช้':'ใช้',amt:batt?75:(l&&l.labor!==''?+l.labor:'')})};
-const L=d.lines.length?d.lines:[null];c.replaceWith(htmlNode(card(c.dataset.id,mk(L[0]),0)));
+const L=d.lines.length?d.lines:[null];ov.__fill=1;try{c.replaceWith(htmlNode(card(c.dataset.id,mk(L[0]),0)))}finally{ov.__fill=0}
 let last=ov.querySelector('.dl-ec[data-id="'+c.dataset.id+'"]');L.slice(1).forEach(function(l){const id='new'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);nn++;last.insertAdjacentHTML('afterend',card(id,mk(l),nn));last=last.nextElementSibling});
 ov.querySelectorAll('.dl-ec > b').forEach(function(x,k){x.textContent='รายการที่ '+(k+1)});
 toast('ดึงข้อมูลเคส '+tk+' จาก DMS แล้ว'+(L.length>1?' ('+L.length+' รายการอะไหล่)':'')+(d.br&&d.br!==b.dealer?' · ⚠ เคสนี้เป็นของร้าน '+d.br:''));return}
