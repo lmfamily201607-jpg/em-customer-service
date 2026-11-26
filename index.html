@@ -1228,6 +1228,15 @@ a{transition:color .12s}
 .u-c6{display:flex;gap:10px;justify-content:flex-end;white-space:nowrap}.u-c6 .link{font-size:.82rem}.u-blue{color:#2563eb!important}
 .u-card.u-open{background:#fafcfb!important}.u-card.u-open>.meta,.u-card.u-open .u-grid,.u-card.u-open .u-menus,.u-card.u-open .actions{margin-left:4px}
 </style>
+<style>
+#boss-box{margin-bottom:16px;border-left:5px solid #1f4e8c}
+.boss-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.boss-tiles .bt{border-radius:12px;padding:12px 14px}.boss-tiles .bt span{font-weight:700;font-size:.92rem}.boss-tiles .bt b{display:block;font-size:2.1rem;line-height:1.2}.boss-tiles .bt i{font-style:normal;font-size:.8rem;color:#555}
+.bt.n{background:#e8f6ee}.bt.f{background:#fff4dc}.bt.c{background:#fde8e8}
+.boss-h{margin:14px 0 6px;font-size:1.02rem}
+.boss-t{width:100%;border-collapse:collapse;font-size:.88rem}.boss-t th{background:#f3f5f7;text-align:left;padding:6px 8px;font-size:.8rem}.boss-t td{padding:7px 8px;border-top:1px solid #eceff1;vertical-align:top}.boss-t tbody tr{cursor:pointer}.boss-t tbody tr:hover{background:#fafbfc}
+@media (max-width:640px){.boss-tiles{grid-template-columns:1fr}}
+</style>
 <div id="modal-root"></div>
 <div id="toast" class="toast" hidden role="status"></div>
 
@@ -1871,6 +1880,25 @@ function initPeriod(){
   D.day=S.all.some(t=>isoDate(t.contactAt)===today)?today:(S.all.length?isoDate(S.all[0].contactAt):today);
   D.month=D.day.slice(0,7);
 }
+// executive report: only complaints and follow-up cases are listed; everything else is a normal case
+function bossKind(t){if(t.category==='ร้องเรียน')return 'complain';if(caseStatus(t)==='ติดตามเคส')return 'follow';return 'normal'}
+function bossReport(R){
+  const kb=document.querySelector('#d-shot .kband');if(!kb)return;let box=document.getElementById('boss-box');
+  if(!box){box=document.createElement('div');box.id='boss-box';box.className='panel';kb.parentNode.insertBefore(box,kb.nextSibling)}
+  const C=R.filter(t=>bossKind(t)==='complain'),F=R.filter(t=>bossKind(t)==='follow'),N=R.filter(t=>bossKind(t)==='normal'),tot=R.length||1,pc=n=>Math.round(n/tot*100)+'%';
+  const nTop=Object.entries(countBy(N,t=>t.category||'ไม่ระบุ')).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>esc(k)+' '+v).join(' · ');
+  const days=t=>{const x=Date.parse(t.contactAt);return isFinite(x)?Math.max(0,Math.floor((Date.now()-x)/86400000)):''};
+  const tbl=(L,col)=>L.length?'<div style="overflow-x:auto"><table class="boss-t"><thead><tr><th>#</th><th>ลูกค้า</th><th>เรื่อง / รายละเอียด</th><th>ผู้ดูแล</th><th>สถานะ</th><th>ผ่านมา</th></tr></thead><tbody>'+L.map((t,i)=>'<tr data-bossopen="'+esc(t.ticketNo||'')+'"><td>'+(i+1)+'</td><td><b>'+esc(t.name||'-')+'</b><div class="meta">'+esc(t.ticketNo||'')+' · '+esc(fmt(t.contactAt))+'</div></td><td><span style="color:'+col+';font-weight:600">'+esc(t.category||'-')+'</span><div>'+esc(String(t.detail||'').slice(0,140))+'</div>'+(t.answer?'<div class="meta">ตอบ/ดำเนินการ: '+esc(String(t.answer).slice(0,120))+'</div>':'')+'</td><td>'+esc(who(t))+'</td><td>'+esc(caseStatus(t))+'</td><td style="white-space:nowrap">'+days(t)+' วัน</td></tr>').join('')+'</tbody></table></div>':'<div class="meta" style="padding:6px 0">ไม่มี 🎉</div>';
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">📋 รายงานสำหรับผู้บริหาร · '+esc(periodLabel())+'</h3><button type="button" id="boss-copy" data-html2canvas-ignore>คัดลอกรายงานผู้บริหาร</button></div>'+
+   '<div class="boss-tiles"><div class="bt n"><span>เคสธรรมดา</span><b>'+N.length+'</b><i>'+pc(N.length)+' ของ '+R.length+' เคส</i></div><div class="bt f"><span>🔁 ติดตามเคส</span><b>'+F.length+'</b><i>'+pc(F.length)+'</i></div><div class="bt c"><span>⚠ ร้องเรียน</span><b>'+C.length+'</b><i>'+pc(C.length)+'</i></div></div>'+
+   '<h4 class="boss-h" style="color:#b42318">⚠ ร้องเรียน ('+C.length+' เคส)</h4>'+tbl(C,'#b42318')+
+   '<h4 class="boss-h" style="color:#b45309">🔁 ติดตามเคส ('+F.length+' เคส)</h4>'+tbl(F,'#b45309')+
+   '<h4 class="boss-h" style="color:#0b7a3b">✅ เคสธรรมดา ('+N.length+' เคส)</h4><div class="meta" style="font-size:.9rem">'+(nTop||'-')+'</div>';
+  box.querySelectorAll('tr[data-bossopen]').forEach(r=>{if(r.dataset.bossopen)r.onclick=()=>{try{openTicket(r.dataset.bossopen)}catch(e){}}});
+  box.querySelector('#boss-copy').onclick=()=>{const L=(T,h)=>h+' '+T.length+' เคส'+(T.length?'\n'+T.map((t,i)=>(i+1)+') '+(t.name||'-')+' · '+(t.category||'-')+' · '+String(t.detail||'').slice(0,80)+' · ผู้ดูแล '+who(t)+' · '+caseStatus(t)+' · '+days(t)+' วัน').join('\n'):'');
+    const txt='รายงานผู้บริหาร '+periodLabel()+'\nเคสทั้งหมด '+R.length+' · เคสธรรมดา '+N.length+' · ติดตามเคส '+F.length+' · ร้องเรียน '+C.length+'\n\n'+L(C,'⚠ ร้องเรียน')+'\n\n'+L(F,'🔁 ติดตามเคส')+'\n\n✅ เคสธรรมดา '+N.length+' เคส'+(nTop?' ('+nTop.replace(/&amp;/g,'&')+')':'');
+    navigator.clipboard.writeText(txt).then(()=>toast('คัดลอกรายงานผู้บริหารแล้ว'),()=>toast('คัดลอกไม่สำเร็จ'))};
+}
 function renderDashboard(){
   const T=S.all;initPeriod();
   $('#d-day').value=D.day;$('#d-month').value=D.month;
@@ -1882,6 +1910,7 @@ function renderDashboard(){
   $('#k-total').textContent=s.total.toLocaleString();$('#k-done').textContent=s.done.toLocaleString();
   $('#k-follow').textContent=s.follow.toLocaleString();$('#k-rate').textContent=s.rate;
   $('#k-closed').textContent=T.filter(t=>t.closedAt&&(D.mode==='day'?isoDate(t.closedAt)===D.day:isoDate(t.closedAt).slice(0,7)===D.month)).length.toLocaleString();
+  try{bossReport(R)}catch(e){}
   shareTable($('#t-topic'),s.topic,s.total,'หัวข้อ');
   shareTable($('#t-agent'),s.agent,s.total,'ผู้ดูแล');
   shareTable($('#t-status'),s.status,s.total,'สถานะ');
