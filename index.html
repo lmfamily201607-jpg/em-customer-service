@@ -5012,7 +5012,7 @@ function casesOf(dealer){const k=ui.desc?-1:1;return pendingAll().filter(r=>(nor
 function ageOf(d){const t=Date.parse(d||'');return isFinite(t)?Math.max(0,Math.floor((Date.now()-t)/86400000)):null}
 function calc(dealer){
   let labor=0,ship=0,cases=0,lines=0,miss=0;
-  casesOf(dealer).forEach(r=>{const c=caseState(r);if(!c.inc||prepared(r.tk)||issues(r,c).length)return;cases++;
+  casesOf(dealer).forEach(r=>{const c=caseState(r);if(prepared(r.tk)||issues(r,c).length)return;cases++;
     c.lines.forEach(l=>{const v=parseFloat(l.labor);if(isFinite(v)&&l.labor!==''){labor+=v;lines++}else miss++});
     const s=parseFloat(c.ship);if(isFinite(s)&&s>0)ship+=s});
   const sum=Math.round((labor+ship)*100)/100,vat=Math.round(sum*7)/100,tot=Math.round((sum+vat)*100)/100,wht=Math.round(labor*3)/100;
@@ -5053,6 +5053,7 @@ function totHtml(){
   <div style="display:flex;flex-wrap:wrap;gap:4px 26px;margin-top:6px"><span>ราคารวม <b>${fmt(t.sum)}</b>${t.ship?` <span class="meta">(ค่าแรง ${fmt(t.labor)} + ค่าส่ง ${fmt(t.ship)})</span>`:''}</span><span>ภาษีมูลค่าเพิ่ม 7% <b>${fmt(t.vat)}</b></span><span>รวมทั้งสิ้น <b class="big">${fmt(t.tot)}</b></span></div>
   <div class="meta" style="margin-top:3px">(${esc(bahtText(t.tot))})</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="primary" id="dc-save"${busy||!t.lines&&!t.ship?' disabled':''}>③ บันทึกเคสที่ครบ (${t.cases} เคส)</button><button type="button" id="dc-print">④ 📄 พิมพ์เอกสารร้านนี้</button><button type="button" id="dc-printall">④ 📄 พิมพ์ทุกร้านที่บันทึกแล้ว</button></div>
+  ${(()=>{if(t.cases)return '';const m=casesOf(d).filter(r=>!prepared(r.tk)).map(r=>[r.tk,issues(r,caseState(r))]).filter(x=>x[1].length).slice(0,6);return m.length?'<div class="dc-tag miss" style="white-space:normal;margin-top:6px;display:block">ยังบันทึกไม่ได้ เพราะเคสยังข้อมูลไม่ครบ: '+m.map(x=>'#'+esc(x[0])+' ขาด '+esc(x[1].join(', '))).join(' | ')+'</div>':''})()}
   <div class="meta" style="margin-top:4px">⑤ เคสที่ข้อมูลไม่ครบจะไม่ถูกบันทึก ค้างไว้ในรายการจนกว่าจะกรอกครบ</div></div>`;
 }
 function render(){
@@ -5079,7 +5080,7 @@ function render(){
     h+=(ui.onlyOk&&!okN?'<p class="meta">ยังไม่มีเคสที่ข้อมูลครบ — กรอกวันที่ซื้อ/วันที่ซ่อม/อาการเสียให้ครบก่อน</p>':'');
     h+=L.filter(r=>!ui.onlyOk||prepared(r.tk)||!issues(r,caseState(r)).length).map(r=>{const c=caseState(r),done=prepared(r.tk),tk=esc(r.tk);
       const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
-      return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><input type="checkbox" data-k="inc"${c.inc&&!done?' checked':''}${done?' disabled':''}> <b>เคส #${tk}</b></label><span class="dc-chk">${done?'':chkHtml(r,c)}</span><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">สร้าง ticket ${esc(r.d||'-')}${ageOf(r.d)!=null?' · ค้าง <b>'+ageOf(r.d)+' วัน</b>':''}</span>${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span> <button type="button" data-dcedit="'+tk+'">✏️ แก้ไขรายการที่บันทึกแล้ว</button>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
+      return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><b>เคส #${tk}</b></label><span class="dc-chk">${done?'':chkHtml(r,c)}</span><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">สร้าง ticket ${esc(r.d||'-')}${ageOf(r.d)!=null?' · ค้าง <b>'+ageOf(r.d)+' วัน</b>':''}</span>${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span> <button type="button" data-dcedit="'+tk+'">✏️ แก้ไขรายการที่บันทึกแล้ว</button>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
       <div class="dc-grid"><label class="wide"><span class="meta">รายการซ่อม</span><select data-k="job"><option value="batt"${c.job==='batt'?' selected':''}>1. เคลมแบตเตอรี่ — ค่าแรง ${BATT_LABOR} บาท/เคส</option><option value="part"${c.job!=='batt'?' selected':''}>2. ค่าแรงเปลี่ยนอะไหล่ — ตามตารางค่าแรงรายอะไหล่</option></select></label><label><span class="meta">วันที่ซื้อ (ลูกค้าซื้อรถ)</span><input type="date" data-k="buy" value="${esc(c.buy)}"></label><label><span class="meta">วันที่ซ่อม (ได้รับอะไหล่จาก EM และซ่อม)</span><input type="date" data-k="fix" value="${esc(c.fix)}"></label>
       <label><span class="meta">ประเภทเคลม</span><select data-k="type"><option${c.type==='เคลมหลังขาย'?' selected':''}>เคลมหลังขาย</option><option${c.type==='เคลมก่อนขาย'?' selected':''}>เคลมก่อนขาย</option></select></label>
       <label><span class="meta">ค่าขนส่งของเคลม (บาท) — กรอกจำนวน</span><input type="number" min="0" step="0.01" data-k="ship" value="${esc(c.ship)}"></label>
@@ -5094,7 +5095,7 @@ async function save(){
   const d=ui.dealer;if(!d||busy)return;
   if(!S.db||!S.canWrite){toast('บัญชีนี้ยังบันทึกข้อมูลไม่ได้');return}
   const recs=[];let skipped=0;const send=ui.send||isoDate(new Date().toISOString());
-  casesOf(d).forEach(r=>{const c=caseState(r);if(!c.inc||prepared(r.tk)||issues(r,c).length)return;const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
+  casesOf(d).forEach(r=>{const c=caseState(r);if(prepared(r.tk)||issues(r,c).length)return;const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
     const base={dealer:d,company:'',phone:'',sendDate:ceDate(send),caseNo:String(r.tk),model:(r.mf||r.m||'').replace(/^EM\s+/,''),vin,buyDate:ceDate(c.buy),repDate:r.d||'',fixDate:ceDate(c.fix),sym:c.sym,type:c.type,pb:false,pa:false,st:'รอค่าแรง',tk:String(r.tk),src:'dms'};
     c.lines.forEach((l,i)=>{const v=parseFloat(l.labor);if(l.labor===''||!isFinite(v)||v<0){skipped++;return}recs.push(['dms-'+r.tk+'-'+i,{...base,report:c.job==='batt'?'ค่าแรงงานแบตเตอรี่':'ค่าแรงเปลี่ยน '+l.part,part:c.job==='batt'?'ไม่ใช้':l.used,sku:l.sku,amt:v}])});
     const s=parseFloat(c.ship);if(isFinite(s)&&s>0)recs.push(['dms-'+r.tk+'-ship',{...base,report:'ค่าส่งของเคลม',part:'',sku:'',amt:s,img:c.shipImg||''}])});
