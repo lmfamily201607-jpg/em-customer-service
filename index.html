@@ -4856,6 +4856,7 @@ const P='audit/_dlabor/',RP='audit/_laborrates/all',CUT='2026-09-01';
 let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:'',onlyOk:false},cs={},rr={},FEED=null,FST={t:0,msg:'',busy:false},sig='',busy=false,ratesTried=false;
 const fmt=n=>(Math.round((+n||0)*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const norm=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
+const ceDate=v=>{const m=/^(\d{4})(-\d\d-\d\d)$/.exec(v||'');return m&&+m[1]>2400?(+m[1]-543)+m[2]:(v||'')};
 const PII=/0\d[\d\- ]{7,10}\d|https?:\/\/|maps\.google|ต\.\s?\S+\s+อ\.|จ\.\s?\S+|ม\.\d+|\d+\/\d+/;
 function bahtText(n){
   n=Math.round((+n||0)*100)/100;
@@ -5031,7 +5032,7 @@ async function save(){
   if(!S.db||!S.canWrite){toast('บัญชีนี้ยังบันทึกข้อมูลไม่ได้');return}
   const recs=[];let skipped=0;const send=ui.send||isoDate(new Date().toISOString());
   casesOf(d).forEach(r=>{const c=caseState(r);if(!c.inc||prepared(r.tk))return;const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
-    const base={dealer:d,company:'',phone:'',sendDate:send,caseNo:String(r.tk),model:(r.mf||r.m||'').replace(/^EM\s+/,''),vin,buyDate:c.buy,repDate:r.d||'',fixDate:c.fix,sym:c.sym,type:c.type,pb:false,pa:false,st:'รอค่าแรง',tk:String(r.tk),src:'dms'};
+    const base={dealer:d,company:'',phone:'',sendDate:ceDate(send),caseNo:String(r.tk),model:(r.mf||r.m||'').replace(/^EM\s+/,''),vin,buyDate:ceDate(c.buy),repDate:r.d||'',fixDate:ceDate(c.fix),sym:c.sym,type:c.type,pb:false,pa:false,st:'รอค่าแรง',tk:String(r.tk),src:'dms'};
     c.lines.forEach((l,i)=>{const v=parseFloat(l.labor);if(l.labor===''||!isFinite(v)||v<0){skipped++;return}recs.push(['dms-'+r.tk+'-'+i,{...base,report:l.part,part:l.used,sku:l.sku,amt:v}])});
     const s=parseFloat(c.ship);if(isFinite(s)&&s>0)recs.push(['dms-'+r.tk+'-ship',{...base,report:'ค่าส่งของเคลม',part:'',sku:'',amt:s,img:c.shipImg||''}])});
   if(!recs.length){toast('ยังไม่มีรายการที่มีค่าแรงให้บันทึก');return}
@@ -5050,7 +5051,7 @@ function mount(v){
   d.addEventListener('input',e=>{const t=e.target,k=t.dataset&&t.dataset.k;if(!k)return;const cEl=t.closest('[data-tk]');if(!cEl)return;const c=cs[cEl.dataset.tk];if(!c)return;
     const li=t.closest('tr[data-li]');if(li&&(k==='labor'||k==='used')){c.lines[+li.dataset.li][k]=t.value;
       if(k==='labor'){const tg=li.querySelector('.dc-tag');const L=c.lines[+li.dataset.li];if(tg&&L.k!=='ok'&&t.value!==''){tg.className='dc-tag ok';tg.textContent='กรอกเอง'}}}
-    else if(k==='buy'||k==='fix'||k==='ship'||k==='sym'||k==='type')c[k]=t.value;
+    else if(k==='buy'||k==='fix'||k==='ship'||k==='sym'||k==='type')c[k]=(k==='buy'||k==='fix')?ceDate(t.value):t.value;
     const r0=rr[cEl.dataset.tk];if(r0&&!c.manual)c.inc=!issues(r0,c).length;
     if(r0){const ck=cEl.querySelector('input[data-k="inc"]');if(ck&&!ck.disabled)ck.checked=!!c.inc;const b=cEl.querySelector('.dc-chk');if(b)b.innerHTML=chkHtml(r0,c);const sm=document.getElementById('dc-sum');if(sm)sm.textContent=sumHtml(casesOf(ui.dealer))}
     const tot=document.getElementById('dc-tot');if(tot)tot.innerHTML=totHtml()});
@@ -5058,7 +5059,8 @@ function mount(v){
     if(t.id==='dc-dealer'){ui.dealer=t.value;render();return}
     if(t.id==='dc-onlyok'){ui.onlyOk=t.checked;render();return}
     if(t.id==='dc-old'){ui.old=t.checked;ui.dealer='';render();return}
-    if(t.id==='dc-send'){ui.send=t.value;return}
+    if(t.id==='dc-send'){ui.send=ceDate(t.value);t.value=ui.send;return}
+    if(t.dataset&&(t.dataset.k==='buy'||t.dataset.k==='fix')){const cEl=t.closest('[data-tk]'),v=ceDate(t.value);if(cEl&&cs[cEl.dataset.tk])cs[cEl.dataset.tk][t.dataset.k]=v;if(v!==t.value)t.value=v;return}
     if(t.id==='dc-rfile'){if(t.files&&t.files[0])importRates(t.files[0]);t.value='';return}
     if(t.dataset&&t.dataset.k==='shipimg'){const cEl=t.closest('[data-tk]'),f=t.files&&t.files[0];if(!cEl||!f)return;
       shrink(f,1000,.72).then(u=>{const c=cs[cEl.dataset.tk],r0=rr[cEl.dataset.tk];c.shipImg=u;if(r0&&!c.manual)c.inc=!issues(r0,c).length;render()}).catch(er=>toast('แนบรูปไม่สำเร็จ: '+errText(er)));return}
@@ -5350,7 +5352,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
   const P='audit/_dlabor/';let sbf=null;
   const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const fmt=n=>(Math.round(n*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const th=d=>{const m=/^(\d{4})-(\d\d)-(\d\d)/.exec(d||'');return m?m[3]+'/'+m[2]+'/'+(+m[1]+543):(d||'-')};
+  const th=d=>{const m=/^(\d{4})-(\d\d)-(\d\d)/.exec(d||'');return m?m[3]+'/'+m[2]+'/'+(+m[1]>2400?+m[1]:+m[1]+543):(d||'-')};
   async function fetchAll(){
     if(!sbf)sbf=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey);
     const q=await sbf.from('em_docs').select('path,data').like('path',P+'%').range(0,1999);
