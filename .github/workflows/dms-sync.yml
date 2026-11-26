@@ -1,0 +1,19 @@
+name: DMS sync
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+concurrency: dms-sync
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/dms-sync.mjs
+        env:
+          SA_KEY: ${{ secrets.SA_KEY }}
+          APP_PUSH_SECRET: ${{ secrets.APP_PUSH_SECRET }}
