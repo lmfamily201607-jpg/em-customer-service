@@ -4834,6 +4834,7 @@ const ids=b.ids.slice(),r0=rows[ids[0]]||{};
 const ov=document.createElement('div');ov.id='dl-edoc';ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.45);overflow:auto;padding:16px';
 const inp=function(k,l,v,t,w){return '<label style="display:flex;flex-direction:column;gap:2px;font-size:.76rem;'+(w?'grid-column:span '+w+';':'')+'"><span class="meta">'+l+'</span><input data-f="'+k+'" type="'+(t||'text')+'" value="'+esc(v==null?'':v)+'"'+(t==='number'?' min="0" step="0.01"':'')+' style="padding:5px 7px;min-width:0"></label>'};
 const sel=function(k,l,v,o){return '<label style="display:flex;flex-direction:column;gap:2px;font-size:.76rem"><span class="meta">'+l+'</span><select data-f="'+k+'" style="padding:5px 7px">'+o.map(function(x){return '<option'+(x===v?' selected':'')+'>'+x+'</option>'}).join('')+'</select></label>'};
+const htmlNode=function(h){const t=document.createElement('div');t.innerHTML=h;return t.firstElementChild};
 const JB=['1. ค่าแรงเปลี่ยนอะไหล่','2. ค่าแรงงานแบตเตอรี่','3. ค่าส่งของเคลม'];
 const jobOf=function(r){const t=String(r.report||'');if(t==='ค่าส่งของเคลม')return JB[2];if(/แบตเตอรี่/.test(t)&&/ค่าแรง/.test(t))return JB[1];return JB[0]};
 const jobSel=function(r){const j=jobOf(r),pn=String(r.report||'').replace(/^ค่าแรงเปลี่ยน\s*/,'');return '<label style="display:flex;flex-direction:column;gap:2px;font-size:.76rem"><span class="meta">รายงานการซ่อม</span><select data-job="1" style="padding:5px 7px">'+JB.map(function(x){return '<option'+(x===j?' selected':'')+'>'+x+'</option>'}).join('')+'</select></label>'+
@@ -4845,7 +4846,15 @@ ov.innerHTML='<div style="max-width:1100px;margin:0 auto;background:#f6f8f7;bord
 '<p class="meta">แก้ไขได้ทุกช่อง เลขที่เอกสารไม่เปลี่ยน บันทึกแล้วใบที่พิมพ์ใหม่จะใช้ข้อมูลล่าสุด</p><div id="dl-ed-hd" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px">'+inp('company','บริษัท',r0.company)+inp('phone','เบอร์โทรศัพท์',r0.phone)+inp('sendDate','วันที่ส่ง',ce(r0.sendDate),'date')+'</div><div id="dl-ed-rows">'+ids.map(function(id,k){return card(id,rows[id],k+1)}).join('')+'</div><button type="button" id="dl-ed-add">+ เพิ่มรายการในเอกสารนี้</button></div>';
 document.body.appendChild(ov);let nn=ids.length;
 ov.querySelector('#dl-ed-x').onclick=function(){ov.remove()};
-ov.addEventListener('change',function(e){const t=e.target;if(t.dataset&&t.dataset.job){const c=t.closest('.dl-ec'),pn=c.querySelector('[data-pn]'),a=c.querySelector('[data-f="amt"]');pn.disabled=t.value!==JB[0];if(t.value===JB[1]&&(!a.value||a.value==='0'))a.value='75'}});
+ov.addEventListener('change',function(e){const t=e.target;
+if(t.dataset&&t.dataset.f==='caseNo'){const c=t.closest('.dl-ec'),tk=t.value.trim();if(!c||!c.isConnected||!tk||!window.DLC||!window.DLC.lookupCase)return;const d=window.DLC.lookupCase(tk);if(!d){toast('ไม่พบเคส '+tk+' ในข้อมูล DMS ของแอพ — กรอกเองได้');return}
+const cur={};c.querySelectorAll('[data-f]').forEach(function(e2){cur[e2.dataset.f]=e2.type==='checkbox'?e2.checked:e2.value});
+const mk=function(l){const batt=d.job==='batt';return Object.assign({},cur,{caseNo:tk,model:d.model,vin:d.vin,repDate:d.repDate,sym:d.sym,type:d.type,report:batt?'ค่าแรงงานแบตเตอรี่':(l&&l.part?'ค่าแรงเปลี่ยน '+l.part:''),part:batt?'ไม่ใช้':'ใช้',amt:batt?75:(l&&l.labor!==''?+l.labor:'')})};
+const L=d.lines.length?d.lines:[null];c.replaceWith(htmlNode(card(c.dataset.id,mk(L[0]),0)));
+let last=ov.querySelector('.dl-ec[data-id="'+c.dataset.id+'"]');L.slice(1).forEach(function(l){const id='new'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);nn++;last.insertAdjacentHTML('afterend',card(id,mk(l),nn));last=last.nextElementSibling});
+ov.querySelectorAll('.dl-ec > b').forEach(function(x,k){x.textContent='รายการที่ '+(k+1)});
+toast('ดึงข้อมูลเคส '+tk+' จาก DMS แล้ว'+(L.length>1?' ('+L.length+' รายการอะไหล่)':'')+(d.br&&d.br!==b.dealer?' · ⚠ เคสนี้เป็นของร้าน '+d.br:''));return}
+if(t.dataset&&t.dataset.job){const c=t.closest('.dl-ec'),pn=c.querySelector('[data-pn]'),a=c.querySelector('[data-f="amt"]');pn.disabled=t.value!==JB[0];if(t.value===JB[1]&&(!a.value||a.value==='0'))a.value='75'}});
 ov.querySelector('#dl-ed-add').onclick=function(){const id='new'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);nn++;ov.querySelector('#dl-ed-rows').insertAdjacentHTML('beforeend',card(id,{type:'เคลมหลังขาย',part:'ใช้'},nn))};
 ov.querySelector('#dl-ed-save').onclick=async function(){const btn=this;btn.disabled=true;const hd={};ov.querySelectorAll('#dl-ed-hd [data-f]').forEach(function(e){hd[e.dataset.f]=e.type==='date'?ce(e.value):e.value.trim()});
 let n=0;try{for(const c of ov.querySelectorAll('.dl-ec')){const id=c.dataset.id,o=Object.assign({},rows[id]||{dealer:b.dealer,docNo:b.no||'',st:r0.st||ST[0],createdAt:new Date().toISOString()},hd);
@@ -5134,7 +5143,7 @@ function mount(v){
     else if(t.id==='dc-ok'){casesOf(ui.dealer).forEach(r=>{const c=caseState(r);c.manual=false;c.inc=!issues(r,c).length});render()}});
   render();loadExisting();refreshFeed();if(!ratesTried){ratesTried=true;loadRates()}
 }
-window.DLC={bahtText,symOf,setRates,lookup,parseRates,calc:()=>calc(ui.dealer),state:()=>({ui,cs,existing}),pendingAll,dealerList,caseState,casesOf,render,ui};
+window.DLC={lookupCase:function(tk){const r=srcRows().find(x=>String(x.tk)===String(tk));if(!r)return null;const c=mkCase(r);return {br:norm(r.br),model:(r.mf||r.m||'').replace(/^EM\s+/,''),vin:[r.v,r.mo,r.ba].filter(Boolean).join(' / '),repDate:r.d||'',sym:c.sym,type:c.type,job:c.job,lines:c.lines.map(l=>({part:l.part,labor:l.labor}))}},bahtText,symOf,setRates,lookup,parseRates,calc:()=>calc(ui.dealer),state:()=>({ui,cs,existing}),pendingAll,dealerList,caseState,casesOf,render,ui};
 let tick=0;
 setInterval(function(){try{
   if(S.view!=='dealerlabor')return;const v=document.getElementById('v-dealerlabor');if(!v)return;
