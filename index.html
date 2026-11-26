@@ -4907,7 +4907,7 @@ let tick=0;setInterval(function(){try{if(S.view!=='dealerlabor')return;const v=d
 
 /*DLCHECK*/(function(){
 const P='audit/_dlabor/',RP='audit/_laborrates/all',CUT='2026-09-01';
-let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:'',onlyOk:false,cat:'all'},cs={},rr={},FEED=null,FST={t:0,msg:'',busy:false},sig='',busy=false,ratesTried=false;
+let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:'',onlyOk:false,cat:'all',desc:false},cs={},rr={},FEED=null,FST={t:0,msg:'',busy:false},sig='',busy=false,ratesTried=false;
 const fmt=n=>(Math.round((+n||0)*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const norm=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
 const ceDate=v=>{const m=/^(\d{4})(-\d\d-\d\d)$/.exec(v||'');return m&&+m[1]>2400?(+m[1]-543)+m[2]:(v||'')};
@@ -5008,7 +5008,8 @@ function shrink(file,max,q){return new Promise((res,rej)=>{const fr=new FileRead
 function caseState(r){const k=String(r.tk);if(!cs[k]){cs[k]=mkCase(r);rr[k]=r;cs[k].inc=!issues(r,cs[k]).length}return cs[k]}
 function chkHtml(r,c){const m=issues(r,c);return m.length?'<span class="dc-tag miss">ข้อมูลไม่ครบ: '+esc(m.join(' · '))+(c.inc?'':' — พักไว้ก่อน')+'</span>':'<span class="dc-tag ok">ข้อมูลครบ พร้อมเบิก</span>'}
 function sumHtml(L){let ok=0,hold=0;L.forEach(r=>{if(prepared(r.tk))return;issues(r,caseState(r)).length?hold++:ok++});return 'ข้อมูลครบ '+ok+' เคส · ไม่ครบ (พักไว้) '+hold+' เคส'}
-function casesOf(dealer){return pendingAll().filter(r=>(norm(r.br)||'(ไม่ระบุร้าน)')===dealer).sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.tk).localeCompare(String(b.tk),undefined,{numeric:true}))}
+function casesOf(dealer){const k=ui.desc?-1:1;return pendingAll().filter(r=>(norm(r.br)||'(ไม่ระบุร้าน)')===dealer).sort((a,b)=>k*(String(a.d).localeCompare(String(b.d))||String(a.tk).localeCompare(String(b.tk),undefined,{numeric:true})))}
+function ageOf(d){const t=Date.parse(d||'');return isFinite(t)?Math.max(0,Math.floor((Date.now()-t)/86400000)):null}
 function calc(dealer){
   let labor=0,ship=0,cases=0,lines=0,miss=0;
   casesOf(dealer).forEach(r=>{const c=caseState(r);if(!c.inc||prepared(r.tk)||issues(r,c).length)return;cases++;
@@ -5074,11 +5075,11 @@ function render(){
   if(ui.dealer){
     const L=casesOf(ui.dealer);
     const okN=L.filter(r=>!prepared(r.tk)&&!issues(r,caseState(r)).length).length;
-    h+=`<div class="dc-step"><span>2</span>กรอกข้อมูลแต่ละเคส</div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0"><label style="display:flex;align-items:center;gap:6px;font-size:.88rem;background:#eef7f1;border:1px solid #b9dcc6;border-radius:8px;padding:4px 10px"><input type="checkbox" id="dc-onlyok"${ui.onlyOk?' checked':''}> แสดงเฉพาะเคสที่ข้อมูลครบ (${okN} เคส)</label><span class="meta"><b id="dc-sum">${sumHtml(L)}</b> · ทั้งหมด ${L.length} เคส · เคสที่ทำเบิกแล้วจะถูกล็อก</span></div>`;
+    h+=`<div class="dc-step"><span>2</span>กรอกข้อมูลแต่ละเคส</div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0"><label style="display:flex;align-items:center;gap:6px;font-size:.88rem;background:#eef7f1;border:1px solid #b9dcc6;border-radius:8px;padding:4px 10px"><input type="checkbox" id="dc-onlyok"${ui.onlyOk?' checked':''}> แสดงเฉพาะเคสที่ข้อมูลครบ (${okN} เคส)</label><label style="font-size:.85rem">เรียงตามวันที่สร้าง ticket <select id="dc-sort"><option value="asc"${ui.desc?'':' selected'}>เก่าสุดก่อน</option><option value="desc"${ui.desc?' selected':''}>ใหม่สุดก่อน</option></select></label><span class="meta"><b id="dc-sum">${sumHtml(L)}</b> · ทั้งหมด ${L.length} เคส · เคสที่ทำเบิกแล้วจะถูกล็อก</span></div>`;
     h+=(ui.onlyOk&&!okN?'<p class="meta">ยังไม่มีเคสที่ข้อมูลครบ — กรอกวันที่ซื้อ/วันที่ซ่อม/อาการเสียให้ครบก่อน</p>':'');
     h+=L.filter(r=>!ui.onlyOk||prepared(r.tk)||!issues(r,caseState(r)).length).map(r=>{const c=caseState(r),done=prepared(r.tk),tk=esc(r.tk);
       const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
-      return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><input type="checkbox" data-k="inc"${c.inc&&!done?' checked':''}${done?' disabled':''}> <b>เคส #${tk}</b></label><span class="dc-chk">${done?'':chkHtml(r,c)}</span><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">แจ้งซ่อม ${esc(r.d||'-')}</span>${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span> <button type="button" data-dcedit="'+tk+'">✏️ แก้ไขรายการที่บันทึกแล้ว</button>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
+      return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><input type="checkbox" data-k="inc"${c.inc&&!done?' checked':''}${done?' disabled':''}> <b>เคส #${tk}</b></label><span class="dc-chk">${done?'':chkHtml(r,c)}</span><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">สร้าง ticket ${esc(r.d||'-')}${ageOf(r.d)!=null?' · ค้าง <b>'+ageOf(r.d)+' วัน</b>':''}</span>${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span> <button type="button" data-dcedit="'+tk+'">✏️ แก้ไขรายการที่บันทึกแล้ว</button>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
       <div class="dc-grid"><label class="wide"><span class="meta">รายการซ่อม</span><select data-k="job"><option value="batt"${c.job==='batt'?' selected':''}>1. เคลมแบตเตอรี่ — ค่าแรง ${BATT_LABOR} บาท/เคส</option><option value="part"${c.job!=='batt'?' selected':''}>2. ค่าแรงเปลี่ยนอะไหล่ — ตามตารางค่าแรงรายอะไหล่</option></select></label><label><span class="meta">วันที่ซื้อ (ลูกค้าซื้อรถ)</span><input type="date" data-k="buy" value="${esc(c.buy)}"></label><label><span class="meta">วันที่ซ่อม (ได้รับอะไหล่จาก EM และซ่อม)</span><input type="date" data-k="fix" value="${esc(c.fix)}"></label>
       <label><span class="meta">ประเภทเคลม</span><select data-k="type"><option${c.type==='เคลมหลังขาย'?' selected':''}>เคลมหลังขาย</option><option${c.type==='เคลมก่อนขาย'?' selected':''}>เคลมก่อนขาย</option></select></label>
       <label><span class="meta">ค่าขนส่งของเคลม (บาท) — กรอกจำนวน</span><input type="number" min="0" step="0.01" data-k="ship" value="${esc(c.ship)}"></label>
@@ -5120,6 +5121,7 @@ function mount(v){
   d.addEventListener('change',e=>{const t=e.target;
     if(t.id==='dc-dealer'){ui.dealer=t.value;render();return}
     if(t.dataset&&t.dataset.k==='job'){const cEl=t.closest('[data-tk]');if(cEl){const c=cs[cEl.dataset.tk],r0=rr[cEl.dataset.tk];c.job=t.value;c.lines=t.value==='batt'?c.bl:c.pl;if(r0&&!c.manual)c.inc=!issues(r0,c).length;render()}return}
+    if(t.id==='dc-sort'){ui.desc=t.value==='desc';render();return}
     if(t.id==='dc-onlyok'){ui.onlyOk=t.checked;render();return}
     if(t.id==='dc-old'){ui.old=t.checked;ui.dealer='';render();return}
     if(t.id==='dc-send'){ui.send=ceDate(t.value);t.value=ui.send;return}
