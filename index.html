@@ -1773,7 +1773,7 @@ function ensureDms(){
     const chunks=s.docs.filter(d=>/^c\d+$/.test(d.id)).map(d=>d.data()).sort((a,b)=>a.part-b.part);
     S.dmsMeta=dict;
     S.dms=chunks.flatMap(c=>c.rows||[]).map(r=>{const m=dict.m[r.m]||'';return {src:'dms',tk:r.tk,st:dict.st[r.st]||'',ty:dict.ty[r.ty]||'',ctype:r.ct,br:dict.br[r.br]||'',
-      v:r.v,m,mf:shortModel(m)||'ไม่ระบุ',mi:r.mi,cn:r.cn,ph:r.ph,c:dict.c[r.c]||'',p:r.p,d:r.d,u:r.u,img:r.img?[r.img]:[],
+      v:r.v,mo:r.mo,ba:r.ba,m,mf:shortModel(m)||'ไม่ระบุ',mi:r.mi,cn:r.cn,ph:r.ph,c:dict.c[r.c]||'',p:r.p,d:r.d,u:r.u,img:r.img?[r.img]:[],
       parts:(r.parts||[]).map(p=>({s:p.s||'',n:p.n||pn[p.s]||p.s,q:p.q,p:p.p}))}});
     refresh();
   },()=>{S.dmsLoaded=false});
@@ -3139,7 +3139,7 @@ function mapDmsRows(sheet){
       .map(p=>{if(p.s){dict.pn[p.s]=p.n;return {s:p.s,q:p.q,p:p.p}}return {n:p.n,q:p.q,p:p.p}});
     const di=parseDate(g(r,'วันที่สร้าง')),ui=parseDate(g(r,'วันที่อัพเดท'));
     rows.push({tk,st:put('st',cellText(g(r,'สถานะ'))),ty:put('ty',cellText(g(r,'ประเภท'))),ct:cellText(g(r,'ประเภทเคลม')),br:put('br',cellText(g(r,'ชื่อสาขา'))),
-      v:cellText(g(r,'VIN')).toUpperCase(),m:put('m',cellText(g(r,'รุ่นรถ'))),mi:cellText(g(r,'เลขไมล์')),cn:cellText(g(r,'ชื่อผู้ใช้งาน')),ph:phoneText(g(r,'เบอร์โทรผู้ใช้งาน')),
+      v:cellText(g(r,'VIN')).toUpperCase(),...(cellText(g(r,'เลขมอเตอร์'))?{mo:cellText(g(r,'เลขมอเตอร์'))}:{}),...(cellText(g(r,'เลขแบตเตอรี่'))?{ba:cellText(g(r,'เลขแบตเตอรี่'))}:{}),m:put('m',cellText(g(r,'รุ่นรถ'))),mi:cellText(g(r,'เลขไมล์')),cn:cellText(g(r,'ชื่อผู้ใช้งาน')),ph:phoneText(g(r,'เบอร์โทรผู้ใช้งาน')),
       c:put('c',cellText(g(r,'หมวดหมู่ปัญหา'))),p:cellText(g(r,'ปัญหาย่อย')).slice(0,600),d:di?isoDate(di):'',u:ui?isoDate(ui):'',img:cellText(g(r,'รูปปัญหา 1')),parts});
   });
   return {rows,dict};
@@ -4847,7 +4847,180 @@ const o={};F.forEach(function(f){o[f[0]]=g(f[0])});o.amt=amt;o.part=g('part');o.
 if(editId){o.createdAt=(rows[editId]||{}).createdAt||new Date().toISOString();o.updatedAt=new Date().toISOString();save(editId,o);fill(null)}else{const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);o.createdAt=new Date().toISOString();save(id,o);['caseNo','model','vin','buyDate','repDate','fixDate','sym','report','amt'].forEach(function(i){d.querySelector('#dl-'+i).value=''});d.querySelector('#dl-pb').checked=false;d.querySelector('#dl-pa').checked=false}};
 d.querySelector('#dl-cancel').onclick=function(){fill(null)};
 d.querySelector('#dl-fq').oninput=function(e){flt.q=e.target.value;draw()};d.querySelector('#dl-fst').onchange=function(e){flt.st=e.target.value;draw()};d.querySelector('#dl-csv').onclick=csv;draw();load()}
+window.dlReload=load;
 let tick=0;setInterval(function(){try{if(S.view!=='dealerlabor')return;const v=document.getElementById('v-dealerlabor');if(!v)return;if(!v.querySelector('#dl-track')){mount(v);return}if(++tick%20===0)load()}catch(e){}},1000);
+})();
+
+/*DLCHECK*/(function(){
+const P='audit/_dlabor/',RP='audit/_laborrates/all',CUT='2026-09-01';
+let sbf=null,RATES=null,BASE=null,RMETA=null,existing={},ui={dealer:'',old:false,send:'',q:''},cs={},sig='',busy=false,ratesTried=false;
+const fmt=n=>(Math.round((+n||0)*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const norm=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
+const PII=/0\d[\d\- ]{7,10}\d|https?:\/\/|maps\.google|ต\.\s?\S+\s+อ\.|จ\.\s?\S+|ม\.\d+|\d+\/\d+/;
+function bahtText(n){
+  n=Math.round((+n||0)*100)/100;
+  const D=['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'],U=['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+  function grp(p,hi){const v=+p;let o='';for(let i=0;i<p.length;i++){const d=+p[i],pos=p.length-i-1;if(!d)continue;
+    if(pos===0&&d===1&&(v>1||hi))o+='เอ็ด';else if(pos===1&&d===2)o+='ยี่';else if(pos===1&&d===1)o+='';else o+=D[d];o+=U[pos]}return o}
+  function whole(s){s=s.replace(/^0+/,'');if(!s)return '';const parts=[];while(s.length){parts.unshift(s.slice(-6).padStart(6,'0'));s=s.slice(0,-6)}
+    return parts.map((p,i)=>{const t=grp(p,i>0);return t?t+(i<parts.length-1?'ล้าน':''):(i<parts.length-1?'ล้าน':'')}).join('')}
+  const bs=String(Math.floor(n)),st=Math.round((n-Math.floor(n))*100),b=whole(bs),s=st?whole(String(st)):'';
+  if(!b&&!st)return 'ศูนย์บาทถ้วน';
+  return (b?b+'บาท':'')+(st?s+'สตางค์':'ถ้วน');
+}
+function symOf(r){
+  const fb=norm(r.c||'');const t=String(r.p||'');if(!t.trim())return fb;
+  const f=norm(t.split('\n')[0]);if(!f||f.length<2||PII.test(f))return fb;return f.slice(0,100);
+}
+function setRates(rows,meta){
+  RATES=new Map();BASE=new Map();RMETA=meta||null;
+  (rows||[]).forEach(r=>{const s=String(r.s||'').trim();if(!s)return;const old=RATES.get(s);if(!old||(old.l==null&&r.l!=null))RATES.set(s,{l:r.l==null?null:+r.l,t:r.t||0})});
+  RATES.forEach((v,s)=>{const b=s.split('.')[0];if(!BASE.has(b))BASE.set(b,new Set());if(v.l!=null)BASE.get(b).add(v.l)});
+}
+function lookup(sku){
+  if(!RATES)return {l:'',tag:'ยังไม่มีตารางค่าแรง',k:'none'};
+  sku=String(sku||'').trim();if(!sku)return {l:'',tag:'ไม่พบรหัส',k:'miss'};
+  if(RATES.has(sku)){const v=RATES.get(sku);return v.l!=null?{l:v.l,tag:'ตรงตาราง',k:'ok'}:{l:'',tag:'ตารางไม่ระบุค่าแรง',k:'miss'}}
+  const b=BASE.get(sku.split('.')[0]);
+  if(b&&b.size===1)return {l:[...b][0],tag:'ใกล้เคียง (ตัดท้ายรหัส) ตรวจก่อนเบิก',k:'near'};
+  return {l:'',tag:'ไม่พบรหัสในตาราง',k:'miss'};
+}
+function parseRates(X,buf){
+  const wb=X.read(buf,{type:'array',cellFormula:false,cellHTML:false,cellText:false,cellStyles:false}),out=[];
+  wb.SheetNames.forEach(n=>{
+    const a=X.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''});let hi=-1;
+    for(let i=0;i<Math.min(a.length,8);i++){const h=a[i].map(x=>String(x).trim());if(h.some(x=>x.indexOf('SKU NO')===0)&&h.indexOf('ค่าแรง')>=0){hi=i;break}}
+    if(hi<0)return;
+    const h=a[hi].map(x=>String(x).trim()),sk=[];h.forEach((x,i)=>{if(x.indexOf('SKU NO')===0||x.indexOf('NEW SKU')===0)sk.push(i)});
+    const li=h.indexOf('ค่าแรง'),fi=h.indexOf('F.R.T');let ni=h.findIndex(x=>/NAME/i.test(x)&&/TH/i.test(x));if(ni<0){const e=h.findIndex(x=>/PART NAME \(EN\)/i.test(x));ni=e>=0?e+1:-1}
+    a.slice(hi+1).forEach(r=>{
+      const lv=r[li]===''||r[li]==null?null:Number(String(r[li]).replace(/,/g,''));const l=lv!=null&&isFinite(lv)?lv:null;
+      const t=fi>=0?Number(r[fi])||0:0,nm=ni>=0?String(r[ni]||'').trim():'';
+      sk.forEach(c=>{const s=String(r[c]==null?'':r[c]).trim();if(s&&s!=='None')out.push({s,l,t,n:nm,sh:n})});
+    });
+  });
+  return out;
+}
+function pendingAll(){
+  const rx=/รอคืนค่า(บริการ|แรง)เคลม/;
+  return (S.dms||[]).filter(r=>rx.test(r.st||'')&&(ui.old||(r.d||'')>=CUT));
+}
+function dealerList(){
+  const m=new Map();pendingAll().forEach(r=>{const b=norm(r.br)||'(ไม่ระบุร้าน)';m.set(b,(m.get(b)||0)+1)});
+  return [...m.entries()].sort((a,b)=>a[0].localeCompare(b[0],'th'));
+}
+function prepared(tk){return Object.values(existing).some(r=>String(r.caseNo)===String(tk))}
+function mkCase(r){
+  const parts=r.parts||[];
+  const lines=parts.length?parts.map(p=>{const k=lookup(p.s);return {part:p.n||p.s||'',sku:p.s||'',q:p.q||1,used:'ใช้',labor:k.l===''?'':String(k.l),tag:k.tag,k:k.k}}):[{part:'',sku:'',q:0,used:'ไม่ใช้',labor:'',tag:'ไม่มีอะไหล่ในเคส',k:'miss'}];
+  return {inc:true,buy:'',fix:'',type:r.ctype==='รถใหม่'?'เคลมก่อนขาย':'เคลมหลังขาย',ship:'',sym:symOf(r),lines};
+}
+function caseState(r){const k=String(r.tk);if(!cs[k])cs[k]=mkCase(r);return cs[k]}
+function casesOf(dealer){return pendingAll().filter(r=>(norm(r.br)||'(ไม่ระบุร้าน)')===dealer).sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.tk).localeCompare(String(b.tk),undefined,{numeric:true}))}
+function calc(dealer){
+  let labor=0,ship=0,cases=0,lines=0,miss=0;
+  casesOf(dealer).forEach(r=>{const c=caseState(r);if(!c.inc||prepared(r.tk))return;cases++;
+    c.lines.forEach(l=>{const v=parseFloat(l.labor);if(isFinite(v)&&l.labor!==''){labor+=v;lines++}else miss++});
+    const s=parseFloat(c.ship);if(isFinite(s)&&s>0)ship+=s});
+  const sum=Math.round((labor+ship)*100)/100,vat=Math.round(sum*7)/100,tot=Math.round((sum+vat)*100)/100,wht=Math.round(labor*3)/100;
+  return {labor,ship,sum,vat,tot,wht,net:Math.round((tot-wht)*100)/100,cases,lines,miss};
+}
+async function client(){if(!sbf&&window.supabase&&window.EM_CONFIG)sbf=window.supabase.createClient(window.EM_CONFIG.supabaseUrl,window.EM_CONFIG.supabaseAnonKey);return sbf}
+async function loadRates(){try{const c=await client();if(!c)return;const q=await c.from('em_docs').select('data').eq('path',RP).limit(1);if(q.error)return;const d=q.data&&q.data[0]&&q.data[0].data;if(d&&d.rows){setRates(d.rows,{importedAt:d.importedAt,file:d.file,count:d.rows.length});cs={};render()}}catch(e){}}
+async function loadExisting(){try{const c=await client();if(!c)return;const R={};for(let i=0;i<10;i++){const q=await c.from('em_docs').select('path,data').like('path',P+'%').range(i*1000,i*1000+999);if(q.error||!q.data)break;q.data.forEach(x=>{if(x.data&&x.data.dealer)R[x.path.slice(P.length)]=x.data});if(q.data.length<1000)break}
+  if(JSON.stringify(R)!==JSON.stringify(existing)){existing=R;render()}}catch(e){}}
+async function importRates(file){
+  if(!S.isAdmin){toast('เฉพาะผู้ดูแลระบบนำเข้าได้');return}
+  try{toast('กำลังอ่านตารางค่าแรง…');const rows=parseRates(XLSX,await file.arrayBuffer());
+    if(!rows.length){toast('ไม่พบคอลัมน์ SKU NO. และ ค่าแรง ในไฟล์นี้');return}
+    await S.db.doc(RP).set({rows:rows.map(r=>({s:r.s,l:r.l,t:r.t,n:r.n})),importedAt:new Date().toISOString(),file:file.name,count:rows.length});
+    setRates(rows,{importedAt:new Date().toISOString(),file:file.name,count:rows.length});cs={};render();toast('นำเข้าตารางค่าแรง '+rows.length.toLocaleString()+' รหัสแล้ว')}
+  catch(e){toast('นำเข้าไม่สำเร็จ: '+errText(e))}
+}
+function css(){if(document.getElementById('dc-css'))return;const s=document.createElement('style');s.id='dc-css';
+  s.textContent='#dl-check .dc-case{border:1px solid var(--line,#d5ddd8);border-radius:12px;padding:10px 12px;margin:10px 0;background:#fff}#dl-check .dc-case.done{opacity:.55}#dl-check .dc-top{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}#dl-check .dc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}#dl-check .dc-grid label{display:flex;flex-direction:column;gap:2px;font-size:.78rem}#dl-check .dc-grid .wide{grid-column:1/-1}#dl-check input,#dl-check select{padding:5px 7px;min-width:0;box-sizing:border-box}#dl-check table.dc-p{width:100%;border-collapse:collapse;font-size:.85rem}#dl-check .dc-p td,#dl-check .dc-p th{border-top:1px solid #e6eee9;padding:4px 6px;text-align:left;vertical-align:middle}#dl-check .dc-tag{font-size:.72rem;padding:1px 7px;border-radius:99px;border:1px solid #cfd8d3;white-space:nowrap}#dl-check .dc-tag.ok{background:#e1f3e7;color:#0b5d2d}#dl-check .dc-tag.near{background:#fff2cc;color:#7a5200}#dl-check .dc-tag.miss,#dl-check .dc-tag.none{background:#f8d7da;color:#842029}#dl-check .dc-tot{position:sticky;bottom:0;background:#fff;border:1px solid var(--line,#d5ddd8);border-radius:12px;padding:10px 14px;margin-top:12px;box-shadow:0 -6px 16px -10px rgba(0,0,0,.25)}#dl-check .dc-tot b.big{font-size:1.15rem}';
+  document.head.appendChild(s)}
+function totHtml(){
+  const d=ui.dealer;if(!d)return '';const t=calc(d);
+  return `<div class="dc-tot"><div style="display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline"><span>เคสที่เลือก <b>${t.cases}</b> · รายการค่าแรง <b>${t.lines}</b>${t.miss?` · <span style="color:#b00020">ยังไม่กรอกค่าแรง ${t.miss} รายการ (จะไม่ถูกบันทึก)</span>`:''}</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:4px 26px;margin-top:6px"><span>ราคารวม <b>${fmt(t.sum)}</b>${t.ship?` <span class="meta">(ค่าแรง ${fmt(t.labor)} + ค่าส่ง ${fmt(t.ship)})</span>`:''}</span><span>ภาษีมูลค่าเพิ่ม 7% <b>${fmt(t.vat)}</b></span><span>รวมทั้งสิ้น <b class="big">${fmt(t.tot)}</b></span></div>
+  <div class="meta" style="margin-top:3px">(${esc(bahtText(t.tot))}) · ประมาณการหัก ณ ที่จ่าย 3% ของค่าแรง ${fmt(t.wht)} → ยอดโอนสุทธิโดยประมาณ ${fmt(t.net)}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="primary" id="dc-save"${busy||!t.lines&&!t.ship?' disabled':''}>บันทึกเป็นรายการเบิก (${t.cases} เคส)</button><button type="button" id="dc-print">📄 ใบเอกสาร / พิมพ์ของร้านนี้</button></div></div>`;
+}
+function render(){
+  const root=document.getElementById('dl-check');if(!root)return;
+  const body=root.querySelector('#dc-body');if(!body)return;
+  const hasDms=(S.dms||[]).length>0,dl=dealerList();
+  let h='';
+  if(!hasDms)h+='<div class="banner warn">ยังไม่มีข้อมูลเคส DMS ในแอป ให้ผู้ดูแลระบบนำเข้าไฟล์เคลมที่เมนู "นำเข้าข้อมูล" (ไฟล์เดียวกับที่ใช้ทำค่าแรง) ระบบจะแสดงเคสสถานะ "รอคืนค่าบริการเคลม" ให้ตรวจที่นี่</div>';
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:6px 0"><label style="display:flex;flex-direction:column;gap:2px;font-size:.78rem;flex:1;min-width:260px"><span class="meta">เลือกร้านค้า (ร้านที่มีเคสค้างค่าแรง ${dl.length} ร้าน)</span><select id="dc-dealer"><option value="">— เลือกร้านค้า —</option>${dl.map(([n,c])=>`<option value="${esc(n)}"${n===ui.dealer?' selected':''}>${esc(n)} (${c} เคส)</option>`).join('')}</select></label>
+  <label style="display:flex;flex-direction:column;gap:2px;font-size:.78rem"><span class="meta">วันที่ส่งเอกสาร</span><input id="dc-send" type="date" value="${esc(ui.send)}"></label>
+  <label style="display:flex;align-items:center;gap:6px;font-size:.85rem"><input type="checkbox" id="dc-old"${ui.old?' checked':''}> รวมเคสก่อนเดือน 9 (พิจารณารายเคสเท่านั้น)</label></div>`;
+  h+=RATES?`<p class="meta">ตารางค่าแรงอะไหล่: ${RATES.size.toLocaleString()} รหัส${RMETA&&RMETA.file?' จากไฟล์ '+esc(RMETA.file):''}${RMETA&&RMETA.importedAt?' (นำเข้า '+esc(isoDate(RMETA.importedAt))+')':''}</p>`:`<div class="banner warn">ยังไม่มีตารางค่าแรงอะไหล่ ระบบจึงคำนวณค่าแรงให้อัตโนมัติไม่ได้ (กรอกเองได้)${S.isAdmin?'':' · ให้ผู้ดูแลระบบนำเข้าตาราง'}</div>`;
+  if(S.isAdmin)h+=`<label class="meta" style="cursor:pointer;display:inline-block;margin-bottom:6px"><span style="border:1px solid #bbb;border-radius:8px;padding:4px 10px;background:#fff">${RATES?'นำเข้าตารางค่าแรงใหม่':'นำเข้าตารางค่าแรงอะไหล่'} (ไฟล์ "ปรับราคา Sparepart" .xlsx)</span><input id="dc-rfile" type="file" accept=".xlsx,.xls" hidden></label>`;
+  if(ui.dealer){
+    const L=casesOf(ui.dealer);
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0"><button type="button" id="dc-all">เลือกทุกเคส</button><button type="button" id="dc-none">ไม่เลือกเลย</button><span class="meta" style="align-self:center">${L.length} เคสค้างค่าแรงของร้านนี้ · เคสที่ทำเบิกแล้วจะถูกล็อก</span></div>`;
+    h+=L.map(r=>{const c=caseState(r),done=prepared(r.tk),tk=esc(r.tk);
+      const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
+      return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><input type="checkbox" data-k="inc"${c.inc&&!done?' checked':''}${done?' disabled':''}> <b>เคส #${tk}</b></label><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">แจ้งซ่อม ${esc(r.d||'-')}</span>${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
+      <div class="dc-grid"><label><span class="meta">วันที่ซื้อ (ลูกค้าซื้อรถ)</span><input type="date" data-k="buy" value="${esc(c.buy)}"></label><label><span class="meta">วันที่ซ่อม</span><input type="date" data-k="fix" value="${esc(c.fix)}"></label>
+      <label><span class="meta">ประเภทเคลม</span><select data-k="type"><option${c.type==='เคลมหลังขาย'?' selected':''}>เคลมหลังขาย</option><option${c.type==='เคลมก่อนขาย'?' selected':''}>เคลมก่อนขาย</option></select></label>
+      <label><span class="meta">ค่าส่งของเคลม (บาท)</span><input type="number" min="0" step="0.01" data-k="ship" value="${esc(c.ship)}"></label>
+      <label class="wide"><span class="meta">อาการเสีย</span><input data-k="sym" value="${esc(c.sym)}"></label></div>
+      <table class="dc-p"><thead><tr><th>อะไหล่ / รายการ</th><th>รหัส</th><th>ใช้</th><th style="width:120px">ค่าแรง (บาท)</th><th>ที่มา</th></tr></thead><tbody>${c.lines.map((l,i)=>`<tr data-li="${i}"><td>${esc(l.part||'(เคสนี้ไม่มีอะไหล่ในระบบ)')}${l.q>1?` <span class="meta">×${l.q} (ค่าแรงไม่คูณจำนวน)</span>`:''}</td><td class="mono">${esc(l.sku||'-')}</td><td><select data-k="used"><option${l.used==='ใช้'?' selected':''}>ใช้</option><option${l.used!=='ใช้'?' selected':''}>ไม่ใช้</option></select></td><td><input type="number" min="0" step="0.01" data-k="labor" value="${esc(l.labor)}" style="width:110px;text-align:right"></td><td><span class="dc-tag ${l.k}">${esc(l.tag)}</span></td></tr>`).join('')}</tbody></table></div>`}).join('');
+    h+='<div id="dc-tot">'+totHtml()+'</div>';
+  }
+  body.innerHTML=h;
+}
+async function save(){
+  const d=ui.dealer;if(!d||busy)return;
+  if(!S.db||!S.canWrite){toast('บัญชีนี้ยังบันทึกข้อมูลไม่ได้');return}
+  const recs=[];let skipped=0;const send=ui.send||isoDate(new Date().toISOString());
+  casesOf(d).forEach(r=>{const c=caseState(r);if(!c.inc||prepared(r.tk))return;const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
+    const base={dealer:d,company:'',phone:'',sendDate:send,caseNo:String(r.tk),model:(r.mf||r.m||'').replace(/^EM\s+/,''),vin,buyDate:c.buy,repDate:r.d||'',fixDate:c.fix,sym:c.sym,type:c.type,pb:false,pa:false,st:'รอค่าแรง',tk:String(r.tk),src:'dms'};
+    c.lines.forEach((l,i)=>{const v=parseFloat(l.labor);if(l.labor===''||!isFinite(v)||v<0){skipped++;return}recs.push(['dms-'+r.tk+'-'+i,{...base,report:l.part,part:l.used,sku:l.sku,amt:v}])});
+    const s=parseFloat(c.ship);if(isFinite(s)&&s>0)recs.push(['dms-'+r.tk+'-ship',{...base,report:'ค่าส่งของเคลม',part:'',sku:'',amt:s}])});
+  if(!recs.length){toast('ยังไม่มีรายการที่มีค่าแรงให้บันทึก');return}
+  if(!confirm('บันทึก '+recs.length+' รายการ ของร้าน '+d+' เป็นรายการเบิกค่าแรง (สถานะ รอค่าแรง)?'+(skipped?'\n\nข้าม '+skipped+' รายการที่ยังไม่กรอกค่าแรง (เคสที่บันทึกแล้วจะถูกล็อก กรอกเพิ่มภายหลังที่รายการเบิกด้านล่าง)':'')))return;
+  busy=true;render();let n=0;
+  try{for(const [id,o] of recs){const now=new Date().toISOString();await S.db.doc(P+id).set({...o,createdAt:now,updatedAt:now});existing[id]=o;n++}
+    toast('บันทึกแล้ว '+n+' รายการ');if(window.dlReload)window.dlReload()}
+  catch(e){toast('บันทึกไม่สำเร็จ (บันทึกไปแล้ว '+n+' รายการ): '+errText(e))}
+  busy=false;render();
+}
+function mount(v){
+  const track=v.querySelector('#dl-track');if(!track)return;
+  const d=document.createElement('div');d.id='dl-check';d.className='panel';d.style.marginBottom='14px';
+  d.innerHTML='<h3>ตรวจเคสค้างค่าแรง — เลือกร้าน กรอกข้อมูล ระบบคำนวณยอดให้</h3><p class="meta">ดึงเคสสถานะ "รอคืนค่าบริการเคลม" จากข้อมูลเคส DMS ในแอป จัดกลุ่มตามร้านค้า เติมค่าแรงจากตารางอะไหล่ให้อัตโนมัติ (แก้ไขได้) แล้วคำนวณราคารวม VAT 7% และรวมทั้งสิ้น บันทึกแล้วจะเข้ารายการเบิกด้านล่างและพิมพ์เป็นใบสรุปค่าแรงเคลมได้</p><div id="dc-body"></div>';
+  track.before(d);css();if(!ui.send)ui.send=isoDate(new Date().toISOString());
+  d.addEventListener('input',e=>{const t=e.target,k=t.dataset&&t.dataset.k;if(!k)return;const cEl=t.closest('[data-tk]');if(!cEl)return;const c=cs[cEl.dataset.tk];if(!c)return;
+    const li=t.closest('tr[data-li]');if(li&&(k==='labor'||k==='used')){c.lines[+li.dataset.li][k]=t.value;
+      if(k==='labor'){const tg=li.querySelector('.dc-tag');const L=c.lines[+li.dataset.li];if(tg&&L.k!=='ok'&&t.value!==''){tg.className='dc-tag ok';tg.textContent='กรอกเอง'}}}
+    else if(k==='buy'||k==='fix'||k==='ship'||k==='sym'||k==='type')c[k]=t.value;
+    const tot=document.getElementById('dc-tot');if(tot)tot.innerHTML=totHtml()});
+  d.addEventListener('change',e=>{const t=e.target;
+    if(t.id==='dc-dealer'){ui.dealer=t.value;render();return}
+    if(t.id==='dc-old'){ui.old=t.checked;ui.dealer='';render();return}
+    if(t.id==='dc-send'){ui.send=t.value;return}
+    if(t.id==='dc-rfile'){if(t.files&&t.files[0])importRates(t.files[0]);t.value='';return}
+    if(t.dataset&&t.dataset.k==='inc'){const cEl=t.closest('[data-tk]');cs[cEl.dataset.tk].inc=t.checked;const tot=document.getElementById('dc-tot');if(tot)tot.innerHTML=totHtml()}
+    else if(t.dataset&&t.dataset.k==='used'){const li=t.closest('tr[data-li]'),cEl=t.closest('[data-tk]');if(li&&cEl)cs[cEl.dataset.tk].lines[+li.dataset.li].used=t.value}});
+  d.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+    if(t.id==='dc-save')save();
+    else if(t.id==='dc-print'){if(window.ddOpen)window.ddOpen([ui.dealer]);else toast('บันทึกรายการก่อน แล้วกดปุ่มใบเอกสารในรายการด้านล่าง')}
+    else if(t.id==='dc-all'||t.id==='dc-none'){casesOf(ui.dealer).forEach(r=>{caseState(r).inc=t.id==='dc-all'});render()}});
+  render();loadExisting();if(!ratesTried){ratesTried=true;loadRates()}
+}
+window.DLC={bahtText,symOf,setRates,lookup,parseRates,calc:()=>calc(ui.dealer),state:()=>({ui,cs,existing}),pendingAll,dealerList,caseState,casesOf,render,ui};
+let tick=0;
+setInterval(function(){try{
+  if(S.view!=='dealerlabor')return;const v=document.getElementById('v-dealerlabor');if(!v)return;
+  if(!S.dmsLoaded&&typeof ensureDms==='function')ensureDms();
+  if(!v.querySelector('#dl-check')){mount(v);return}
+  const s=(S.dms||[]).length+':'+(RATES?RATES.size:0);if(s!==sig){sig=s;render()}
+  if(++tick%30===0)loadExisting();
+}catch(e){}},1000);
 })();
 
 /*MORNINGREMIND*/(function(){
@@ -5176,6 +5349,7 @@ if(Date.now()-last>=HOUR&&!document.getElementById('ov')){if(n)show()}}catch(e){
     return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>'+css+'</style></head><body>'+G.map(g=>head(g)+tbl(g)+foot(g)+'<br><br>').join('')+'</body></html>';
   }
   function close(){const o=document.getElementById('dd-ov');if(o)o.remove()}
+  window.ddOpen=function(n){return open(n)};
   async function open(names){
     let rows;try{rows=await fetchAll()}catch(e){toast('โหลดข้อมูลไม่สำเร็จ');return}
     const G=groups(rows,names);if(!G.length){toast('ยังไม่มีรายการ');return}
