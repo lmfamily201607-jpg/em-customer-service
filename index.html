@@ -1504,6 +1504,7 @@ function isoDateTime(iso){if(!iso)return '';const d=new Date(iso);if(isNaN(d))re
 function toLocalInput(iso){const d=iso?new Date(iso):new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
 function caseStatus(t){const s=t.status;if(s==='waiting')return 'ติดตามเคส';if(!s||s==='open')return 'จบ';return s}
 function statusOf(t){
+  if(t.status&&caseStatus(t)==='จบ')return 'done'; // a case marked finished is finished, even if some fields were left blank
   if(t.source!=='legacy'&&(REQUIRED.some(k=>!String(t[k]||'').trim())||t.status===''))return 'incomplete';
   return caseStatus(t)==='จบ'?'done':'follow';
 }
