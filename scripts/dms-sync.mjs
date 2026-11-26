@@ -53,11 +53,13 @@ const day = (x) => String(x || '').slice(0, 10);
 TOKEN = await idToken();
 const me = await api('/v1/me'); console.log('แผนก:', me.department);
 const claims = (await all('service.claims', {})).filter((c) => rx.test(String(c.current_status || '')));
-console.log('เคสสถานะ 10 / รอคืนค่า:', claims.length);
-const ids = claims.map((c) => c.claim_id), parts = {}, hist = {};
+console.log('เคสสถานะ 10 / รอคืนค่า:', claims.length, '· รูป DMS:', canMedia ? 'มีสิทธิ์' : 'ไม่มีสิทธิ์ service.claim_media');
+const ids = claims.map((c) => c.claim_id), parts = {}, hist = {}, media = {};
+const canMedia = (me.datasets || []).some((d) => d.name === 'service.claim_media');
 for (let i = 0; i < ids.length; i += 300) {
   const q = { claim_id: ids.slice(i, i + 300).join(',') };
   (await all('service.claim_parts', q)).forEach((p) => (parts[p.claim_id] = parts[p.claim_id] || []).push({ s: String(p.good_code || ''), n: String(p.good_name || ''), q: Number(p.qty) || 1, p: Number(p.price) || 0 }));
+  if (canMedia) (await all('service.claim_media', q)).forEach((m) => m.url && (media[m.claim_id] = media[m.claim_id] || []).push({ t: String(m.media_type || ''), u: String(m.url) }));
   (await all('service.claim_status_history', q)).forEach((h) => (hist[h.claim_id] = hist[h.claim_id] || []).push({ s: String(h.status || ''), t: String(h.changed_at || '') }));
 }
 const cases = claims.map((c) => ({
@@ -66,7 +68,7 @@ const cases = claims.map((c) => ({
   dn: String(c.dealer_name || ''), dc: String(c.dealer_code || ''), bp: String(c.branch_province || ''),
   v: String(c.vin_no || c.chassis_number || ''), mo: String(c.motor_number || ''), ba: String(c.battery_number || ''),
   m: String(c.model || c.vehicle_model || ''), c: String(c.problem_category || ''), p: String(c.problem_subcategory || ''),
-  d: day(c.created_at), parts: parts[c.claim_id] || [], hist: hist[c.claim_id] || [],
+  d: day(c.created_at), parts: parts[c.claim_id] || [], hist: hist[c.claim_id] || [], md: media[c.claim_id] || [],
 }));
 const SIZE = 100, chunks = Math.ceil(cases.length / SIZE);
 for (let i = 0; i < chunks; i++) await push('audit/_dmsfeed/c/' + String(i).padStart(3, '0'), { cases: cases.slice(i * SIZE, (i + 1) * SIZE) });

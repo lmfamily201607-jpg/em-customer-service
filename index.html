@@ -2840,6 +2840,7 @@ function openRepair(tk){
     <dt>หมวดปัญหา</dt><dd>${esc(r.c||'-')}</dd><dt>อาการ / ปัญหาย่อย</dt><dd>${esc(r.p||'-')}</dd><dt>สถานะล่าสุด</dt><dd>${esc(r.st||'-')}</dd>${extra}
     <dt>อะไหล่</dt><dd>${(r.parts||[]).length?(r.parts).map(p=>`${esc(p.n||'-')} <span class="mono meta">${esc(p.s||'')}</span> × ${esc(p.q||1)}${p.p?` · ${Number(p.p).toLocaleString()} บาท`:''}`).join('\n'):'-'}</dd>
     <dt>รูป</dt><dd>${(r.img||[]).length?r.img.map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">รูปที่ ${i+1}</a>`).join(' · '):'-'}</dd></dl>
+    ${window.DLC&&window.DLC.mediaOf&&window.DLC.mediaOf(r.tk).length?'<h4 style="margin:12px 0 2px">📷 รูปใน DMS</h4>'+window.DLC.mdHtml(r.tk):''}
     ${window.DLC&&window.DLC.histOf&&window.DLC.histOf(r.tk).length?'<h4 style="margin:12px 0 2px">🕒 ไทม์ไลน์สถานะ</h4>'+window.DLC.tlHtml(r.tk):''}
     <p class="meta" style="margin:12px 0 0">ข้อมูลอ้างอิงจากไฟล์ซ่อมที่นำเข้า แอปนี้ไม่ได้ติดตามหรือแก้ไขงานซ่อม</p>`);
 }
@@ -4953,7 +4954,7 @@ ov.addEventListener('change',function(e){const t=e.target;
 if(t.dataset&&t.dataset.f==='dealer'){const co=ov.querySelector('#dl-ed-hd [data-f="company"]');if(co&&t.value)co.value=String(t.value).replace(/\s+/g,' ').split(/\s+สาขา\s+/)[0];return}
 if(t.dataset&&t.dataset.f==='caseNo'){const c=t.closest('.dl-ec'),tk=t.value.trim();if(!c||!c.isConnected||!tk||!window.DLC||!window.DLC.lookupCase||ov.__fill)return;const d=window.DLC.lookupCase(tk);const nf=c.querySelector('.dl-nf');if(nf)nf.remove();if(!d){c.querySelector('b').insertAdjacentHTML('afterend',' <span class="dl-nf" style="color:#b00020;font-size:.8rem">⚠ ไม่พบเคส '+esc(tk)+' ในข้อมูล DMS ของแอพ (ข้อมูลถึง '+esc(String((S.dms||[]).reduce(function(m,r){return r.d>m?r.d:m},'')||'-'))+') — กรอกเองได้</span>');return}
 const cur={};c.querySelectorAll('[data-f]').forEach(function(e2){cur[e2.dataset.f]=e2.type==='checkbox'?e2.checked:e2.value});
-const mk=function(l){const batt=d.job==='batt';return Object.assign({},cur,{caseNo:tk,model:d.model,vin:d.vin,repDate:d.repDate,sym:d.sym,type:d.type,report:batt?'ค่าแรงงานแบตเตอรี่':(l&&l.part?'ค่าแรงเปลี่ยน '+l.part:''),part:batt?'ไม่ใช้':'ใช้',amt:batt?75:(l&&l.labor!==''?+l.labor:'')})};
+const mk=function(l){const batt=d.job==='batt';return Object.assign({},cur,{caseNo:tk,model:d.model,vin:d.vin,repDate:d.repDate,fixDate:cur.fixDate||d.fixDate||'',sym:d.sym,type:d.type,report:batt?'ค่าแรงงานแบตเตอรี่':(l&&l.part?'ค่าแรงเปลี่ยน '+l.part:''),part:batt?'ไม่ใช้':'ใช้',amt:batt?75:(l&&l.labor!==''?+l.labor:'')})};
 const L=d.lines.length?d.lines:[null];ov.__fill=1;try{c.replaceWith(htmlNode(card(c.dataset.id,mk(L[0]),0)))}finally{ov.__fill=0}
 let last=ov.querySelector('.dl-ec[data-id="'+c.dataset.id+'"]');L.slice(1).forEach(function(l){const id='new'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);nn++;last.insertAdjacentHTML('afterend',card(id,mk(l),nn));last=last.nextElementSibling});
 ov.querySelectorAll('.dl-ec > b').forEach(function(x,k){x.textContent='รายการที่ '+(k+1)});
@@ -5098,7 +5099,8 @@ function mkCase(r){
   const pl=parts.length?parts.map(p=>{const k=lookup(p.s);return {part:p.n||p.s||'',sku:p.s||'',q:p.q||1,used:'ใช้',labor:k.l===''?'':String(k.l),tag:k.tag,k:k.k}}):[{part:'',sku:'',q:0,used:'ไม่ใช้',labor:'',tag:'ไม่มีอะไหล่ในเคส — ไม่จ่าย',k:'miss'}];
   const bl=[{part:'ค่าแรงงานเกี่ยวกับแบตเตอรี่ (เคลมแบตเตอรี่)',sku:'',q:0,used:'ใช้',labor:String(BATT_LABOR),tag:'ค่าแรงแบตเตอรี่ '+BATT_LABOR+' บาท/เคส',k:'ok'}];
   const job=(!parts.length&&/แบต/.test(String(r.c||'')+' '+String(r.p||'')))?'batt':'part';
-  return {inc:true,buy:'',fix:'',type:r.ctype==='รถใหม่'?'เคลมก่อนขาย':'เคลมหลังขาย',ship:'',shipImg:'',sym:symOf(r),job,pl,bl,lines:job==='batt'?bl:pl};
+  const H=(r.hist||[]).map(h=>String(h.t||'')).filter(Boolean).sort(),lastD=H.length?H[H.length-1].slice(0,10):'';
+  return {inc:true,buy:'',fix:lastD,type:r.ctype==='รถใหม่'?'เคลมก่อนขาย':'เคลมหลังขาย',ship:'',shipImg:'',sym:symOf(r),job,pl,bl,lines:job==='batt'?bl:pl};
 }
 function issues(r,c){
   const m=[];
@@ -5168,6 +5170,11 @@ function tlHtml(tk){const H=histOf(tk).slice().sort((a,b)=>String(a.t).localeCom
   const ft=t=>{const m=/^(\d{4})-(\d\d)-(\d\d)T?(\d\d:\d\d)?/.exec(String(t||''));return m?(+m[3])+'/'+(+m[2])+'/'+(+m[1]+543)+(m[4]?' '+m[4]:''):String(t||'-')};
   const dd=(a,b)=>{const x=Date.parse(a),y=Date.parse(b);return isFinite(x)&&isFinite(y)?Math.round((y-x)/86400000):null};
   return '<ol style="list-style:none;margin:6px 0 0;padding:0 0 0 14px;border-left:3px solid #cfe3d6">'+H.map((h,i)=>{const g=i?dd(H[i-1].t,h.t):null;return '<li style="position:relative;margin:0 0 10px;padding-left:10px"><span style="position:absolute;left:-22px;top:3px;width:12px;height:12px;border-radius:50%;background:'+(i===H.length-1?'#0b5d2d':'#9ccfae')+'"></span><b>'+esc(h.s||'-')+'</b><div class="meta" style="font-size:.8rem">'+esc(ft(h.t))+(g!=null?' · +'+g+' วัน':'')+'</div></li>'}).join('')+'</ol><p class="meta" style="font-size:.78rem">รวม '+(dd(H[0].t,H[H.length-1].t)??'-')+' วัน จากสถานะแรกถึงล่าสุด · ข้อมูลจาก API DMS</p>'}
+function mediaOf(tk){const r=(FEED||[]).find(x=>String(x.tk)===String(tk));return r&&r.md||[]}
+const MDL={problem_image:'รูปปัญหา',problem_video:'วิดีโอปัญหา',repair_form:'ใบแจ้งซ่อม',mileage_photo:'รูปเลขไมล์'};
+function mdHtml(tk){const M=mediaOf(tk);if(!M.length)return '<p class="meta">ไม่มีรูปใน DMS ของเคสนี้</p>';const G={};M.forEach(m=>(G[m.t]=G[m.t]||[]).push(m.u));
+  return Object.keys(G).map(k=>'<h4 style="margin:10px 0 6px">'+esc(MDL[k]||k)+' ('+G[k].length+')</h4><div style="display:flex;flex-wrap:wrap;gap:8px">'+G[k].map(u=>/video|\.(mp4|mov|webm|m4v)(\?|$)/i.test(k+' '+u)?'<a href="'+esc(u)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:120px;height:90px;border:1px solid #ddd;border-radius:8px;background:#111;color:#fff;text-decoration:none">▶ เปิดวิดีโอ</a>':'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img src="'+esc(u)+'" loading="lazy" alt="" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid #ddd"></a>').join('')+'</div>').join('')+'<p class="meta" style="font-size:.78rem">กดรูปเพื่อดูขนาดเต็ม · ข้อมูลจาก API DMS</p>'}
+function showMd(tk){modal('<div class="modal-head"><h3 style="margin:0">📷 รูปใน DMS เคส #'+esc(tk)+'</h3><button class="x" data-close>ปิด</button></div>'+mdHtml(tk))}
 function showTl(tk){modal('<div class="modal-head"><h3 style="margin:0">🕒 ไทม์ไลน์เคส #'+esc(tk)+'</h3><button class="x" data-close>ปิด</button></div>'+tlHtml(tk))}
 function estAmt(c){if(c.job==='batt')return BATT_LABOR;return c.lines.reduce((a,l)=>a+(l.labor!==''&&isFinite(parseFloat(l.labor))?parseFloat(l.labor):0),0)}
 function dash(){
@@ -5215,7 +5222,7 @@ function render(){
     h+=(ui.onlyOk&&!okN?'<p class="meta">ยังไม่มีเคสที่ข้อมูลครบ — กรอกวันที่ซื้อ/วันที่ซ่อม/อาการเสียให้ครบก่อน</p>':'');
     h+=L.filter(r=>!ui.onlyOk||prepared(r.tk)||!issues(r,caseState(r)).length).map(r=>{const c=caseState(r),done=prepared(r.tk),tk=esc(r.tk);
       const vin=[r.v,r.mo,r.ba].filter(Boolean).join(' / ');
-      return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><b>เคส #${tk}</b></label><span class="dc-chk">${done?'':chkHtml(r,c)}</span><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">สร้าง ticket ${esc(r.d||'-')}${ageOf(r.d)!=null?' · ค้าง <b>'+ageOf(r.d)+' วัน</b>':''}</span><button type="button" data-dctl="${tk}">🕒 ไทม์ไลน์</button>${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span> <button type="button" data-dcedit="'+tk+'">✏️ แก้ไขรายการที่บันทึกแล้ว</button>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
+      return `<div class="dc-case${done?' done':''}" data-tk="${tk}"><div class="dc-top"><label><b>เคส #${tk}</b></label><span class="dc-chk">${done?'':chkHtml(r,c)}</span><span>${esc((r.mf||r.m||'').replace(/^EM\s+/,''))}</span><span class="meta">${esc(vin||'ไม่มีเลขตัวถัง')}</span><span class="meta">สร้าง ticket ${esc(r.d||'-')}${ageOf(r.d)!=null?' · ค้าง <b>'+ageOf(r.d)+' วัน</b>':''}</span><button type="button" data-dctl="${tk}">🕒 ไทม์ไลน์</button>${mediaOf(r.tk).length?`<button type="button" data-dcmd="${tk}">📷 รูป DMS (${mediaOf(r.tk).length})</button>`:''}${done?'<span class="dc-tag ok">ทำเบิกแล้ว</span> <button type="button" data-dcedit="'+tk+'">✏️ แก้ไขรายการที่บันทึกแล้ว</button>':''}${(r.d||'')<CUT?'<span class="dc-tag near">ก่อนเดือน 9</span>':''}</div>
       <div class="dc-grid"><label class="wide"><span class="meta">รายการซ่อม</span><select data-k="job"><option value="batt"${c.job==='batt'?' selected':''}>1. เคลมแบตเตอรี่ — ค่าแรง ${BATT_LABOR} บาท/เคส</option><option value="part"${c.job!=='batt'?' selected':''}>2. ค่าแรงเปลี่ยนอะไหล่ — ตามตารางค่าแรงรายอะไหล่</option></select></label><label><span class="meta">วันที่ซื้อ (ลูกค้าซื้อรถ)</span><input type="date" data-k="buy" value="${esc(c.buy)}"></label><label><span class="meta">วันที่ซ่อม (ได้รับอะไหล่จาก EM และซ่อม)</span><input type="date" data-k="fix" value="${esc(c.fix)}"></label>
       <label><span class="meta">ประเภทเคลม</span><select data-k="type"><option${c.type==='เคลมหลังขาย'?' selected':''}>เคลมหลังขาย</option><option${c.type==='เคลมก่อนขาย'?' selected':''}>เคลมก่อนขาย</option></select></label>
       <label><span class="meta">ค่าขนส่งของเคลม (บาท) — กรอกจำนวน</span><input type="number" min="0" step="0.01" data-k="ship" value="${esc(c.ship)}"></label>
@@ -5271,6 +5278,7 @@ function mount(v){
     if(t.id==='dc-newdoc'){if(window.dlNewDoc)window.dlNewDoc(ui.dealer);return}
     if(t.dataset&&t.dataset.dcedit){const q=document.getElementById('dl-fq');if(q){q.value=t.dataset.dcedit;q.dispatchEvent(new Event('input',{bubbles:true}));const tr=document.getElementById('dl-track');if(tr)tr.scrollIntoView({behavior:'smooth',block:'start'})}return}
     if(t.dataset&&t.dataset.dctl){showTl(t.dataset.dctl);return}
+    if(t.dataset&&t.dataset.dcmd){showMd(t.dataset.dcmd);return}
     if(t.dataset&&t.dataset.dcpick){ui.cat='all';ui.dealer=t.dataset.dcpick;render();const s=document.getElementById('dc-dealer');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});return}
     if(t.dataset&&t.dataset.dccat){ui.cat=t.dataset.dccat;ui.dealer='';render();return}
     if(t.id==='dc-save')save();
@@ -5285,7 +5293,7 @@ function mount(v){
     else if(t.id==='dc-ok'){casesOf(ui.dealer).forEach(r=>{const c=caseState(r);c.manual=false;c.inc=!issues(r,c).length});render()}});
   render();loadExisting();refreshFeed();if(!ratesTried){ratesTried=true;loadRates()}
 }
-window.DLC={histOf,tlHtml,showTl,lookupCase:function(tk){const r=srcRows().find(x=>String(x.tk)===String(tk));if(!r)return null;const c=mkCase(r);return {br:norm(r.br),company:companyOf(r),model:(r.mf||r.m||'').replace(/^EM\s+/,''),vin:[r.v,r.mo,r.ba].filter(Boolean).join(' / '),repDate:r.d||'',sym:c.sym,type:c.type,job:c.job,lines:c.lines.map(l=>({part:l.part,labor:l.labor}))}},bahtText,symOf,setRates,lookup,parseRates,calc:()=>calc(ui.dealer),state:()=>({ui,cs,existing}),pendingAll,dealerList,caseState,casesOf,render,ui};
+window.DLC={histOf,tlHtml,showTl,mediaOf,mdHtml,showMd,lookupCase:function(tk){const r=srcRows().find(x=>String(x.tk)===String(tk));if(!r)return null;const c=mkCase(r);return {br:norm(r.br),company:companyOf(r),model:(r.mf||r.m||'').replace(/^EM\s+/,''),vin:[r.v,r.mo,r.ba].filter(Boolean).join(' / '),repDate:r.d||'',fixDate:c.fix||'',sym:c.sym,type:c.type,job:c.job,lines:c.lines.map(l=>({part:l.part,labor:l.labor}))}},bahtText,symOf,setRates,lookup,parseRates,calc:()=>calc(ui.dealer),state:()=>({ui,cs,existing}),pendingAll,dealerList,caseState,casesOf,render,ui};
 let tick=0;
 setInterval(function(){try{
   if(S.view!=='dealerlabor')return;const v=document.getElementById('v-dealerlabor');if(!v)return;
