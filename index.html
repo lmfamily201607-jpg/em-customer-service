@@ -151,7 +151,7 @@ table.heat td:first-child,table.heat th:first-child{text-align:left}
 .kb{background:var(--accent-soft);display:flex;flex-direction:column;min-width:0}
 .kb span{background:var(--ink);color:var(--bg);font-weight:600;font-size:14px;padding:6px 12px}
 .kb b{font-family:var(--display);font-size:clamp(28px,5vw,46px);color:var(--accent);text-align:center;padding:10px 8px 14px;font-variant-numeric:tabular-nums}
-.kband:has(#k-closed){grid-template-columns:repeat(5,minmax(0,1fr))}
+.kband:has(#k-closed){grid-template-columns:repeat(6,minmax(0,1fr))}
 @media (max-width:640px){.kband{grid-template-columns:repeat(2,minmax(0,1fr))}.kband:has(#k-closed){grid-template-columns:repeat(2,minmax(0,1fr))}}
 .rtable{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0;align-self:start}
 .rt-h{background:var(--ink);color:var(--bg);font-weight:600;padding:7px 12px;font-size:14px}
@@ -619,7 +619,8 @@ a{transition:color .12s}
     <div class="kband">
       <div class="kb"><span>เคสทั้งหมด</span><b id="k-total">0</b></div>
       <div class="kb"><span>จบ / ปิดเคส</span><b id="k-done">0</b></div>
-      <div class="kb"><span>ติดตาม / ตรวจสอบ</span><b id="k-follow">0</b></div>
+      <div class="kb"><span>ติดตามเคส</span><b id="k-follow">0</b></div>
+      <div class="kb"><span>รอซ่อม / รอโอนเงิน</span><b id="k-wait">0</b></div>
       <div class="kb"><span>สัดส่วนสถานะจบ</span><b id="k-rate">-</b></div>
       <div class="kb"><span>ปิดจริงในช่วงนี้ (รวมเคสเก่า)</span><b id="k-closed">0</b></div>
     </div>
@@ -1950,7 +1951,7 @@ function renderDashboard(){
   $('#d-title').textContent=(D.mode==='day'?'สรุปงานรายวัน ':'สรุปงานรายเดือน ')+periodLabel();$('#d-import').hidden=!(S.permReady&&myPerm().menus.includes('import'));
   $('#dash-date').textContent=`ข้อมูลรวม ${T.length.toLocaleString()} เรื่อง (บันทึกในแอป ${S.tickets.length.toLocaleString()} · Log Case ที่นำเข้า ${S.legacy.length.toLocaleString()})`;
   $('#k-total').textContent=s.total.toLocaleString();$('#k-done').textContent=s.done.toLocaleString();
-  $('#k-follow').textContent=s.follow.toLocaleString();$('#k-rate').textContent=s.rate;
+  {const nf=R.filter(t=>statusOf(t)!=='incomplete'&&/^(ติดตามเคส|รอข้อมูล)$/.test(caseStatus(t))).length,nw=R.filter(t=>statusOf(t)!=='incomplete'&&/^(รอซ่อม|รอโอนเงิน)$/.test(caseStatus(t))).length;$('#k-follow').textContent=nf.toLocaleString();const kw=document.getElementById('k-wait');if(kw)kw.textContent=nw.toLocaleString()}$('#k-rate').textContent=s.rate;
   $('#k-closed').textContent=T.filter(t=>t.closedAt&&(D.mode==='day'?isoDate(t.closedAt)===D.day:isoDate(t.closedAt).slice(0,7)===D.month)).length.toLocaleString();
   try{bossReport(R)}catch(e){}
   shareTable($('#t-topic'),s.topic,s.total,'หัวข้อ');
@@ -4752,7 +4753,7 @@ const tdy=parseInt((document.getElementById('k-follow')||{}).textContent,10)||0;
  h+=doneHtml();
  box.innerHTML=h}
 document.addEventListener('click',e=>{if(!e.target.closest('#fu-copy'))return;const di=document.getElementById('d-day');if(!di)return;const R=rows(di.value,true).filter(x=>!fuCat||x.cat===fuCat);const g=id=>((document.getElementById(id)||{}).innerText||'').trim();
- let t='สรุปงานรายวัน '+fmt(di.value)+'\nเคสทั้งหมด '+g('k-total')+' · จบ '+g('k-done')+' · ติดตาม '+g('k-follow')+' · สัดส่วนจบ '+g('k-rate')+'\n\nเคสที่ต้องติดตาม '+R.length+' เคส'+(R.length?(' ('+chSum(R)+')'):'')+'\n';
+ let t='สรุปงานรายวัน '+fmt(di.value)+'\nเคสทั้งหมด '+g('k-total')+' · จบ '+g('k-done')+' · ติดตามเคส '+g('k-follow')+' · รอซ่อม/รอโอนเงิน '+g('k-wait')+' · สัดส่วนจบ '+g('k-rate')+'\n\nเคสที่ต้องติดตาม '+R.length+' เคส'+(R.length?(' ('+chSum(R)+')'):'')+'\n';
  R.forEach((x,i)=>{t+=(i+1)+'. '+x.name+' | '+x.cat+' | ช่องทาง: '+x.ch+' | สาเหตุ: '+x.why+' | '+(x.from?('แจ้ง '+fmt(x.from)+' ผ่านมา '+x.n+' วัน'):'ไม่ทราบวันแจ้ง')+' | ตาม '+x.times+' ครั้ง | สถานะ: '+x.st+' | '+(x.closed?('จบ '+fmt(x.closed)):'ยังไม่จบ')+'\n'});
  const done=()=>toast('คัดลอกรายงานแล้ว วางส่งได้เลย');
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,()=>toast('คัดลอกไม่สำเร็จ'));else toast('เบราว์เซอร์นี้คัดลอกอัตโนมัติไม่ได้')});
