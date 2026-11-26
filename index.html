@@ -4911,6 +4911,7 @@ function parseRates(X,buf){
   });
   return out;
 }
+const BATT_LABOR=75; // battery-related case with no part list = flat labor per case
 const FP='audit/_dmsfeed/config';
 function srcRows(){return FEED&&FEED.length?FEED:(S.dms||[])}
 async function loadFeedCfg(){try{const c=await client();if(!c)return;const q=await c.from('em_docs').select('data').eq('path',FP).limit(1);const d=q.data&&q.data[0]&&q.data[0].data;if(d&&d.url){FCFG={url:d.url,token:d.token||''};if(!FST.t&&!FST.busy)refreshFeed()}}catch(e){}}
@@ -4942,7 +4943,7 @@ function dealerList(){
 function prepared(tk){return Object.values(existing).some(r=>String(r.caseNo)===String(tk))}
 function mkCase(r){
   const parts=r.parts||[];
-  const lines=parts.length?parts.map(p=>{const k=lookup(p.s);return {part:p.n||p.s||'',sku:p.s||'',q:p.q||1,used:'ใช้',labor:k.l===''?'':String(k.l),tag:k.tag,k:k.k}}):[{part:'',sku:'',q:0,used:'ไม่ใช้',labor:'',tag:'ไม่มีอะไหล่ในเคส',k:'miss'}];
+  const lines=parts.length?parts.map(p=>{const k=lookup(p.s);return {part:p.n||p.s||'',sku:p.s||'',q:p.q||1,used:'ใช้',labor:k.l===''?'':String(k.l),tag:k.tag,k:k.k}}):(/แบต/.test(String(r.c||'')+' '+String(r.p||''))?[{part:'ค่าแรงงานเกี่ยวกับแบตเตอรี่ (เคสไม่มีรายการอะไหล่)',sku:'',q:0,used:'ใช้',labor:String(BATT_LABOR),tag:'ค่าแรงแบตเตอรี่ '+BATT_LABOR+' บาท/เคส',k:'ok'}]:[{part:'',sku:'',q:0,used:'ไม่ใช้',labor:'',tag:'ไม่มีอะไหล่ในเคส — ไม่จ่าย',k:'miss'}]);
   return {inc:true,buy:'',fix:'',type:r.ctype==='รถใหม่'?'เคลมก่อนขาย':'เคลมหลังขาย',ship:'',sym:symOf(r),lines};
 }
 function issues(r,c){
