@@ -4889,11 +4889,11 @@ function setRates(rows,meta){
 }
 function lookup(sku){
   if(!RATES)return {l:'',tag:'ยังไม่มีตารางค่าแรง',k:'none'};
-  sku=String(sku||'').trim();if(!sku)return {l:'',tag:'ไม่พบรหัส',k:'miss'};
-  if(RATES.has(sku)){const v=RATES.get(sku);return v.l!=null?{l:v.l,tag:'ตรงตาราง',k:'ok'}:{l:'',tag:'ตารางไม่ระบุค่าแรง',k:'miss'}}
+  sku=String(sku||'').trim();if(!sku)return {l:'',tag:'ไม่มีรหัส — ไม่จ่าย',k:'miss'};
+  if(RATES.has(sku)){const v=RATES.get(sku);return v.l!=null?{l:v.l,tag:'ตรงตาราง',k:'ok'}:{l:'',tag:'ไม่มีค่าแรงในตาราง — ไม่จ่าย',k:'miss'}}
   const b=BASE.get(sku.split('.')[0]);
   if(b&&b.size===1)return {l:[...b][0],tag:'ใกล้เคียง (ตัดท้ายรหัส) ตรวจก่อนเบิก',k:'near'};
-  return {l:'',tag:'ไม่พบรหัสในตาราง',k:'miss'};
+  return {l:'',tag:'ไม่พบรหัสในตาราง — ไม่จ่าย',k:'miss'};
 }
 function parseRates(X,buf){
   const wb=X.read(buf,{type:'array',cellFormula:false,cellHTML:false,cellText:false,cellStyles:false}),out=[];
@@ -4951,8 +4951,8 @@ function issues(r,c){
   if(c.type==='เคลมหลังขาย'&&!c.buy)m.push('วันที่ซื้อ');
   if(!c.fix)m.push('วันที่ซ่อม');
   if(!String(c.sym||'').trim())m.push('อาการเสีย');
-  const noLab=c.lines.filter(l=>l.labor===''||!isFinite(parseFloat(l.labor))).length;
-  if(noLab)m.push('ค่าแรงยังไม่ครบ '+noLab+' รายการ');
+    const pay=c.lines.filter(l=>l.labor!==''&&isFinite(parseFloat(l.labor))).length,sh=parseFloat(c.ship);
+  if(!pay&&!(isFinite(sh)&&sh>0))m.push('ไม่มีรายการที่จ่ายค่าแรง');
   return m;
 }
 function caseState(r){const k=String(r.tk);if(!cs[k]){cs[k]=mkCase(r);rr[k]=r;cs[k].inc=!issues(r,cs[k]).length}return cs[k]}
@@ -4989,7 +4989,7 @@ function css(){if(document.getElementById('dc-css'))return;const s=document.crea
   document.head.appendChild(s)}
 function totHtml(){
   const d=ui.dealer;if(!d)return '';const t=calc(d);
-  return `<div class="dc-tot"><div style="display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline"><span>เคสที่เลือก <b>${t.cases}</b> · รายการค่าแรง <b>${t.lines}</b>${t.miss?` · <span style="color:#b00020">ยังไม่กรอกค่าแรง ${t.miss} รายการ (จะไม่ถูกบันทึก)</span>`:''}</span></div>
+  return `<div class="dc-tot"><div style="display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline"><span>เคสที่เลือก <b>${t.cases}</b> · รายการค่าแรง <b>${t.lines}</b>${t.miss?` · <span class="meta">ไม่มีค่าแรง (ไม่จ่าย) ${t.miss} รายการ — ไม่นำมาคิด</span>`:''}</span></div>
   <div style="display:flex;flex-wrap:wrap;gap:4px 26px;margin-top:6px"><span>ราคารวม <b>${fmt(t.sum)}</b>${t.ship?` <span class="meta">(ค่าแรง ${fmt(t.labor)} + ค่าส่ง ${fmt(t.ship)})</span>`:''}</span><span>ภาษีมูลค่าเพิ่ม 7% <b>${fmt(t.vat)}</b></span><span>รวมทั้งสิ้น <b class="big">${fmt(t.tot)}</b></span></div>
   <div class="meta" style="margin-top:3px">(${esc(bahtText(t.tot))}) · ประมาณการหัก ณ ที่จ่าย 3% ของค่าแรง ${fmt(t.wht)} → ยอดโอนสุทธิโดยประมาณ ${fmt(t.net)}</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="primary" id="dc-save"${busy||!t.lines&&!t.ship?' disabled':''}>บันทึกเป็นรายการเบิก (${t.cases} เคส)</button><button type="button" id="dc-print">📄 ใบเอกสาร / พิมพ์ของร้านนี้</button></div></div>`;
@@ -5031,7 +5031,7 @@ async function save(){
     c.lines.forEach((l,i)=>{const v=parseFloat(l.labor);if(l.labor===''||!isFinite(v)||v<0){skipped++;return}recs.push(['dms-'+r.tk+'-'+i,{...base,report:l.part,part:l.used,sku:l.sku,amt:v}])});
     const s=parseFloat(c.ship);if(isFinite(s)&&s>0)recs.push(['dms-'+r.tk+'-ship',{...base,report:'ค่าส่งของเคลม',part:'',sku:'',amt:s}])});
   if(!recs.length){toast('ยังไม่มีรายการที่มีค่าแรงให้บันทึก');return}
-  if(!confirm('บันทึก '+recs.length+' รายการ ของร้าน '+d+' เป็นรายการเบิกค่าแรง (สถานะ รอค่าแรง)?'+(skipped?'\n\nข้าม '+skipped+' รายการที่ยังไม่กรอกค่าแรง (เคสที่บันทึกแล้วจะถูกล็อก กรอกเพิ่มภายหลังที่รายการเบิกด้านล่าง)':'')))return;
+  if(!confirm('บันทึก '+recs.length+' รายการ ของร้าน '+d+' เป็นรายการเบิกค่าแรง (สถานะ รอค่าแรง)?'+(skipped?'\n\nไม่นำ '+skipped+' รายการที่ไม่มีค่าแรง (ไม่จ่าย) มาบันทึก':'')))return;
   busy=true;render();let n=0;
   try{for(const [id,o] of recs){const now=new Date().toISOString();await S.db.doc(P+id).set({...o,createdAt:now,updatedAt:now});existing[id]=o;n++}
     toast('บันทึกแล้ว '+n+' รายการ');if(window.dlReload)window.dlReload()}
